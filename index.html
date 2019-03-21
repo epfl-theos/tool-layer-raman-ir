@@ -22,13 +22,18 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.1/dist/katex.css" integrity="sha384-b/NoaeRXkMxyKcrDw2KtVtYKkVg3dA0rTRgLoV7W2df3MzeR1eHLTi+l4//4fMwk" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.10.1/dist/katex.js" integrity="sha384-ern5NCRqs6nJ/a4Ik0nB9hnKVH5HwV2XRUYdQl09OB/vvd1Lmmqbg1Mh+mYUclXx" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
     <script>
         // This data is injected from flask at page generation
         var appData = {
             'structure': null, // Pass info on the structure to display
             'symmetryInfo': {},
             'forceConstants': {
-                'description': 'some \\LaTeX description', 
+                'description': '\\text{Elastic force constant matrices: }K^1_{\\alpha\\beta} = \\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right), K^2_{\\alpha\\beta} = \\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right)', 
                 'variables': [
                     {
                         'name': 'C111',
@@ -37,12 +42,12 @@
                     },
                     {
                         'name': 'C133',
-                        'displayName': 'b',
-                        'value': 1.
+                        'displayName': 'c',
+                        'value': 2.
                     },
                 ],
                 'matrices': [
-                    [['C11', 0., 0.], [0., 'C111', 0.], [0., 0., 'C133']],
+                    [['C111', 0., 0.], [0., 'C111', 0.], [0., 0., 'C133']],
                     [[ [['C111', -1.]] , 0., 0.], [0., 'C111', 0.], [0., 0., 'C133']]
                 ]
             }
@@ -67,9 +72,23 @@
             <div style="width: 100%; text-align: center;">
                 Maximum number of layers: {{ maxLayers }}
             </div>
+            <div style="width: 100%; text-align: center;" v-html="getLatexHTML(latexCode)" id="test"></div>
             <div>
                 <span class="warning-message"> {{ warningMessage }} </span> 
             </div>
+        </div>
+
+        <div style="max-width: 800px; margin: auto;">
+            <template v-for="variable in forceConstantVariables">
+                <div class="row">
+                    <div class="col-xs-12 col-sm-6">
+                        <label :for="variable.name">{{variable.displayName}}</label>
+                    </div>
+                    <div class="col-xs-12 col-sm-6">
+                        <input type="number" step="any" class="form-control" :name="variable.name" v-model.number="variable.value" v-on:input="updateGraphDebounced">
+                    </div> 
+                </div> 
+            </template>
         </div>
 
         <div id="plotContainer" style="min-width: 310px; max-width: 800px; height: 400px; margin: 0 auto"></div>

@@ -37,18 +37,24 @@ def get_modes():
         return make_response("Invalid request, not a valid JSON", 400)
 
     try:
-        max_layers = data['maxLayers']
-    except KeyError:
-        return make_response("Invalid request, maxLayers value not passed", 400)
-        
-    try:
-        max_layers = int(max_layers)
+        max_layers = int(data['maxLayers'])
         if max_layers < 2 or max_layers > 40:
             raise KeyError
+    except (KeyError, ValueError):
+        return make_response("Invalid request, maxLayers value not passed or not in valid range", 400)
+        
+    try:
+        force_constant_params = data['forceConstantParams']
     except KeyError:
-        return make_response("Invalid request, k is not an int value or it is not in the expected range", 400)
+        return make_response("Invalid request, missing forceConstantParams", 400)
+
+    # an example of validation
+    if 'C111' not in force_constant_params or force_constant_params['C111'] < 0:
+        return make_response("missing or invalid C111", 400)
 
     ## LOGIC START ##
+
+    print(max_layers, force_constant_params)
 
     num_points = 300
     min_x = -1
@@ -62,9 +68,9 @@ def get_modes():
     return_data = {
             "x": list(x),
             "y": list(y),
-            "isBackScattering": [True for _ in x],
-            "isRamanActive": [True for _ in x],
-            "isInfraredActive": [True for _ in x],
+            "isBackScattering": [idx % 2 < 1 and (idx % 4 < 2) for idx in range(len(x))], # If it's not Raman active, then this is always False
+            "isRamanActive": [idx % 4 < 2 for idx in range(len(x))],
+            "isInfraredActive": [idx % 8 < 4 for idx in range(len(x))],
             }
 
     ## LOGIC END ##
