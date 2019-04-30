@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Example slider-graph</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" media="screen" href="../../user_static/css/main.css">
+
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/series-label.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+    <!-- development version, includes helpful console warnings -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+    <!-- production version, optimized for size and speed -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/vue"></script> -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.1/dist/katex.css" integrity="sha384-b/NoaeRXkMxyKcrDw2KtVtYKkVg3dA0rTRgLoV7W2df3MzeR1eHLTi+l4//4fMwk" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.10.1/dist/katex.js" integrity="sha384-ern5NCRqs6nJ/a4Ik0nB9hnKVH5HwV2XRUYdQl09OB/vvd1Lmmqbg1Mh+mYUclXx" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <script>
+        // This data is injected from flask at page generation
+        var appData = {
+            'structure': null, // Pass info on the structure to display
+            'symmetryInfo': {},
+            'forceConstants': {
+                'description': '\\text{Elastic force constant matrices: }K^1_{\\alpha\\beta} = \\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right), K^2_{\\alpha\\beta} = \\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right)', 
+                'variables': [
+                    {
+                        'name': 'C111',
+                        'displayName': 'a',
+                        'value': 1.
+                    },
+                    {
+                        'name': 'C133',
+                        'displayName': 'c',
+                        'value': 2.
+                    },
+                ],
+                'matrices': [
+                    [['C111', 0., 0.], [0., 'C111', 0.], [0., 0., 'C133']],
+                    [[ [['C111', -1.]] , 0., 0.], [0., 'C111', 0.], [0., 0., 'C133']]
+                ]
+            }
+        };
+    </script>
+
+</head>
+<body>    
+    <div>
+        {{ test_data }}
+    </div>
+
+    <div id="app">  <!-- Vue.js will work in here -->
+        <div id="inputs">
+            <div>
+                <div class="slidecontainer">
+                    <input type="range" min="2" max="40" value="5" step="1" class="slider" v-model="maxLayers" v-on:input="updateGraphDebounced"> 
+                </div> 
+                <div style="width: 100%; text-align: center;"><span v-bind:class="{ invisible: !showSpinner }"><img src="../../user_static/img/loader-spinning.gif" height="40px"></img></span> 
+                </div>
+            </div>
+            <div style="width: 100%; text-align: center;">
+                {# 
+                    Another way of avoiding escaping {{}} by Jinja, if they are
+                    Vue.JS constructs, is to escape them as strings:
+                    {{ '{{' }}
+                    and 
+                    {{ '}}' }}
+                    but I think it's uglier and less readable.
+
+                    Still, I think the {% raw %} should be confined to one
+                    or a few lines to avoid that, by just looking at a piece of
+                    source code in the tempate, it's hard to understand if it's
+                    a Jinjia2 or Vue.js replacement.
+                #}
+                {% raw %} 
+                Maximum number of layers: {{ maxLayers }}
+                {% endraw %}
+            </div>
+            <div style="width: 100%; text-align: center;" v-html="getLatexHTML(latexCode)" id="test"></div>
+            <div>
+                {% raw %} 
+                <span class="warning-message"> {{ warningMessage }} </span> 
+                {% endraw %}
+            </div>
+        </div>
+
+        <div style="max-width: 800px; margin: auto;">
+            <template v-for="variable in forceConstantVariables">
+                <div class="row">
+                    <div class="col-xs-12 col-sm-6">
+                        {% raw %}
+                        <label :for="variable.name">{{variable.displayName}}</label>
+                        {% endraw %}
+                    </div>
+                    <div class="col-xs-12 col-sm-6">
+                        <input type="number" step="any" class="form-control" :name="variable.name" v-model.number="variable.value" v-on:input="updateGraphDebounced">
+                    </div> 
+                </div> 
+            </template>
+        </div>
+
+        <div id="plotContainer" style="min-width: 310px; max-width: 800px; height: 400px; margin: 0 auto"></div>
+    </div>
+
+    <script src="../../user_static/js/main.js"></script>
+</body>
+</html>

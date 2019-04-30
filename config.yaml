@@ -6,6 +6,7 @@ about_section_title: "About this tool"
 templates:
   how_to_cite: "how_to_cite.html"
   about: "about.html"
+  select_content: "custom_select_content.html"
 
 use_upload_structure_block: True
 
