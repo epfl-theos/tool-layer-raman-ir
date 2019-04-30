@@ -7,6 +7,7 @@ templates:
   how_to_cite: "how_to_cite.html"
   about: "about.html"
   select_content: "custom_select_content.html"
+  upload_structure_additional_content: "upload_structure_additional_content.html"
 
 use_upload_structure_block: True
 

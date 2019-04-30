@@ -17,13 +17,15 @@ def process_structure():
         structurefile = flask.request.files['structurefile']
         fileformat = flask.request.form.get('fileformat', 'unknown')
         filecontent = structurefile.read().decode('utf-8')
+        example_slider = flask.request.form.get('example-slider', 'PROBLEM GETTING EXAMPLE-SLIDER VALUE')
 
         try:
             data_for_template = process_structure_core(
                 filecontent=filecontent,
                 fileformat=fileformat,
                 logger=None,
-                flask_request=flask.request)
+                flask_request=flask.request,
+                example_slider=example_slider)
             return flask.render_template(
                 "user_templates/visualizer.html", **data_for_template)
         except FlaskRedirectException as e:
