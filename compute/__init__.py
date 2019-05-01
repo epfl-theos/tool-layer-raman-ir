@@ -4,7 +4,7 @@ from flask import Blueprint
 import json
 import numpy as np
 
-from .layer_raman_engine import process_structure_core, FlaskRedirectException
+from .layer_raman_engine import parse_structure, process_structure_core, FlaskRedirectException
 
 blueprint = Blueprint('compute', __name__, url_prefix='/compute')
 
@@ -17,20 +17,30 @@ def process_structure():
         structurefile = flask.request.files['structurefile']
         fileformat = flask.request.form.get('fileformat', 'unknown')
         filecontent = structurefile.read().decode('utf-8')
-        example_slider = flask.request.form.get('example-slider', 'PROBLEM GETTING EXAMPLE-SLIDER VALUE')
+        skin_factor = flask.request.form.get('skin-factor', "")
+        try:
+            skin_factor = float(skin_factor)
+        except ValueError:
+            flask.flash("Invalid value for skin factor, must be float ({})".format(skin_factor))
+            return flask.redirect(flask.url_for('input_data'))
+
+        try:
+            structure = parse_structure(filecontent=filecontent, fileformat=fileformat)
+        except Exception as exc:
+            flask.flash("Unable to parse the structure, sorry... ({}, {})".format(str(type(exc)), str(exc)))
+            return flask.redirect(flask.url_for('input_data'))
 
         try:
             data_for_template = process_structure_core(
-                filecontent=filecontent,
-                fileformat=fileformat,
+                structure=structure,
                 logger=None,
                 flask_request=flask.request,
-                example_slider=example_slider)
+                skin_factor=skin_factor)
             return flask.render_template(
                 "user_templates/visualizer.html", **data_for_template)
         except FlaskRedirectException as e:
             flask.flash(str(e))
-            return flask.redirect(flask.url_for('input_structure'))
+            return flask.redirect(flask.url_for('input_data'))
         except Exception as exc:
             flask.flash("Unable to process the structure, sorry... ({}, {})".format(str(type(exc)), str(exc)))
             return flask.redirect(flask.url_for('input_data'))

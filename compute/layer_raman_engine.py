@@ -4,12 +4,18 @@ class FlaskRedirectException(Exception):
     """
     pass
 
-def process_structure_core(filecontent, fileformat, logger, flask_request, example_slider):
+def parse_structure(filecontent, fileformat):
+    return (filecontent, fileformat)
+
+def process_structure_core(structure, logger, flask_request, skin_factor):
     """
     Get the data to put in the visualizer jinja2 template
     """
+
+
     return {
-        'test_data': "Some data from the server-side python code: SLIDER: {}; File format: {}, file content: {} bytes".format(
-            example_slider, fileformat, len(filecontent)
+        'test_data': "Some data from the server-side python code: SLIDER: {} ({}); File format: {}, file content: {} bytes".format(
+            skin_factor, str(type(skin_factor)), structure[1], len(structure[0])
         )
     }
+
