@@ -238,7 +238,7 @@ var app = new Vue({
             })
             .value();
             
-            console.log(seriesNames, seriesWithData);
+            //console.log(seriesNames, seriesWithData);
 
             // clean-up all series
             while(vueApp.chart.series.length > 0) {
@@ -373,7 +373,7 @@ var app = new Vue({
 
             // Define custom symbols
             window.Highcharts.SVGRenderer.prototype.symbols.cross = function (x, y, w, h) {
-                console.log('cross', x, y, w, h);
+                //console.log('cross', x, y, w, h);
                 return ['M', x, y, 'L', x + w, y + h, 'M', x + w, y, 'L', x, y + h, 'z'];
             };
             if (window.Highcharts.VMLRenderer) {
