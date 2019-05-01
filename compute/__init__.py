@@ -97,16 +97,17 @@ def get_modes():
 
     numeric_matrices = replace_symbols_with_values(
         list_of_lists=symbolic_matrices, replacements=force_constant_params)
+    ## This still contains information on linear combinations of coefficients.
+    ## Now, we assume it's a list of 3x3 matrices, and if an element
+    ## is not a numeric value but a list of lists, it means a linear combination: 
+    ## replace with correct combination. E.g.:
+    ## [['C111', -1]] = -C111; 
+    ## [['C111', -0.5], ['C112', -0.5]] = -0.5 * C111 - 0.5 * C112
+    numeric_matrices = replace_linear_combinations(numeric_matrices)
+
     print(symbolic_matrices)
     print(force_constant_params)
     print(numeric_matrices)
-
-    ## GP: still to do: now assume it' a list of 3x3 matrices, and if an element
-    ##     is not a numeric value but a list of lists, it means a linear combination: 
-    ##     replace with correct combination. E.g.:
-    ##     [['C111', -1]] = -C111; 
-    ##     [['C111', -0.5], ['C112', -0.5]] = -0.5 * C111 - 0.5 * C112
-    ## (double check with Marco that this was the agreed format!)
 
     ## LOGIC START ##
 
@@ -155,3 +156,31 @@ def replace_symbols_with_values(list_of_lists, replacements):
     else:
         return list_of_lists # if it's a numeric value, for instance
 
+def replace_linear_combinations(list_of_3x3_matrices):
+    """
+    Given a list of 3x3 matrices, where elements can either be float values 
+    or lists representing linear combination of values, return a (copied) list
+    of 3x3 matrices, where linear combinations are replaced by their values.
+
+    For instance, a value ``[[0.1, 0.3], [0.8, 0.7]]`` means a combination 
+    ``0.1 * 0.3 + 0.8 * 0.7`` and will therefore be replaced by ``0.59``.
+    """
+    from collections.abc import Iterable
+    result = []
+
+    for matrix in list_of_3x3_matrices:
+        new_matrix = []
+        for row in matrix:
+            new_row = []
+            for entry in row:
+                if isinstance(entry, Iterable):
+                    new_entry = 0
+                    for value, factor in entry:
+                        new_entry += value * factor
+                    new_row.append(new_entry)
+                else:
+                    new_row.append(entry)
+            new_matrix.append(new_row)
+        result.append(new_matrix)
+    
+    return result
