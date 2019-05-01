@@ -1,1 +1,4 @@
 ase==3.17.0
+seekpath==1.8.4
+qe-tools==1.1.2
+pymatgen==2017.7.4

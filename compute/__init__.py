@@ -25,7 +25,7 @@ def process_structure():
             return flask.redirect(flask.url_for('input_data'))
 
         try:
-            structure = parse_structure(filecontent=filecontent, fileformat=fileformat)
+            structure = parse_structure(filecontent=filecontent, fileformat=fileformat, extra_data=dict(flask.request.form))
         except Exception as exc:
             flask.flash("Unable to parse the structure, sorry... ({}, {})".format(str(type(exc)), str(exc)))
             return flask.redirect(flask.url_for('input_data'))
