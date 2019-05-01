@@ -253,7 +253,7 @@ def _find_layers(asecell,factor=1.1,update_cell=False):
     at the connectivity of the bonds
 
     """
-    from ase.calculators.neighborlist import *
+    from ase.calculators.neighborlist import NeighborList
     from numpy.linalg import norm, matrix_rank, det, inv
 
     tol = 1e-6
@@ -287,7 +287,7 @@ def _find_layers(asecell,factor=1.1,update_cell=False):
                   neigh_vec.append(offset)
           # We define the dimensionality as the rank 
           dim = matrix_rank(neigh_vec)
-          print "Dimensionality: ", dim
+          #print "Dimensionality: ", dim
           if dim == 2:
              twod_unit = True
              cell = asecell.cell
@@ -313,14 +313,14 @@ def _find_layers(asecell,factor=1.1,update_cell=False):
                          disconnected.append(vector)
              iv = _shortest_vector_index(disconnected)
              vector3 = disconnected[iv]
-             print vector1,vector2,vector3
+             #print vector1,vector2,vector3
           layer_structures.append(aselayer)
           layer_indices.append(layer)
       
     if twod_unit and update_cell:
        newcell = [vector1,vector2,vector3]
-       if det(newcell)/det(cell) > 1.0:
-          print "New cell larger than the original cell"
-       asecell = update_and_rotate_cell(asecell,newcell,layer_indices)
+       #if det(newcell)/det(cell) > 1.0:
+          #print "New cell larger than the original cell"
+       asecell = _update_and_rotate_cell(asecell,newcell,layer_indices)
 
     return asecell[visited],layer_structures
