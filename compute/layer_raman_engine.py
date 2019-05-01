@@ -254,7 +254,7 @@ def _find_layers(asecell,factor=1.1,update_cell=False):
 
     """
     from ase.calculators.neighborlist import NeighborList
-    from numpy.linalg import norm, matrix_rank, det, inv
+    from numpy.linalg import norm, matrix_rank
 
     tol = 1e-6
     nl = NeighborList(factor * get_covalent_radii_array(asecell),
@@ -265,29 +265,24 @@ def _find_layers(asecell,factor=1.1,update_cell=False):
     layer_structures = []
     layer_indices = []
     visited = [] 
-    for idx,atom in enumerate(asecell):
+    for idx in range(len(asecell)):
        layer = [] 
        if idx not in visited:
-          #print idx
           check_neighbors(idx,nl,asecell,visited,layer)
-          #print layer
           aselayer = asecell.copy()[layer]
-          #view(aselayer)
-          nl2 = NeighborList(1.1*covalent_radii_array(aselayer),
+          layer_nl = NeighborList(factor*get_covalent_radii_array(aselayer),
                              bothways=True,self_interaction=False,skin=0.0)
-          nl2.update(aselayer)
+          layer_nl.update(aselayer)
           # We search for the periodic images of the first atom (idx=0)
           # that are connected to at least one atom of the connected layer
           neigh_vec = []
-          for idx2, atom2 in enumerate(aselayer):
-            indices, offsets = nl2.get_neighbors(idx2)
+          for idx2 in range(len(aselayer)):
+            indices, offsets = layer_nl.get_neighbors(idx2)
             for ref,offset in zip(indices,offsets):
                if not all(offset == [0,0,0]):# and ref==0:
-                  #print offset
                   neigh_vec.append(offset)
           # We define the dimensionality as the rank 
-          dim = matrix_rank(neigh_vec)
-          #print "Dimensionality: ", dim
+          dim = matrix_rank(neigh_vec)          
           if dim == 2:
              twod_unit = True
              cell = asecell.cell
@@ -301,7 +296,7 @@ def _find_layers(asecell,factor=1.1,update_cell=False):
                 iv = _shortest_vector_index(vectors)
                 vector2 = vectors.pop(iv)
                 vector3 = np.cross(vector1,vector2)
-             aselayer = update_and_rotate_cell(aselayer,[vector1,vector2,vector3],
+             aselayer = _update_and_rotate_cell(aselayer,[vector1,vector2,vector3],
                                                [range(len(aselayer))])
                   
              disconnected = []
@@ -313,7 +308,6 @@ def _find_layers(asecell,factor=1.1,update_cell=False):
                          disconnected.append(vector)
              iv = _shortest_vector_index(disconnected)
              vector3 = disconnected[iv]
-             #print vector1,vector2,vector3
           layer_structures.append(aselayer)
           layer_indices.append(layer)
       
