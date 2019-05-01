@@ -80,19 +80,37 @@ def get_modes():
             raise KeyError
     except (KeyError, ValueError):
         return make_response("Invalid request, maxLayers value not passed or not in valid range", 400)
-        
+ 
     try:
         force_constant_params = data['forceConstantParams']
     except KeyError:
         return make_response("Invalid request, missing forceConstantParams", 400)
 
-    # an example of validation
-    if 'C111' not in force_constant_params or force_constant_params['C111'] < 0:
-        return make_response("missing or invalid C111", 400)
+    try:
+        symbolic_matrices = data['matrices']
+    except KeyError:
+        return make_response("Invalid request, missing matrices", 400)
+
+    ## an example of validation - to decide if we want to do it!
+    #if 'C111' not in force_constant_params or force_constant_params['C111'] < 0:
+    #    return make_response("missing or invalid C111", 400)
+
+    numeric_matrices = replace_symbols_with_values(
+        list_of_lists=symbolic_matrices, replacements=force_constant_params)
+    print(symbolic_matrices)
+    print(force_constant_params)
+    print(numeric_matrices)
+
+    ## GP: still to do: now assume it' a list of 3x3 matrices, and if an element
+    ##     is not a numeric value but a list of lists, it means a linear combination: 
+    ##     replace with correct combination. E.g.:
+    ##     [['C111', -1]] = -C111; 
+    ##     [['C111', -0.5], ['C112', -0.5]] = -0.5 * C111 - 0.5 * C112
+    ## (double check with Marco that this was the agreed format!)
 
     ## LOGIC START ##
 
-    print(max_layers, force_constant_params)
+    #print(max_layers, force_constant_params)
 
     num_points = 300
     min_x = -1
@@ -114,3 +132,26 @@ def get_modes():
     ## LOGIC END ##
 
     return flask.jsonify(return_data)
+
+
+def replace_symbols_with_values(list_of_lists, replacements):
+    """
+    Take iteratively a list of lists (at any depth level) and replace strings with
+    the corresponding values in the ``replacements`` dictionary, leaving other
+    types of values (floats, ints, ...) untouched.
+
+    :return: a new list_of_lists with the same shape, with strings replaced by numbers.
+    :raise ValueError: if one of the values is not found
+    """
+    from collections.abc import Iterable
+
+    if isinstance(list_of_lists, str): # Check this first, a str is also Iterable
+        try:
+            return replacements[list_of_lists]
+        except KeyError:
+            raise ValueError("Unknown replacement '{}'".format(list_of_lists))
+    elif isinstance(list_of_lists, Iterable):
+        return [replace_symbols_with_values(elem, replacements=replacements) for elem in list_of_lists]
+    else:
+        return list_of_lists # if it's a numeric value, for instance
+
