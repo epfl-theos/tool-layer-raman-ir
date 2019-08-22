@@ -209,7 +209,7 @@ def _update_and_rotate_cell(asecell,newcell,layer_indices):
    # if the first two lattice vectors have equal magnitude and form
    # a 60deg angle, change the second so that the angle becomes 120
    if (abs(norm(cell[0])-norm(cell[1])) < 1e-6 and
-       abs(np.dot(cell[0],cell[1])/n.dot(cell[0],cell[0]) - 0.5) < 1e-3):
+       abs(np.dot(cell[0],cell[1])/np.dot(cell[0],cell[0]) - 0.5) < 1e-3):
       cell[1] -= cell[0]
    asecell.set_cell(cell)
    # finally rotate the first cell vector along x
@@ -217,7 +217,7 @@ def _update_and_rotate_cell(asecell,newcell,layer_indices):
    # Wrap back in the unit cell each layer separately
    for layer in layer_indices:
       # projection of the atomic positions of the layer along the third axis
-      proj  = np.dot(asecell.positions[layer],normal_vec)/asecell.get_volume()
+      proj  = np.dot(asecell.positions[layer],[0,0,1])/asecell.get_volume()
       # move back the vertical position of the layer within the cell
       asecell.positions[layer] -= int(proj.mean()) * asecell.cell[2]
    # fix also the inplane component of the positions   
@@ -262,6 +262,7 @@ def _find_layers(asecell,factor=1.1,update_cell=False):
     nl.update(asecell)
     vector1, vector2,vector3 = asecell.cell
     twod_unit = False
+    only_twod_units = True
     layer_structures = []
     layer_indices = []
     visited = [] 
@@ -278,8 +279,8 @@ def _find_layers(asecell,factor=1.1,update_cell=False):
           neigh_vec = []
           for idx2 in range(len(aselayer)):
             indices, offsets = layer_nl.get_neighbors(idx2)
-            for ref,offset in zip(indices,offsets):
-               if not all(offset == [0,0,0]):# and ref==0:
+            for offset in offsets:
+               if not all(offset == [0,0,0]):
                   neigh_vec.append(offset)
           # We define the dimensionality as the rank 
           dim = matrix_rank(neigh_vec)          
@@ -308,6 +309,8 @@ def _find_layers(asecell,factor=1.1,update_cell=False):
                          disconnected.append(vector)
              iv = _shortest_vector_index(disconnected)
              vector3 = disconnected[iv]
+          else:
+              only_twod_units = False
           layer_structures.append(aselayer)
           layer_indices.append(layer)
       
@@ -317,4 +320,27 @@ def _find_layers(asecell,factor=1.1,update_cell=False):
           #print "New cell larger than the original cell"
        asecell = _update_and_rotate_cell(asecell,newcell,layer_indices)
 
-    return asecell[visited],layer_structures
+    return only_twod_units, asecell[visited], layer_structures
+
+def compare_layers(layers,ltol=0.2,stol=0.3,angle_tol=5.0):
+    """
+    Compares all layers in the material
+    layers:: list of ASE structures corresponding to layers
+    ltol:: tolerance on cell length 
+    stol:: tolerance on atomic site positions
+    angle_tol:: tolerance on cell angles
+    """
+    from pymatgen.analysis.structure_matcher import StructureMatcher
+    from pymatgen.io.ase import AseAtomsAdaptor
+    # instance of the adaptor to convert ASE structures to pymatgen format
+    adaptor = AseAtomsAdaptor()
+    
+    # Create an instance of Structure Matcher with the given tolerances
+    sm = StructureMatcher(ltol,stol,angle_tol)
+    ref_layer = adaptor.get_structure(layers[0])
+    all_match = True
+    for aselayer in layers[1:]:
+        layer = adaptor.get_structure(aselayer)
+        if not sm.fit(ref_layer,layer):
+            all_match = False
+    return all_match
