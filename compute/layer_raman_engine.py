@@ -231,13 +231,13 @@ def _update_and_rotate_cell(asecell,newcell,layer_indices):
 
     asecell.set_cell(newcell)
     normal_vec = np.cross(newcell[0],newcell[1])
-    print asecell.cell
+    print(asecell.cell)
     asecell.rotate(v=normal_vec,a=[0,0,1],center=(0,0,0),rotate_cell=True)
     # it needs to be done twice because of possible bug in ASE
     normal_vec = np.cross(asecell.cell[0],asecell.cell[1])
     asecell.rotate(v=normal_vec,a=[0,0,1],center=(0,0,0),rotate_cell=True)
     cell = asecell.cell
-    print asecell.cell
+    print(asecell.cell)
     # if the first two lattice vectors have equal magnitude and form
     # a 60deg angle, change the second so that the angle becomes 120
     if ( (abs(norm(cell[0])-norm(cell[1])) < 1e-6) and
@@ -349,12 +349,12 @@ def _find_layers(asecell,factor=1.1,update_cell=True):
             layer_indices.append(layer)
     if is_layered and update_cell:
         newcell = [vector1,vector2,vector3]
-        print "BULK"
-        print asecell.cell    
+        print("BULK")
+        print(asecell.cell)
         if abs(np.linalg.det(newcell)/np.linalg.det(cell)-1.0)>1e-3:
-            print "New cell has a different volume the original cell"
+            print("New cell has a different volume the original cell")
         asecell = _update_and_rotate_cell(asecell,newcell,layer_indices)
-        print asecell.cell
+        print(asecell.cell)
     return is_layered, asecell, layer_indices
 
 def layers_match(layers,ltol=0.2,stol=0.3,angle_tol=5.0):
@@ -430,7 +430,7 @@ def find_common_transformation(asecell,layer_indices,ltol=0.2,stol=0.3,angle_tol
     vert_direction /= np.linalg.norm(vert_direction)
     stack_proj = [ np.dot(layer.positions,vert_direction).mean() for layer in layers]
     stack_order = np.argsort(stack_proj)
-    print stack_order
+    print(stack_order)
     layers = [ layers[i] for i in stack_order]
     transformations = []
     for il, layer1 in enumerate(layers):
@@ -441,4 +441,4 @@ def find_common_transformation(asecell,layer_indices,ltol=0.2,stol=0.3,angle_tol
         bilayer = layer1+layer2
         sg = SpacegroupAnalyzer(adaptor.get_structure(bilayer))
 
-    print transformations
+    print(transformations)

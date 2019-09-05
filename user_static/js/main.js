@@ -281,7 +281,13 @@ var app = new Vue({
             return Highcharts.chart('plotContainer', {
                 chart: {
                     type: 'scatter',
-                    zoomType: 'xy'
+                    zoomType: 'xy',
+                    animation: false
+                },
+                drilldown: {
+                    animation: {
+                        duration: 0
+                    }
                 },
                 credits: {
                     enabled: false
@@ -310,6 +316,11 @@ var app = new Vue({
                     useHTML: true
                 },
                 plotOptions: {
+                    series: {
+                        animation: {
+                            duration: 0
+                        }
+                    },
                     scatter: {
                         marker: {
                             radius: 5,
