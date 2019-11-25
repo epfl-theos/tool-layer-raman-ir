@@ -132,7 +132,7 @@ var app = new Vue({
             // will be replaced later in 'mount', but needs to be there already
             // see https://vuejs.org/v2/guide/reactivity.html#Declaring-Reactive-Properties
         },
-        fetchAndUpdateData: function() {
+        fetchAndUpdateData: function(xmin, xmax) {
             try {
                 this.currentRequest.abort();
             } catch(err) {
@@ -155,7 +155,11 @@ var app = new Vue({
                 matrices: vueApp.appData.forceConstants.matrices,
                 symmetryInfo: vueApp.appData.symmetryInfo,
                 maxLayers: vueApp.maxLayers,
+                xmin: xmin,
+                xmax: xmax
             };
+
+            console.log('faud', dataToSend);
 
             this.currentRequest = $.post({
                 url: "/compute/api/modes/",
@@ -276,13 +280,25 @@ var app = new Vue({
             while(this.chart.series.length > 0) {
                 this.chart.series[0].remove();
             }
-        },
+        }, 
         createChart: function () {
+            var _this = this;
             return Highcharts.chart('plotContainer', {
                 chart: {
                     type: 'scatter',
                     zoomType: 'xy',
-                    animation: false
+                    animation: false,
+                    events: {
+                        redraw: function (event) {
+                            var xmin = event.target.axes[0].min;
+                            var xmax = event.target.axes[0].max;
+                            console.log('redraw', xmin, xmax);
+                            /*console.log('redraw', event.target.axes[1].coll, event.target.axes[1].min, event.target.axes[1].max);*/
+                            // DANGER! This will make infinite loops!!
+                            // Maybe check if it actually changed?
+                            // _this.fetchAndUpdateData(xmin, xmax);
+                        }
+                    }
                 },
                 drilldown: {
                     animation: {
