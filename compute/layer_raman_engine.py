@@ -231,13 +231,11 @@ def _update_and_rotate_cell(asecell,newcell,layer_indices):
 
     asecell.set_cell(newcell)
     normal_vec = np.cross(newcell[0],newcell[1])
-    print(asecell.cell)
     asecell.rotate(v=normal_vec,a=[0,0,1],center=(0,0,0),rotate_cell=True)
     # it needs to be done twice because of possible bug in ASE
     normal_vec = np.cross(asecell.cell[0],asecell.cell[1])
     asecell.rotate(v=normal_vec,a=[0,0,1],center=(0,0,0),rotate_cell=True)
-    cell = asecell.cell
-    print(asecell.cell)
+    cell = asecell.cell    
     # if the first two lattice vectors have equal magnitude and form
     # a 60deg angle, change the second so that the angle becomes 120
     if ( (abs(norm(cell[0])-norm(cell[1])) < 1e-6) and
@@ -245,8 +243,8 @@ def _update_and_rotate_cell(asecell,newcell,layer_indices):
         cell[1] -= cell[0]
     asecell.set_cell(cell)
     # finally rotate the first cell vector along x
-    angle = np.arctan2(cell[0,1],cell[0,0])
-    asecell.rotate(v=[0,0,1],a=-angle,center=(0,0,0),rotate_cell=True)
+    angle = np.arctan2(cell[0,1],cell[0,0])*180/np.pi
+    asecell.rotate(-angle,v=[0,0,1],center=(0,0,0),rotate_cell=True)
     # Wrap back in the unit cell each layer separately
     for layer in layer_indices:
         # projection of the atomic positions of the layer along the third axis
@@ -331,9 +329,9 @@ def _find_layers(asecell,factor=1.1,update_cell=True):
                     vector2 = vectors.pop(iv)
                     vector3 = np.cross(vector1,vector2)
                 vector1, vector2 = _gauss_reduce(vector1,vector2)
+                vector3 = np.cross(vector1,vector2)
                 aselayer = _update_and_rotate_cell(aselayer,[vector1,vector2,vector3],
                                                 [range(len(aselayer))])
-                    
                 disconnected = []
                 for i in range(-3,4):
                     for j in range(-3,4):
@@ -349,12 +347,12 @@ def _find_layers(asecell,factor=1.1,update_cell=True):
             layer_indices.append(layer)
     if is_layered and update_cell:
         newcell = [vector1,vector2,vector3]
-        print("BULK")
-        print(asecell.cell)
+        #print ("BULK")
+        #print asecell.cell    
         if abs(np.linalg.det(newcell)/np.linalg.det(cell)-1.0)>1e-3:
-            print("New cell has a different volume the original cell")
+            print ("New cell has a different volume the original cell")
         asecell = _update_and_rotate_cell(asecell,newcell,layer_indices)
-        print(asecell.cell)
+        #print (asecell.cell)
     return is_layered, asecell, layer_indices
 
 def layers_match(layers,ltol=0.2,stol=0.3,angle_tol=5.0):
@@ -387,7 +385,7 @@ def layers_match(layers,ltol=0.2,stol=0.3,angle_tol=5.0):
         #    print (sm._strict_match(str1,str2,fu,s1_supercell,break_on_match=False))
     return all_match
 
-def find_common_transformation(asecell,layer_indices,ltol=0.2,stol=0.3,angle_tol=5.0):
+def find_common_transformation(asecell,layer_indices,ltol=0.05,stol=0.05,angle_tol=2.0):
     """
     Given an input structure, in ASE format, and the list with 
     the indices of atoms belonging to each layer, determine
@@ -406,6 +404,7 @@ def find_common_transformation(asecell,layer_indices,ltol=0.2,stol=0.3,angle_tol
     from pymatgen.analysis.structure_matcher import StructureMatcher
     from pymatgen.io.ase import AseAtomsAdaptor
     from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+    from pymatgen.core.operations import SymmOp
 
     # instance of the adaptor to convert ASE structures to pymatgen format
     adaptor = AseAtomsAdaptor()
@@ -430,15 +429,53 @@ def find_common_transformation(asecell,layer_indices,ltol=0.2,stol=0.3,angle_tol
     vert_direction /= np.linalg.norm(vert_direction)
     stack_proj = [ np.dot(layer.positions,vert_direction).mean() for layer in layers]
     stack_order = np.argsort(stack_proj)
-    print(stack_order)
+    #print (stack_order)
     layers = [ layers[i] for i in stack_order]
-    transformations = []
-    for il, layer1 in enumerate(layers):
-        layer2 = layers[(il+1)%num_layers]
-        str1 = adaptor.get_structure(layer1)
-        str2 = adaptor.get_structure(layer2)
-        transformations.append(list(sm.get_transformation(str1,str2)))
-        bilayer = layer1+layer2
-        sg = SpacegroupAnalyzer(adaptor.get_structure(bilayer))
+    layer0 = layers[0]
+    layer1 = layers[1]
+    str0 = adaptor.get_structure(layer0)
+    str1 = adaptor.get_structure(layer1)
+    # This is the transformation that brings layer0 into layer1
+    transformation01 = sm.get_transformation(str1,str0)
+    # define the common lattice of both layers (which is the one of the bulk)
+    common_lattice = str0.lattice
+    # we use twice the same "common lattice" because they are identical in our case
+    # in general we should have str0.lattice and str1.lattice (not necessarily in this order)
+    rot01 = np.linalg.solve(np.dot(transformation01[0],common_lattice.matrix),common_lattice.matrix)
+    # translation vector in cartesian coordinates
+    tr01 = np.matmul(common_lattice.matrix.T,transformation01[1])
+    # this is the "symmetry" operation that brings layer0 into layer1
+    op01 = SymmOp.from_rotation_and_translation(rot01,tr01)
+    
+    # check that the same operation brings each layer into the next one
+    for il in range(1,num_layers):
+        layer0 = layers[il]
+        layer1 = layers[(il+1)%num_layers]
+        # the transformed positions of the atoms in the first layer
+        pos0 = op01.operate_multi(layer0.positions)
+        # that should be identical to the ones of the second layer
+        pos1 = layer1.positions
+        # we already know from above that the species in each layer are identical
+        # so we take the set of the ones in the first layer
+        for an in set(layer0.get_chemical_symbols()):
+            # check, species by species, that the atomic positions are identical
+            # up to a threshold
+            distance, mapping =  are_same(
+                [ _[0] for _ in zip(pos0,layer0.get_chemical_symbols()) if _[1] == an ],
+                [ _[0] for _ in zip(pos1,layer1.get_chemical_symbols()) if _[1] == an ],
+                common_lattice.matrix)
+            # if the distance for any of the atoms of the given species
+            # is larger than the threshold the transformation is not the same
+            # between all consecutive layers
+            if distance.max() > stol:
+                print ("WARNING: transformation between consecutive layers not always the same")
+                return None, None
+    return rot01, tr01
+def get_mapping(pos1,pos2,cell):
+    return np.array([0,0]), np.array([0,0])
 
-    print(transformations)
+def test_structure(filename):
+    from ase.io import read
+    asecell = read(filename)
+    is_layered, asecell, layer_indices = _find_layers(asecell)
+    print find_common_transformation(asecell,layer_indices) 
