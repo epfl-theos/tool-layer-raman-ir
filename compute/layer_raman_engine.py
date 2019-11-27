@@ -403,8 +403,8 @@ def find_common_transformation(asecell,layer_indices,ltol=0.05,stol=0.05,angle_t
     """
     from pymatgen.analysis.structure_matcher import StructureMatcher
     from pymatgen.io.ase import AseAtomsAdaptor
-    from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
     from pymatgen.core.operations import SymmOp
+    from map_positions import are_same_except_order
 
     # instance of the adaptor to convert ASE structures to pymatgen format
     adaptor = AseAtomsAdaptor()
@@ -422,6 +422,7 @@ def find_common_transformation(asecell,layer_indices,ltol=0.05,stol=0.05,angle_t
     layers = [asecell[layer] for layer in layer_indices]
     if not layers_match(layers):
         # an exception should be raised?
+        print ("WARNING: layers are not identical")
         return None, None
     # Re-order layers according to their projection 
     # on the stacking direction
@@ -460,22 +461,24 @@ def find_common_transformation(asecell,layer_indices,ltol=0.05,stol=0.05,angle_t
         for an in set(layer0.get_chemical_symbols()):
             # check, species by species, that the atomic positions are identical
             # up to a threshold
-            distance, mapping =  are_same(
-                [ _[0] for _ in zip(pos0,layer0.get_chemical_symbols()) if _[1] == an ],
-                [ _[0] for _ in zip(pos1,layer1.get_chemical_symbols()) if _[1] == an ],
+            distance, mapping =  are_same_except_order(
+                np.array([ _[0] for _ in zip(pos0,layer0.get_chemical_symbols()) if _[1] == an ]),
+                np.array([ _[0] for _ in zip(pos1,layer1.get_chemical_symbols()) if _[1] == an ]),
                 common_lattice.matrix)
             # if the distance for any of the atoms of the given species
             # is larger than the threshold the transformation is not the same
             # between all consecutive layers
             if distance.max() > stol:
+                # an exception should be raised?
                 print ("WARNING: transformation between consecutive layers not always the same")
                 return None, None
     return rot01, tr01
-def get_mapping(pos1,pos2,cell):
-    return np.array([0,0]), np.array([0,0])
 
 def test_structure(filename):
+    import sys
     from ase.io import read
     asecell = read(filename)
     is_layered, asecell, layer_indices = _find_layers(asecell)
+    if not is_layered:
+        sys.exit("The material is not layered")
     print find_common_transformation(asecell,layer_indices) 
