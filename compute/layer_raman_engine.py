@@ -232,7 +232,7 @@ def _update_and_rotate_cell(asecell,newcell,layer_indices):
     asecell.set_cell(newcell)
     normal_vec = np.cross(newcell[0],newcell[1])
     asecell.rotate(v=normal_vec,a=[0,0,1],center=(0,0,0),rotate_cell=True)
-    # it needs to be done twice because of possible bug in ASE
+    # it needs to be done twice because of possible bugs in ASE
     normal_vec = np.cross(asecell.cell[0],asecell.cell[1])
     asecell.rotate(v=normal_vec,a=[0,0,1],center=(0,0,0),rotate_cell=True)
     cell = asecell.cell    
@@ -341,10 +341,10 @@ def _find_layers(asecell,factor=1.1,update_cell=True):
                                 disconnected.append(vector)
                 iv = _shortest_vector_index(disconnected)
                 vector3 = disconnected[iv]
+                layer_structures.append(aselayer)
+                layer_indices.append(layer)
             else:
                 is_layered = False
-            layer_structures.append(aselayer)
-            layer_indices.append(layer)
     if is_layered and update_cell:
         newcell = [vector1,vector2,vector3]
         #print ("BULK")
@@ -352,6 +352,15 @@ def _find_layers(asecell,factor=1.1,update_cell=True):
         if abs(np.linalg.det(newcell)/np.linalg.det(cell)-1.0)>1e-3:
             print ("New cell has a different volume the original cell")
         asecell = _update_and_rotate_cell(asecell,newcell,layer_indices)
+        # Re-order layers according to their projection 
+        # on the stacking direction
+        vert_direction = np.cross(asecell.cell[0],asecell.cell[1])
+        vert_direction /= np.linalg.norm(vert_direction)
+        stack_proj = [ np.dot(layer.positions,vert_direction).mean() 
+            for layer in [ asecell[il] for il in layer_indices ] ]
+        stack_order = np.argsort(stack_proj)
+        # order layers with increasing coordinate along the stacking direction
+        layer_indices = [ layer_indices[il] for il in stack_order]
         #print (asecell.cell)
     return is_layered, asecell, layer_indices
 
@@ -385,7 +394,7 @@ def layers_match(layers,ltol=0.2,stol=0.3,angle_tol=5.0):
         #    print (sm._strict_match(str1,str2,fu,s1_supercell,break_on_match=False))
     return all_match
 
-def find_common_transformation(asecell,layer_indices,ltol=0.05,stol=0.05,angle_tol=2.0):
+def find_common_transformation(asecell,layer_indices,ltol=0.05,stol=0.05,angle_tol=2.0,symprec=1e-3):
     """
     Given an input structure, in ASE format, and the list with 
     the indices of atoms belonging to each layer, determine
@@ -404,6 +413,7 @@ def find_common_transformation(asecell,layer_indices,ltol=0.05,stol=0.05,angle_t
     from pymatgen.analysis.structure_matcher import StructureMatcher
     from pymatgen.io.ase import AseAtomsAdaptor
     from pymatgen.core.operations import SymmOp
+    from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
     from map_positions import are_same_except_order
 
     # instance of the adaptor to convert ASE structures to pymatgen format
@@ -424,14 +434,9 @@ def find_common_transformation(asecell,layer_indices,ltol=0.05,stol=0.05,angle_t
         # an exception should be raised?
         print ("WARNING: layers are not identical")
         return None, None
-    # Re-order layers according to their projection 
-    # on the stacking direction
-    vert_direction = np.cross(asecell.cell[0],asecell.cell[1])
-    vert_direction /= np.linalg.norm(vert_direction)
-    stack_proj = [ np.dot(layer.positions,vert_direction).mean() for layer in layers]
-    stack_order = np.argsort(stack_proj)
-    #print (stack_order)
-    layers = [ layers[i] for i in stack_order]
+    # Layers are already ordered according to their
+    # projection along the stacking direction
+    # we start by comparing the first and second layer
     layer0 = layers[0]
     layer1 = layers[1]
     str0 = adaptor.get_structure(layer0)
@@ -447,11 +452,18 @@ def find_common_transformation(asecell,layer_indices,ltol=0.05,stol=0.05,angle_t
     tr01 = np.matmul(common_lattice.matrix.T,transformation01[1])
     # this is the "symmetry" operation that brings layer0 into layer1
     op01 = SymmOp.from_rotation_and_translation(rot01,tr01)
-    
+
+    spg = SpacegroupAnalyzer(str0,symprec=symprec)
+    print spg.get_symmetry_operations()
     # check that the same operation brings each layer into the next one
+    # we need to check not only the symmetry operation found by pymatgen,
+    # but also its combination with any of the point group operations of
+    # the monolayer: TODO 
     for il in range(1,num_layers):
         layer0 = layers[il]
         layer1 = layers[(il+1)%num_layers]
+        # TODO: before transforming, translate back the two layers
+        # by il * cell[2]/num_layers
         # the transformed positions of the atoms in the first layer
         pos0 = op01.operate_multi(layer0.positions)
         # that should be identical to the ones of the second layer
@@ -474,11 +486,109 @@ def find_common_transformation(asecell,layer_indices,ltol=0.05,stol=0.05,angle_t
                 return None, None
     return rot01, tr01
 
-def test_structure(filename):
+def construct_all_matrices(asecell,layer_indices,transformation,symprec=1e-3):
+    """
+    Construct the interlayer force constant matrices from the symmetries 
+    of the bilayer and the trasformation matrix that brings EACH layer into
+    the next one
+    """
+    #TODO: for now it works only when the transformation matrix 
+    # has no inversion along z
+    from pymatgen.io.ase import AseAtomsAdaptor
+    from pymatgen.core.operations import SymmOp
+    from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+    # define the bilayer by taking the first two layers
+    # (layers are already ordered according to their projection
+    #  along the stacking direction)
+    bilayer = asecell[layer_indices[0]] + asecell[layer_indices[1]]
+    # put the third lattice of the bilayer orthogonal to the layers
+    # and with a large magnitude
+    bilayer.cell[2] = 10 * np.cross(asecell.cell[0],asecell.cell[1])
+    # transform the structure to a pymatgen structure
+    struct = AseAtomsAdaptor().get_structure(bilayer)
+    # Find the spacegroup of the bilayer
+    spg = SpacegroupAnalyzer(struct,symprec=symprec)
+    print spg.get_point_group_symbol(), spg.get_crystal_system()
+    cry_sys = spg.get_crystal_system()
+    if cry_sys in ['tetragonal','trigonal',]:
+        matrix_dict = {'C111': [[1., 0., 0.], [0., 1., 0.], [0., 0., 0.]],
+                       'C133': [[0., 0., 0.], [0., 0., 0.], [0., 0., 1.]]
+                    }
+    elif cry_sys == 'orthorhombic' :
+        matrix_dict = {'C111': [[1., 0., 0.], [0., 0., 0.], [0., 0., 0.]],
+                       'C122': [[0., 0., 0.], [0., 1., 0.], [0., 0., 0.]],
+                       'C133': [[0., 0., 0.], [0., 0., 0.], [0., 0., 1.]]
+                    }
+    elif cry_sys == 'monoclinic':
+        matrix_dict =  {'C111': [[1., 0., 0.], [0., 0., 0.], [0., 0., 0.]],
+                       'C122': [[0., 0., 0.], [0., 1., 0.], [0., 0., 0.]],
+                       'C133': [[0., 0., 0.], [0., 0., 0.], [0., 0., 1.]]
+                    }
+        # TODO: add the off-diagonal element according to the unique-axis
+        # direction in the specific setting
+    elif cry_sys == 'triclinic':
+        matrix_dict = {'C111': [[1., 0., 0.], [0., 0., 0.], [0., 0., 0.]],
+                       'C112': [[0., 1., 0.], [1., 0., 0.], [0., 0., 0.]],
+                       'C113': [[0., 0., 1.], [0., 0., 0.], [1., 0., 0.]],                       
+                       'C122': [[0., 0., 0.], [0., 1., 0.], [0., 0., 0.]],
+                       'C123': [[0., 0., 0.], [0., 0., 1.], [0., 1., 0.]],
+                       'C133': [[0., 0., 0.], [0., 0., 0.], [0., 0., 1.]]
+        }
+    elif cry_sys == 'cubic':
+        raise ValueError("Problems with bilayer structure, cubic crystal system detected")
+    else:
+        raise ValueError("Bilayer crystal system not valid")
+    # Under the assumption that this transformation does not flip the z-axis, this 
+    # is also the transformation that brings a bilayer into the next one.
+    # TODO: generalize to take into account the case of transformations that flip z
+    matrix_list = rotate_and_simplify_matrix(matrix_dict,np.identity(3))
+    print matrix_list
+
+def rotate_and_simplify_matrix(matrix_dict,transformation):
+    """
+    This function 'rotates' a matrix written with the internal notation
+    matrix_dict:: dictionary whose keys are the free parameters of the interlayer
+                  force constant matrix, and the value is a matrix that moltiplies the
+                  parameter to obtain the corresponding contribution
+    transformation:: 3x3 array that contains the transformation matrix that needs to be applied to 
+                     the force constant matrix
+    """
+    # The new force constant matrix is simply the one obtained by transforming the corresponding
+    #  matrix of each free paramater (thanks to the linearity of the operation)
+    new_matrix_dict =  {}
+    for k, v in matrix_dict.iteritems():
+        new_matrix_dict.update({k: np.dot(transformation,np.dot(v,np.linalg.inv(transformation)))})
+    # We now convert the dictionary to a list, where each entry is a list of lists of the kind
+    # [free parameter, coefficient]. 
+    # If a coefficient is zero the corresponding list is suppressed.
+    # If there is only one parameter, we reduce the entry to a simple list
+    # If the list is empty, we replace it with 0.0
+    eps = 1e-4 # threshold to consider a coefficient to be 0
+    matrix_list = []
+    for i in range(3):
+        row = [] 
+        for j in range(3):
+            entry = []
+            for k, v in new_matrix_dict.iteritems():
+                if abs(v[i,j]) > eps:
+                    entry.append([k,v[i,j]])
+            if len(entry)==0:
+                row.append(0.0)
+            elif len(entry)==1:
+                row.append(entry[0])
+            else:
+                row.append(entry)            
+        matrix_list.append(row)
+    return matrix_list
+
+def test_structure(filename,factor=1.1):
     import sys
     from ase.io import read
+    from ase.visualize import view
     asecell = read(filename)
-    is_layered, asecell, layer_indices = _find_layers(asecell)
+    is_layered, asecell, layer_indices = _find_layers(asecell,factor=factor)
     if not is_layered:
         sys.exit("The material is not layered")
-    print find_common_transformation(asecell,layer_indices) 
+    rot,transl =  find_common_transformation(asecell,layer_indices) 
+    print rot, transl
+    print construct_all_matrices(asecell,layer_indices,rot)
