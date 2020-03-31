@@ -454,7 +454,7 @@ def find_common_transformation(asecell,layer_indices,ltol=0.05,stol=0.05,angle_t
     op01 = SymmOp.from_rotation_and_translation(rot01,tr01)
 
     spg = SpacegroupAnalyzer(str0,symprec=symprec)
-    print spg.get_symmetry_operations()
+    print(spg.get_symmetry_operations())
     # check that the same operation brings each layer into the next one
     # we need to check not only the symmetry operation found by pymatgen,
     # but also its combination with any of the point group operations of
@@ -508,7 +508,7 @@ def construct_all_matrices(asecell,layer_indices,transformation,symprec=1e-3):
     struct = AseAtomsAdaptor().get_structure(bilayer)
     # Find the spacegroup of the bilayer
     spg = SpacegroupAnalyzer(struct,symprec=symprec)
-    print spg.get_point_group_symbol(), spg.get_crystal_system()
+    print (spg.get_point_group_symbol(), spg.get_crystal_system())
     cry_sys = spg.get_crystal_system()
     if cry_sys in ['tetragonal','trigonal',]:
         matrix_dict = {'C111': [[1., 0., 0.], [0., 1., 0.], [0., 0., 0.]],
@@ -542,7 +542,7 @@ def construct_all_matrices(asecell,layer_indices,transformation,symprec=1e-3):
     # is also the transformation that brings a bilayer into the next one.
     # TODO: generalize to take into account the case of transformations that flip z
     matrix_list = rotate_and_simplify_matrix(matrix_dict,np.identity(3))
-    print matrix_list
+    print(matrix_list)
 
 def rotate_and_simplify_matrix(matrix_dict,transformation):
     """
@@ -590,5 +590,5 @@ def test_structure(filename,factor=1.1):
     if not is_layered:
         sys.exit("The material is not layered")
     rot,transl =  find_common_transformation(asecell,layer_indices) 
-    print rot, transl
-    print construct_all_matrices(asecell,layer_indices,rot)
+    print(rot, transl)
+    print(construct_all_matrices(asecell,layer_indices,rot))
