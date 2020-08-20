@@ -21,4 +21,5 @@ COPY ./compute/ /home/app/code/webservice/compute/
 COPY ./user_static/ /home/app/code/webservice/user_static/
 
 # Set proper permissions on files just copied
+RUN chmod -R o+rX /home/app/code/webservice/
 RUN chown -R app:app /home/app/code/webservice/
