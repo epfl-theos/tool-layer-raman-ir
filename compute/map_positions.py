@@ -1,5 +1,6 @@
-from __future__ import print_function
+
 import numpy as np
+from numpy.random import random
 
 
 def are_same_except_order(pos1, pos2, cell):
@@ -29,7 +30,7 @@ def are_same_except_order(pos1, pos2, cell):
     pos2_new_order = []
 
     # This is the array At the beginning I consider all atoms
-    remaining = range(len(pos2_scaled)) 
+    remaining = list(range(len(pos2_scaled))) 
 
     # Loop over atoms of pos1, for each find the closest in the "remaining" of pos2
     # (i.e., the ones not already considered in the previous loop iterations)
@@ -45,7 +46,7 @@ def are_same_except_order(pos1, pos2, cell):
         # after refolding to get the closest
         refolded_norms = (pos_diff_cart**2).sum(axis=1)
         # Note that this index_smallest goes only from 0 to len(remaining)-1
-        internal_index_smallest = refolded_norms.argmin()
+        internal_index_smallest = int(refolded_norms.argmin())
         distances.append(np.sqrt(refolded_norms[internal_index_smallest]))
         # Here I get the correct index in the original array
         index = remaining[internal_index_smallest]
@@ -58,6 +59,7 @@ def are_same_except_order(pos1, pos2, cell):
     assert not remaining, "There are some remaining atoms: {}".format(remaining)
 
     return np.array(distances), np.array(pos2_new_order)
+
 
 if __name__ == "__main__":
     pos_test = np.array([
@@ -94,7 +96,7 @@ if __name__ == "__main__":
 
     NOISE_SIZE = 1.e-8
 
-    pos_test_compare = (pos_test + rel_vec_shift + NOISE_SIZE * np.random.random((10, 3)))[shuffle]
+    pos_test_compare = (pos_test + rel_vec_shift + NOISE_SIZE * random((10, 3)))[shuffle]
 
     # Add noise?
 
@@ -103,5 +105,5 @@ if __name__ == "__main__":
 
     distances, new_order = are_same_except_order(pos_test_abs, pos_test_compare_abs, cell)
     print('MAX DISTANCE:', distances.max(), 'with noise level', NOISE_SIZE)
-    assert shuffle[new_order].tolist() == range(len(pos_test))
+    assert shuffle[new_order].tolist() == list(range(len(pos_test)))
     

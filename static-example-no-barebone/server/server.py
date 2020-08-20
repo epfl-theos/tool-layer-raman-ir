@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from __future__ import print_function
 from flask import Flask
 import flask
 import json
@@ -76,6 +75,7 @@ def get_modes():
     ## LOGIC END ##
 
     return flask.jsonify(return_data)
+
 
 if __name__ == '__main__':
     # Must be inside this 'if' if you want to use apache mod_wsgi

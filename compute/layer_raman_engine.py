@@ -1,17 +1,28 @@
-import ase
-import numpy as np
 import io
 import json
+
+import ase
+import ase.io
+import numpy as np
+from ase.calculators.neighborlist import NeighborList
+
+from pymatgen.analysis.structure_matcher import StructureMatcher
+from pymatgen.core.operations import SymmOp
+from pymatgen.io.ase import AseAtomsAdaptor
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+from .map_positions import are_same_except_order
+
+
+from tools_barebone.structure_importers import get_structure_tuple, UnknownFormatError
+
 
 class FlaskRedirectException(Exception):
     """
     Class used to return immediately with a flash message and a redirect.
     """
-    pass
+
 
 def parse_structure(filecontent, fileformat, extra_data):
-    from .structure_importers import get_structure_tuple, UnknownFormatError
-
     fileobject = io.StringIO(str(filecontent))
     try:
         structure_tuple = get_structure_tuple(
@@ -22,7 +33,8 @@ def parse_structure(filecontent, fileformat, extra_data):
 
     return structure_tuple
 
-def process_structure_core(structure, logger, flask_request, skin_factor):
+
+def process_structure_core(structure, logger, flask_request, skin_factor):  # pylint: disable=unused-argument
     """
     Get the data to put in the visualizer jinja2 template
     """
@@ -32,7 +44,10 @@ def process_structure_core(structure, logger, flask_request, skin_factor):
         'structure': None, # Pass info on the structure to display
         'symmetryInfo': {},
         'forceConstants': {
-            'description': '\\text{Elastic force constant matrices: }K^1_{\\alpha\\beta} = \\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right), K^2_{\\alpha\\beta} = \\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right)', 
+            'description': 
+                '\\text{Elastic force constant matrices: }K^1_{\\alpha\\beta} = '
+                '\\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right), '
+                'K^2_{\\alpha\\beta} = \\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right)', 
             'variables': [
                 {
                     'name': 'C111',
@@ -192,7 +207,7 @@ def _shortest_vector_index(array):
     :return idx: the index of the shortest vector in the array
     """
     idx = np.array([np.linalg.norm(vector) for vector in array]).argmin()
-    return idx
+    return int(idx)
 
 def _gauss_reduce(vec1,vec2,tol=1e-6):
     """
@@ -227,8 +242,6 @@ def _update_and_rotate_cell(asecell,newcell,layer_indices):
     and then rotate it so that the first two lattice vectors are in the 
     x-y plane. Atomic positions are refolded moving each layer rigidly.
     """
-    from numpy.linalg import norm
-
     asecell.set_cell(newcell)
     normal_vec = np.cross(newcell[0],newcell[1])
     asecell.rotate(v=normal_vec,a=[0,0,1],center=(0,0,0),rotate_cell=True)
@@ -238,7 +251,7 @@ def _update_and_rotate_cell(asecell,newcell,layer_indices):
     cell = asecell.cell    
     # if the first two lattice vectors have equal magnitude and form
     # a 60deg angle, change the second so that the angle becomes 120
-    if ( (abs(norm(cell[0])-norm(cell[1])) < 1e-6) and
+    if ( (abs(np.linalg.norm(cell[0])-np.linalg.norm(cell[1])) < 1e-6) and
          (abs(np.dot(cell[0],cell[1])/np.dot(cell[0],cell[0]) - 0.5) < 1e-3)):
         cell[1] -= cell[0]
     asecell.set_cell(cell)
@@ -279,15 +292,12 @@ def check_neighbors(idx,neighbor_list,asecell,visited,layer):
                 neighbor_list.update(asecell)
             check_neighbors(ref,neighbor_list,asecell,visited,layer)
 
-def _find_layers(asecell,factor=1.1,update_cell=True):
+def _find_layers(asecell,factor=1.1,update_cell=True):  # pylint: disable=too-many-locals
     """
     Obtains all subunits of a given structure by looking
     at the connectivity of the bonds
 
     """
-    from ase.calculators.neighborlist import NeighborList
-    from numpy.linalg import norm, matrix_rank
-
     tol = 1e-6
     nl = NeighborList(factor * get_covalent_radii_array(asecell),
                       bothways=True,self_interaction=False,skin=0.0)
@@ -297,7 +307,7 @@ def _find_layers(asecell,factor=1.1,update_cell=True):
     layer_structures = []
     layer_indices = []
     visited = [] 
-    for idx in range(len(asecell)):
+    for idx in range(len(asecell)):  # pylint: disable=too-many-nested-blocks
         layer = [] 
         if idx not in visited:
             check_neighbors(idx,nl,asecell,visited,layer)
@@ -314,7 +324,7 @@ def _find_layers(asecell,factor=1.1,update_cell=True):
                     if not all(offset == [0,0,0]):
                         neigh_vec.append(offset)
             # We define the dimensionality as the rank 
-            dim = matrix_rank(neigh_vec)          
+            dim = np.linalg.matrix_rank(neigh_vec)          
             if dim == 2:
                 cell = asecell.cell
                 vectors = list(np.dot(neigh_vec,cell))
@@ -324,14 +334,14 @@ def _find_layers(asecell,factor=1.1,update_cell=True):
                 iv = _shortest_vector_index(vectors)
                 vector2 = vectors.pop(iv)
                 vector3 = np.cross(vector1,vector2)
-                while norm(vector3) < tol:
+                while np.linalg.norm(vector3) < tol:
                     iv = _shortest_vector_index(vectors)
                     vector2 = vectors.pop(iv)
                     vector3 = np.cross(vector1,vector2)
                 vector1, vector2 = _gauss_reduce(vector1,vector2)
                 vector3 = np.cross(vector1,vector2)
                 aselayer = _update_and_rotate_cell(aselayer,[vector1,vector2,vector3],
-                                                [range(len(aselayer))])
+                                                [list(range(len(aselayer)))])
                 disconnected = []
                 for i in range(-3,4):
                     for j in range(-3,4):
@@ -372,8 +382,6 @@ def layers_match(layers,ltol=0.2,stol=0.3,angle_tol=5.0):
     stol:: tolerance on atomic site positions
     angle_tol:: tolerance on cell angles
     """
-    from pymatgen.analysis.structure_matcher import StructureMatcher
-    from pymatgen.io.ase import AseAtomsAdaptor
     # instance of the adaptor to convert ASE structures to pymatgen format
     adaptor = AseAtomsAdaptor()
     
@@ -394,7 +402,7 @@ def layers_match(layers,ltol=0.2,stol=0.3,angle_tol=5.0):
         #    print (sm._strict_match(str1,str2,fu,s1_supercell,break_on_match=False))
     return all_match
 
-def find_common_transformation(asecell,layer_indices,ltol=0.05,stol=0.05,angle_tol=2.0,symprec=1e-3):
+def find_common_transformation(asecell,layer_indices,ltol=0.05,stol=0.05,angle_tol=2.0,symprec=1e-3):  # pylint: disable=too-many-arguments,too-many-locals
     """
     Given an input structure, in ASE format, and the list with 
     the indices of atoms belonging to each layer, determine
@@ -410,12 +418,6 @@ def find_common_transformation(asecell,layer_indices,ltol=0.05,stol=0.05,angle_t
     stol:: tolerance on atomic site positions
     angle_tol:: tolerance on cell angles
     """
-    from pymatgen.analysis.structure_matcher import StructureMatcher
-    from pymatgen.io.ase import AseAtomsAdaptor
-    from pymatgen.core.operations import SymmOp
-    from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-    from map_positions import are_same_except_order
-
     # instance of the adaptor to convert ASE structures to pymatgen format
     adaptor = AseAtomsAdaptor()
     
@@ -473,7 +475,8 @@ def find_common_transformation(asecell,layer_indices,ltol=0.05,stol=0.05,angle_t
         for an in set(layer0.get_chemical_symbols()):
             # check, species by species, that the atomic positions are identical
             # up to a threshold
-            distance, mapping =  are_same_except_order(
+            # The second variable would be the mapping, but I'm not using it
+            distance, _ =  are_same_except_order(
                 np.array([ _[0] for _ in zip(pos0,layer0.get_chemical_symbols()) if _[1] == an ]),
                 np.array([ _[0] for _ in zip(pos1,layer1.get_chemical_symbols()) if _[1] == an ]),
                 common_lattice.matrix)
@@ -494,9 +497,6 @@ def construct_all_matrices(asecell,layer_indices,transformation,symprec=1e-3):
     """
     #TODO: for now it works only when the transformation matrix 
     # has no inversion along z
-    from pymatgen.io.ase import AseAtomsAdaptor
-    from pymatgen.core.operations import SymmOp
-    from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
     # define the bilayer by taking the first two layers
     # (layers are already ordered according to their projection
     #  along the stacking direction)
@@ -508,7 +508,7 @@ def construct_all_matrices(asecell,layer_indices,transformation,symprec=1e-3):
     struct = AseAtomsAdaptor().get_structure(bilayer)
     # Find the spacegroup of the bilayer
     spg = SpacegroupAnalyzer(struct,symprec=symprec)
-    print (spg.get_point_group_symbol(), spg.get_crystal_system())
+    print(spg.get_point_group_symbol(), spg.get_crystal_system())
     cry_sys = spg.get_crystal_system()
     if cry_sys in ['tetragonal','trigonal',]:
         matrix_dict = {'C111': [[1., 0., 0.], [0., 1., 0.], [0., 0., 0.]],
@@ -556,7 +556,7 @@ def rotate_and_simplify_matrix(matrix_dict,transformation):
     # The new force constant matrix is simply the one obtained by transforming the corresponding
     #  matrix of each free paramater (thanks to the linearity of the operation)
     new_matrix_dict =  {}
-    for k, v in matrix_dict.iteritems():
+    for k, v in matrix_dict.items():
         new_matrix_dict.update({k: np.dot(transformation,np.dot(v,np.linalg.inv(transformation)))})
     # We now convert the dictionary to a list, where each entry is a list of lists of the kind
     # [free parameter, coefficient]. 
@@ -569,7 +569,7 @@ def rotate_and_simplify_matrix(matrix_dict,transformation):
         row = [] 
         for j in range(3):
             entry = []
-            for k, v in new_matrix_dict.iteritems():
+            for k, v in new_matrix_dict.items():
                 if abs(v[i,j]) > eps:
                     entry.append([k,v[i,j]])
             if len(entry)==0:
@@ -582,13 +582,10 @@ def rotate_and_simplify_matrix(matrix_dict,transformation):
     return matrix_list
 
 def test_structure(filename,factor=1.1):
-    import sys
-    from ase.io import read
-    from ase.visualize import view
-    asecell = read(filename)
+    asecell = ase.io.read(filename)
     is_layered, asecell, layer_indices = _find_layers(asecell,factor=factor)
     if not is_layered:
-        sys.exit("The material is not layered")
+        raise ValueError("The material is not layered")
     rot,transl =  find_common_transformation(asecell,layer_indices) 
     print(rot, transl)
     print(construct_all_matrices(asecell,layer_indices,rot))

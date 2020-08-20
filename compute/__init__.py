@@ -1,12 +1,16 @@
-import flask
-from flask import Blueprint
-
 import json
+import logging
+
+import flask
 import numpy as np
+
+from collections.abc import Iterable
 
 from .layer_raman_engine import parse_structure, process_structure_core, FlaskRedirectException
 
-blueprint = Blueprint('compute', __name__, url_prefix='/compute')
+
+logger = logging.getLogger("layer-raman-tool-app")
+blueprint = flask.Blueprint("compute", __name__, url_prefix="/compute")
 
 @blueprint.route('/process_structure/', methods=['GET', 'POST'])
 def process_structure():
@@ -33,7 +37,7 @@ def process_structure():
         try:
             data_for_template = process_structure_core(
                 structure=structure,
-                logger=None,
+                logger=logger,
                 flask_request=flask.request,
                 skin_factor=skin_factor)
             return flask.render_template(
@@ -144,8 +148,6 @@ def replace_symbols_with_values(list_of_lists, replacements):
     :return: a new list_of_lists with the same shape, with strings replaced by numbers.
     :raise ValueError: if one of the values is not found
     """
-    from collections.abc import Iterable
-
     if isinstance(list_of_lists, str): # Check this first, a str is also Iterable
         try:
             return replacements[list_of_lists]
@@ -165,7 +167,6 @@ def replace_linear_combinations(list_of_3x3_matrices):
     For instance, a value ``[[0.1, 0.3], [0.8, 0.7]]`` means a combination 
     ``0.1 * 0.3 + 0.8 * 0.7`` and will therefore be replaced by ``0.59``.
     """
-    from collections.abc import Iterable
     result = []
 
     for matrix in list_of_3x3_matrices:
