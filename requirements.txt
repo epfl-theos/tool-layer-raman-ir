@@ -1,0 +1,4 @@
+ase==3.18.0
+seekpath==2.0.1
+qe-tools==1.1.4
+pymatgen==2020.8.13

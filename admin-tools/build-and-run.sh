@@ -2,15 +2,6 @@
 
 set -e
 
-TOOLS_BAREBONE_IMAGE=`docker images tools-barebone -q`
-
-if [ "$TOOLS_BAREBONE_IMAGE" == "" ]
-then
-    echo "Please create first the tools-barebone image, follow the instructions here:"
-    echo "https://github.com/materialscloud-org/tools-barebone"
-    exit 1
-fi
-
 # To build container
 docker build -t layer-raman-tool ..
 
