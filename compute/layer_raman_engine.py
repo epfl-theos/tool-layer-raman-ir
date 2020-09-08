@@ -10,7 +10,7 @@ from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.operations import SymmOp
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-from .map_positions import are_same_except_order
+from map_positions import are_same_except_order
 
 
 from tools_barebone.structure_importers import get_structure_tuple, UnknownFormatError
@@ -547,15 +547,18 @@ def construct_all_matrices(asecell, layer_indices, transformation, symprec=1e-3)
     bilayer = asecell[layer_indices[0]] + asecell[layer_indices[1]]
     # put the third lattice of the bilayer orthogonal to the layers
     # and with a large magnitude
-    bilayer.cell[2] = 10 * np.cross(asecell.cell[0], asecell.cell[1])
+    bilayer.cell[2] = [0,0,10 * np.max([np.linalg.norm(asecell.cell[0]), 
+                                np.linalg.norm(asecell.cell[1])])]
     # transform the structure to a pymatgen structure
     struct = AseAtomsAdaptor().get_structure(bilayer)
     # Find the spacegroup of the bilayer
     spg = SpacegroupAnalyzer(struct, symprec=symprec)
     print(spg.get_point_group_symbol(), spg.get_crystal_system())
+    #print(spg.get_point_group_operations(cartesian=True))
     cry_sys = spg.get_crystal_system()
     if cry_sys in [
         "tetragonal",
+        "hexagonal",
         "trigonal",
     ]:
         matrix_dict = {
@@ -574,8 +577,36 @@ def construct_all_matrices(asecell, layer_indices, transformation, symprec=1e-3)
             "C122": [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 0.0]],
             "C133": [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]],
         }
-        # TODO: add the off-diagonal element according to the unique-axis
+        # Now add the off-diagonal element according to the unique-axis
         # direction in the specific setting
+        # initialize a random tensor
+        orig_tensor = np.reshape([ np.random.rand() for i in range(9)],(3,3))
+        # impose that the tensor is symmetric
+        orig_tensor += orig_tensor.T
+        # initialize to zero the symmetrized tensor
+        tensor = np.zeros((3,3))
+        # symmetrize tensor by applying all symmetry operations
+        for symop in spg.get_point_group_operations(cartesian=True):
+            tensor += symop.transform_tensor(orig_tensor)
+        # put to zero the diagonal components
+        tensor = tensor-np.diag(np.diag(tensor))
+        # find non-zero off-diagonal component of the invariant tensor
+        nonzero = np.argwhere(abs(tensor)>1e-5)
+        if len(nonzero)!=2:
+            raise ValueError(
+                "Problems identifying the unique axis in monoclinic system: "
+                "more than 2 non-zero off-diagonal entries in the invariant tensor"
+            )
+        if (nonzero[0] != nonzero[1][::-1]).any():
+            raise ValueError(
+                "Problems identifying the unique axis in monoclinic system: "
+                "invariant tensor not symmetric."
+            )
+        # Initialize to zero the matrix associated with off-diagonal elements
+        matrix = np.zeros((3,3))
+        # and set to one the correct off-diagonal elements
+        matrix[[nonzero[:,0]],[nonzero[:,1]]] = 1.0
+        matrix_dict.update({"C1{}{}".format(*(nonzero[0]+1)) : matrix})
     elif cry_sys == "triclinic":
         matrix_dict = {
             "C111": [[1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
@@ -644,5 +675,6 @@ def test_structure(filename, factor=1.1):
     if not is_layered:
         raise ValueError("The material is not layered")
     rot, transl = find_common_transformation(asecell, layer_indices)
+    print ("Common transformation found: ")
     print(rot, transl)
     print(construct_all_matrices(asecell, layer_indices, rot))
