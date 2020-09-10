@@ -4,13 +4,13 @@ import json
 import ase
 import ase.io
 import numpy as np
-from ase.calculators.neighborlist import NeighborList
+from ase.neighborlist import NeighborList
 
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.operations import SymmOp
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-from map_positions import are_same_except_order
+from .map_positions import are_same_except_order
 
 
 from tools_barebone.structure_importers import get_structure_tuple, UnknownFormatError
@@ -35,7 +35,70 @@ def parse_structure(filecontent, fileformat, extra_data):
     return structure_tuple
 
 
+def ase_from_tuple(structure_tuple):
+    """
+    Given a structure tuple, return an ASE cell
+
+    :param structure_tuple: a structure tuple, as expected by seekpath: (cell, positions, numbers)
+
+    :return: the corresponding ASE Atoms class.
+    """
+    cell = np.array(structure_tuple[0])
+    asecell = ase.Atoms(cell=cell, pbc=True)
+    for scaled_position, atomic_number in zip(structure_tuple[1], structure_tuple[2]):
+        absolute_position = cell.T @ scaled_position
+        asecell.append(
+            ase.Atom(
+                ase.data.chemical_symbols[atomic_number], position=absolute_position
+            )
+        )
+
+    return asecell
+
+
 def process_structure_core(
+    structure, logger, flask_request, skin_factor
+):  # pylint: disable=unused-argument
+    asecell = ase_from_tuple(structure)
+    is_layered, asecell, layer_indices = _find_layers(asecell, factor=skin_factor)
+    if not is_layered:
+        raise ValueError("The material is not layered")
+
+    rot, transl = find_common_transformation(asecell, layer_indices)
+    all_matrices = construct_all_matrices(asecell, layer_indices, rot)
+
+    app_data = {
+        "structure": structure,
+        "symmetryInfo": {},
+        "forceConstants": {
+            # TO BE FIXED
+            "description": "\\text{Elastic force constant matrices: }K^1_{\\alpha\\beta} = "
+            "\\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right), "
+            "K^2_{\\alpha\\beta} = \\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right)",
+            # TO BE FIXED
+            "variables": [
+                {"name": "C111", "displayName": "a", "value": 1.0},
+                {"name": "C133", "displayName": "c", "value": 2.0},
+            ],
+            # Check here what should actually be done
+            "matrices": [all_matrices],
+        },
+    }
+
+    return {
+        "test_data": (
+            "Some data from the server-side python code: "
+            "SLIDER: {}; Number of atoms: {}, chemical numbers: {}<br>"
+            "Common transformation found: {}; {}<br>"
+            "All matrices: {}".format(
+                skin_factor, len(structure[1]), structure[2], rot, transl, all_matrices
+            )
+        ),
+        "app_data_json": json.dumps(app_data),
+    }
+
+
+def process_structure_core_test(
     structure, logger, flask_request, skin_factor
 ):  # pylint: disable=unused-argument
     """
@@ -547,14 +610,17 @@ def construct_all_matrices(asecell, layer_indices, transformation, symprec=1e-3)
     bilayer = asecell[layer_indices[0]] + asecell[layer_indices[1]]
     # put the third lattice of the bilayer orthogonal to the layers
     # and with a large magnitude
-    bilayer.cell[2] = [0,0,10 * np.max([np.linalg.norm(asecell.cell[0]), 
-                                np.linalg.norm(asecell.cell[1])])]
+    bilayer.cell[2] = [
+        0,
+        0,
+        10 * np.max([np.linalg.norm(asecell.cell[0]), np.linalg.norm(asecell.cell[1])]),
+    ]
     # transform the structure to a pymatgen structure
     struct = AseAtomsAdaptor().get_structure(bilayer)
     # Find the spacegroup of the bilayer
     spg = SpacegroupAnalyzer(struct, symprec=symprec)
     print(spg.get_point_group_symbol(), spg.get_crystal_system())
-    #print(spg.get_point_group_operations(cartesian=True))
+    # print(spg.get_point_group_operations(cartesian=True))
     cry_sys = spg.get_crystal_system()
     if cry_sys in [
         "tetragonal",
@@ -580,19 +646,19 @@ def construct_all_matrices(asecell, layer_indices, transformation, symprec=1e-3)
         # Now add the off-diagonal element according to the unique-axis
         # direction in the specific setting
         # initialize a random tensor
-        orig_tensor = np.reshape([ np.random.rand() for i in range(9)],(3,3))
+        orig_tensor = np.reshape([np.random.rand() for i in range(9)], (3, 3))
         # impose that the tensor is symmetric
         orig_tensor += orig_tensor.T
         # initialize to zero the symmetrized tensor
-        tensor = np.zeros((3,3))
+        tensor = np.zeros((3, 3))
         # symmetrize tensor by applying all symmetry operations
         for symop in spg.get_point_group_operations(cartesian=True):
             tensor += symop.transform_tensor(orig_tensor)
         # put to zero the diagonal components
-        tensor = tensor-np.diag(np.diag(tensor))
+        tensor = tensor - np.diag(np.diag(tensor))
         # find non-zero off-diagonal component of the invariant tensor
-        nonzero = np.argwhere(abs(tensor)>1e-5)
-        if len(nonzero)!=2:
+        nonzero = np.argwhere(abs(tensor) > 1e-5)
+        if len(nonzero) != 2:
             raise ValueError(
                 "Problems identifying the unique axis in monoclinic system: "
                 "more than 2 non-zero off-diagonal entries in the invariant tensor"
@@ -603,10 +669,10 @@ def construct_all_matrices(asecell, layer_indices, transformation, symprec=1e-3)
                 "invariant tensor not symmetric."
             )
         # Initialize to zero the matrix associated with off-diagonal elements
-        matrix = np.zeros((3,3))
+        matrix = np.zeros((3, 3))
         # and set to one the correct off-diagonal elements
-        matrix[[nonzero[:,0]],[nonzero[:,1]]] = 1.0
-        matrix_dict.update({"C1{}{}".format(*(nonzero[0]+1)) : matrix})
+        matrix[[nonzero[:, 0]], [nonzero[:, 1]]] = 1.0
+        matrix_dict.update({"C1{}{}".format(*(nonzero[0] + 1)): matrix})
     elif cry_sys == "triclinic":
         matrix_dict = {
             "C111": [[1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
@@ -626,7 +692,7 @@ def construct_all_matrices(asecell, layer_indices, transformation, symprec=1e-3)
     # is also the transformation that brings a bilayer into the next one.
     # TODO: generalize to take into account the case of transformations that flip z
     matrix_list = rotate_and_simplify_matrix(matrix_dict, np.identity(3))
-    print(matrix_list)
+    return matrix_list
 
 
 def rotate_and_simplify_matrix(matrix_dict, transformation):
@@ -648,7 +714,8 @@ def rotate_and_simplify_matrix(matrix_dict, transformation):
     # We now convert the dictionary to a list, where each entry is a list of lists of the kind
     # [free parameter, coefficient].
     # If a coefficient is zero the corresponding list is suppressed.
-    # If there is only one parameter, we reduce the entry to a simple list
+    # If there is only one parameter, we reduce the entry to a simple list of lists
+    # (the syntax is: a list of [[p1, a], [p2, b]] denotes the lin. comb. p1 * a + p2 * b)
     # If the list is empty, we replace it with 0.0
     eps = 1e-4  # threshold to consider a coefficient to be 0
     matrix_list = []
@@ -658,7 +725,7 @@ def rotate_and_simplify_matrix(matrix_dict, transformation):
             entry = []
             for k, v in new_matrix_dict.items():
                 if abs(v[i, j]) > eps:
-                    entry.append([k, v[i, j]])
+                    entry.append([[k, v[i, j]]])
             if len(entry) == 0:
                 row.append(0.0)
             elif len(entry) == 1:
@@ -667,14 +734,3 @@ def rotate_and_simplify_matrix(matrix_dict, transformation):
                 row.append(entry)
         matrix_list.append(row)
     return matrix_list
-
-
-def test_structure(filename, factor=1.1):
-    asecell = ase.io.read(filename)
-    is_layered, asecell, layer_indices = _find_layers(asecell, factor=factor)
-    if not is_layered:
-        raise ValueError("The material is not layered")
-    rot, transl = find_common_transformation(asecell, layer_indices)
-    print ("Common transformation found: ")
-    print(rot, transl)
-    print(construct_all_matrices(asecell, layer_indices, rot))
