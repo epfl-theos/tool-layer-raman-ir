@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import traceback
 
 import flask
 import numpy as np
@@ -44,6 +45,7 @@ def process_structure():
                 extra_data=dict(flask.request.form),
             )
         except Exception as exc:
+            traceback.print_exc()
             flask.flash(
                 "Unable to parse the structure, sorry... ({}, {})".format(
                     str(type(exc)), str(exc)
@@ -65,6 +67,7 @@ def process_structure():
             flask.flash(str(e))
             return flask.redirect(flask.url_for("input_data"))
         except Exception as exc:
+            traceback.print_exc()
             flask.flash(
                 "Unable to process the structure, sorry... ({}, {})".format(
                     str(type(exc)), str(exc)
@@ -129,6 +132,7 @@ def process_example_structure():
             flask.flash(str(e))
             return flask.redirect(flask.url_for("input_data"))
         except Exception as exc:
+            traceback.print_exc()
             flask.flash(
                 "Unable to process the structure, sorry... ({}, {})".format(
                     str(type(exc)), str(exc)
@@ -159,7 +163,7 @@ def get_block_coordinates(i, j, block_size=3):
 
 
 @blueprint.route("/api/modes/", methods=["POST"])
-def get_modes():
+def get_modes():  # pylint: disable=too-many-locals
     if flask.request.method != "POST":
         return make_response("Only POST method allowed", 405)
 

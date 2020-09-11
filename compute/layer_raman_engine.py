@@ -1,10 +1,13 @@
 import io
 import json
+import time
 
 import ase
 import ase.io
 import numpy as np
 from ase.neighborlist import NeighborList
+from ase.data import chemical_symbols
+import spglib
 
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.operations import SymmOp
@@ -14,6 +17,10 @@ from .map_positions import are_same_except_order
 
 
 from tools_barebone.structure_importers import get_structure_tuple, UnknownFormatError
+from tools_barebone import get_tools_barebone_version
+
+# Version of this tool
+__version__ = "20.09.0"
 
 
 class FlaskRedirectException(Exception):
@@ -61,9 +68,32 @@ def ase_from_tuple(structure_tuple):
     return asecell
 
 
+def get_xsf_structure(structure_tuple):
+    """Return a XSF file from a structure tuple."""
+    cell = np.array(structure_tuple[0])
+
+    xsfstructure = []
+    xsfstructure.append("CRYSTAL")
+    xsfstructure.append("PRIMVEC")
+    for vector in cell:
+        xsfstructure.append("{} {} {}".format(vector[0], vector[1], vector[2]))
+    xsfstructure.append("PRIMCOORD")
+    xsfstructure.append("{} 1".format(len(structure_tuple[1])))
+    for scaled_pos, atom_num in zip(structure_tuple[1], structure_tuple[2]):
+        abs_pos = cell.T @ scaled_pos
+        xsfstructure.append(
+            "{} {} {} {}".format(atom_num, abs_pos[0], abs_pos[1], abs_pos[2])
+        )
+    xsfstructure = "\n".join(xsfstructure)
+
+    return xsfstructure
+
+
 def process_structure_core(
     structure, logger, flask_request, skin_factor
-):  # pylint: disable=unused-argument
+):  # pylint: disable=unused-argument, too-many-locals
+    start_time = time.time()
+
     asecell = ase_from_tuple(structure)
     is_layered, asecell, layer_indices = _find_layers(asecell, factor=skin_factor)
     if not is_layered:
@@ -72,12 +102,32 @@ def process_structure_core(
     rot, transl = find_common_transformation(asecell, layer_indices)
     all_matrices = construct_all_matrices(asecell, layer_indices, rot)
 
+    inputstructure_cell_vectors = [
+        [idx, coords[0], coords[1], coords[2]]
+        for idx, coords in enumerate(structure[0], start=1)
+    ]
+    inputstructure_symbols = [chemical_symbols[num] for num in structure[2]]
+    inputstructure_atoms_scaled = [
+        [label, coords[0], coords[1], coords[2]]
+        for label, coords in zip(inputstructure_symbols, structure[1])
+    ]
+
+    inputstructure_positions_cartesian = np.dot(
+        np.array(structure[1]), np.array(structure[0]),
+    ).tolist()
+    inputstructure_atoms_cartesian = [
+        [label, coords[0], coords[1], coords[2]]
+        for label, coords in zip(
+            inputstructure_symbols, inputstructure_positions_cartesian
+        )
+    ]
+
     app_data = {
         "structure": structure,
         "symmetryInfo": {},
         "forceConstants": {
             # TO BE FIXED
-            "description": "\\text{Elastic force constant matrices: }K^1_{\\alpha\\beta} = "
+            "description": "K^1_{\\alpha\\beta} = "
             "\\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right), "
             "K^2_{\\alpha\\beta} = \\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right)",
             # TO BE FIXED
@@ -90,54 +140,27 @@ def process_structure_core(
         },
     }
 
+    compute_time = time.time() - start_time
+
     return {
         "test_data": (
             "Some data from the server-side python code: "
             "SLIDER: {}; Number of atoms: {}, chemical numbers: {}<br>"
-            "Common transformation found: {}; {}<br>"
-            "All matrices: {}".format(
-                skin_factor, len(structure[1]), structure[2], rot, transl, all_matrices
+            "Common transformation found: {}; {}".format(
+                skin_factor, len(structure[1]), structure[2], rot, transl
             )
         ),
         "app_data_json": json.dumps(app_data),
-    }
-
-
-def process_structure_core_test(
-    structure, logger, flask_request, skin_factor
-):  # pylint: disable=unused-argument
-    """
-    Get the data to put in the visualizer jinja2 template
-    """
-
-    # This is the data that will be injected in the webpage
-    app_data = {
-        "structure": None,  # Pass info on the structure to display
-        "symmetryInfo": {},
-        "forceConstants": {
-            "description": "\\text{Elastic force constant matrices: }K^1_{\\alpha\\beta} = "
-            "\\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right), "
-            "K^2_{\\alpha\\beta} = \\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right)",
-            "variables": [
-                {"name": "C111", "displayName": "a", "value": 1.0},
-                {"name": "C133", "displayName": "c", "value": 2.0},
-            ],
-            "matrices": [
-                [["C111", 0.0, 0.0], [0.0, "C111", 0.0], [0.0, 0.0, "C133"]],
-                [
-                    [[["C111", -0.6], ["C133", -0.4]], 0.0, 0.0],
-                    [0.0, "C111", 0.0],
-                    [0.0, 0.0, "C133"],
-                ],
-            ],
-        },
-    }
-
-    return {
-        "test_data": "Some data from the server-side python code: SLIDER: {}; Number of atoms: {}, chemical numbers: {}".format(
-            skin_factor, len(structure[1]), structure[2]
-        ),
-        "app_data_json": json.dumps(app_data),
+        "xsfstructure": get_xsf_structure(structure),
+        "inputstructure_cell_vectors": inputstructure_cell_vectors,
+        "inputstructure_atoms_scaled": inputstructure_atoms_scaled,
+        "inputstructure_atoms_cartesian": inputstructure_atoms_cartesian,
+        "skin_factor": skin_factor,
+        "compute_time": compute_time,
+        "spglib_version": spglib.__version__,
+        "ase_version": ase.__version__,
+        "tools_barebone_version": get_tools_barebone_version(),
+        "this_tool_version": __version__,
     }
 
 

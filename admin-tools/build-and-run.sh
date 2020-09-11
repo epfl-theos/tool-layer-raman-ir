@@ -16,10 +16,19 @@ fi
 # To launch container
 docker run -d -p 8091:80 --rm --name=layer-raman-tool-instance layer-raman-tool
 
-echo "You can access the webservice at:"
-echo "http://localhost:8091"
+# Pass '-n' to avoid opening a new browser window
+if [ "$1" != "-n" ]
+then
+    # Give it a second to let apache start
+    sleep 1
+    python -c "import webbrowser; webbrowser.open('http://localhost:8091')"
+    echo "Browser opened at http://localhost:8091"
+    echo "Pass -n to avoid opening it"
+else
+    echo "You can access the webservice at:"
+    echo "http://localhost:8091"
+fi
+
 echo ""
 echo "You can kill the service with:"
 echo "docker kill layer-raman-tool-instance"
-
-python -c "import webbrowser; webbrowser.open('http://localhost:8091')"
