@@ -9,7 +9,7 @@ emph {
 }
 
 .slidecontainer {
-    width: 200px; 
+    max-width: 800px; 
     margin: auto;
   }
 
