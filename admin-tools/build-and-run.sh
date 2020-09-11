@@ -2,8 +2,10 @@
 
 set -e
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 # To build container
-docker build -t layer-raman-tool ..
+docker build -t layer-raman-tool "$DIR/.."
 
 LAYER_CONTAINER=`docker ps --filter="name=layer-raman-tool-instance" -q`
 if [ "$LAYER_CONTAINER" != "" ]
@@ -20,3 +22,4 @@ echo ""
 echo "You can kill the service with:"
 echo "docker kill layer-raman-tool-instance"
 
+python -c "import webbrowser; webbrowser.open('http://localhost:8091')"

@@ -22,7 +22,12 @@ class FlaskRedirectException(Exception):
     """
 
 
-def parse_structure(filecontent, fileformat, extra_data):
+def parse_structure(filecontent, fileformat, extra_data=None):
+    """Parse a structure given the file content and the file format.
+
+    Possibly pass also the extra data from the form if needed
+    (e.g. for the cell of a XYZ file).
+    """
     fileobject = io.StringIO(str(filecontent))
     try:
         structure_tuple = get_structure_tuple(

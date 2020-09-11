@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 
 import flask
 import numpy as np
@@ -12,6 +13,7 @@ from .layer_raman_engine import (
     FlaskRedirectException,
 )
 
+verbose = True
 
 logger = logging.getLogger("layer-raman-tool-app")
 blueprint = flask.Blueprint("compute", __name__, url_prefix="/compute")
@@ -73,7 +75,68 @@ def process_structure():
         return flask.redirect(flask.url_for("input_data"))
 
 
-verbose = True
+VALID_EXAMPLES = {
+    # MoS2 bulk from Materials Cloud:
+    # https://www.materialscloud.org/explore/2dstructures/details/6e58409f-4ab2-4883-9686-87d4d89c0bf9
+    # (Originally from COD, 9007660, P6_3/mmc)
+    "MoS2": ("6e58409f-4ab2-4883-9686-87d4d89c0bf9_structure.xsf", 1.1),
+}
+
+
+@blueprint.route("/process_example_structure/", methods=["GET", "POST"])
+def process_example_structure():
+    """
+    Process an example structure (example name from POST request)
+    """
+    if flask.request.method == "POST":
+        examplestructure = flask.request.form.get("examplestructure", "<none>")
+        fileformat = "xsf-ase"
+
+        try:
+            filename, skin_factor = VALID_EXAMPLES[examplestructure]
+        except KeyError:
+            flask.flash("Invalid example structure '{}'".format(examplestructure))
+            return flask.redirect(flask.url_for("input_data"))
+
+        # I expect that the valid_examples dictionary already filters only
+        # existing files, so I don't try/except here
+        with open(
+            os.path.join(os.path.dirname(__file__), "xsf-examples", filename,)
+        ) as structurefile:
+            filecontent = structurefile.read()
+
+        try:
+            structure = parse_structure(filecontent=filecontent, fileformat=fileformat,)
+        except Exception as exc:
+            flask.flash(
+                "Unable to parse the example structure, sorry... ({}, {})".format(
+                    str(type(exc)), str(exc)
+                )
+            )
+            return flask.redirect(flask.url_for("input_data"))
+
+        try:
+            data_for_template = process_structure_core(
+                structure=structure,
+                logger=logger,
+                flask_request=flask.request,
+                skin_factor=skin_factor,
+            )
+            return flask.render_template(
+                "user_templates/visualizer.html", **data_for_template
+            )
+        except FlaskRedirectException as e:
+            flask.flash(str(e))
+            return flask.redirect(flask.url_for("input_data"))
+        except Exception as exc:
+            flask.flash(
+                "Unable to process the structure, sorry... ({}, {})".format(
+                    str(type(exc)), str(exc)
+                )
+            )
+            return flask.redirect(flask.url_for("input_data"))
+    else:  # GET Request
+        return flask.redirect(flask.url_for("input_data"))
 
 
 def make_response(message, error_code):
