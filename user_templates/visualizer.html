@@ -286,6 +286,17 @@
 
     </div>
 
+    <div id='finalinfo'>
+        <p><span style="font-weight: bold;">
+            Technical info</span>:
+            Time spent to compute quantities: {{ '%.3f' % compute_time }} s.
+            <a href="https://wiki.fysik.dtu.dk/ase/index.html">ASE</a> version: {{ ase_version }}.
+            <a href="https://spglib.github.io/spglib/">spglib</a> version: {{ spglib_version }}.
+            <a href="https://github.com/materialscloud-org/tools-barebone">tools-barebone</a> version: {{tools_barebone_version}}.
+            This tool version: {{this_tool_version}}.
+    </div>
+    
+
 </div>
 <script src="../../user_static/js/main.js"></script>
 <script src="../../user_static/js/visualization.js"></script>
@@ -324,16 +335,6 @@
       });
 
 </script>
-
-<div id='finalinfo'>
-    <p><span style="font-weight: bold;">
-        Technical info</span>:
-        Time spent to compute quantities: {{ '%.3f' % compute_time }} s.
-        <a href="https://wiki.fysik.dtu.dk/ase/index.html">ASE</a> version: {{ ase_version }}.
-        <a href="https://spglib.github.io/spglib/">spglib</a> version: {{ spglib_version }}.
-        <a href="https://github.com/materialscloud-org/tools-barebone">tools-barebone</a> version: {{tools_barebone_version}}.
-        This tool version: {{this_tool_version}}.
-</div>
 
 <div style ="position: relative" data-iframe-height></div>
 </body>
