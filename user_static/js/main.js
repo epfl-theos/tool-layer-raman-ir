@@ -15,14 +15,16 @@ var app = new Vue({
         latexCode: "",
         forceConstantVariables: [],
 
+        // TODO: remove cases with Raman_N+BackScattering_Y
+
         seriesMetadata: Object.freeze([ // Initial series definition
             {
                 internalName: 'IR_Y+Raman_Y+BackScattering_Y',
                 name: 'Infrared + Raman active (visible in backscattering)',
                 marker: {
-                    symbol: 'square'
+                    symbol: 'diamond'
                 },
-                color: 'rgba(223, 83, 83, .5)',
+                color: 'rgba(223, 83, 83, .8)',
                 data: [],
                 dataLabels: {
                     useHTML: true
@@ -32,9 +34,9 @@ var app = new Vue({
                 internalName: 'IR_Y+Raman_Y+BackScattering_N',
                 name: 'Infrared + Raman active (not visible in backscattering)',
                 marker: {
-                    symbol: 'square'
+                    symbol: 'diamond'
                 },
-                color: 'rgba(0, 0, 0, .5)',
+                color: 'rgba(55, 126, 184, .8)',
                 data: [],
                 dataLabels: {
                     useHTML: true
@@ -42,11 +44,11 @@ var app = new Vue({
             },
             {
                 internalName: 'IR_Y+Raman_N+BackScattering_Y',
-                name: 'Infrared active (visible in backscattering)',
+                name: 'SHOULD_NOT_HAPPEN_Infrared active only (visible in backscattering)',
                 marker: {
                     symbol: 'triangle'
                 },
-                color: 'rgba(223, 83, 83, .5)',
+                color: 'rgba(223, 83, 83, .8)',
                 data: [],
                 dataLabels: {
                     useHTML: true
@@ -54,11 +56,11 @@ var app = new Vue({
             },
             {
                 internalName: 'IR_Y+Raman_N+BackScattering_N',
-                name: 'Infrared active (not visible in backscattering)',
+                name: 'Infrared active only',
                 marker: {
                     symbol: 'triangle'
                 },
-                color: 'rgba(0, 0, 0, .5)',
+                color: 'rgba(55, 126, 184, .8)',
                 data: [],
                 dataLabels: {
                     useHTML: true
@@ -66,11 +68,11 @@ var app = new Vue({
             },
             {
                 internalName: 'IR_N+Raman_Y+BackScattering_Y',
-                name: 'Raman active (visible in backscattering)',
+                name: 'Raman active only (visible in backscattering)',
                 marker: {
-                    symbol: 'circle'
+                    symbol: 'triangle-down'
                 },
-                color: 'rgba(223, 83, 83, .5)',
+                color: 'rgba(223, 83, 83, .8)',
                 data: [],
                 dataLabels: {
                     useHTML: true
@@ -78,11 +80,11 @@ var app = new Vue({
             },
             {
                 internalName: 'IR_N+Raman_Y+BackScattering_N',
-                name: 'Raman active (not visible in backscattering)',
+                name: 'Raman active only (not visible in backscattering)',
                 marker: {
-                    symbol: 'circle'
+                    symbol: 'triangle-down'
                 },
-                color: 'rgba(0, 0, 0, .5)',
+                color: 'rgba(55, 126, 184, .8)',
                 data: [],
                 dataLabels: {
                     useHTML: true
@@ -90,11 +92,11 @@ var app = new Vue({
             },
             {
                 internalName: 'IR_N+Raman_N+BackScattering_Y',
-                name: 'Inactive (visible in backscattering)',
+                name: 'SHOULD_NOT_HAPPEN_Inactive (visible in backscattering)',
                 marker: {
-                    symbol: 'square'
+                    symbol: 'circle'
                 },
-                color: 'rgba(223, 83, 83, .5)',
+                color: 'rgba(223, 83, 83, .8)',
                 data: [],
                 dataLabels: {
                     useHTML: true
@@ -102,11 +104,11 @@ var app = new Vue({
             },
             {
                 internalName: 'IR_N+Raman_N+BackScattering_N',
-                name: 'Inactive (not visible in backscattering)',
+                name: 'Inactive',
                 marker: {
-                    symbol: 'square'
+                    symbol: 'circle'
                 },
-                color: 'rgba(0, 0, 0, .5)',
+                color: 'rgba(80, 80, 80, .8)',
                 data: [],
                 dataLabels: {
                     useHTML: true

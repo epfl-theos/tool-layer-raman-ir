@@ -1,4 +1,4 @@
 #!/bin/bash
 
-docker exec -it layer-raman-tool-instance cat /var/log/apache2/error.log
+docker exec -it layer-raman-tool-instance tail -f /var/log/apache2/error.log
 

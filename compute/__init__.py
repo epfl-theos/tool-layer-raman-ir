@@ -145,6 +145,19 @@ def make_response(message, error_code):
     return flask.make_response(message, error_code)
 
 
+def get_block_coordinates(i, j, block_size=3):
+    """Return numpy slice coordinates for block at (i, j) *block* coordinates.
+    
+    :param i: row block coordinate (for a block of size `block_size x block_size`)
+    :param j: column block coordinate (for a block of size `block_size x block_size`)
+    :param block_size: the block size
+    """
+    return (
+        slice(block_size * i, block_size * (i + 1)),
+        slice(block_size * j, block_size * (j + 1)),
+    )
+
+
 @blueprint.route("/api/modes/", methods=["POST"])
 def get_modes():
     if flask.request.method != "POST":
@@ -201,31 +214,57 @@ def get_modes():
     ## [['C111', -0.5], ['C112', -0.5]] = -0.5 * C111 - 0.5 * C112
     numeric_matrices = replace_linear_combinations(numeric_matrices)
 
-    print(symbolic_matrices)
-    print(force_constant_params)
-    print(numeric_matrices)
+    # print(symbolic_matrices)
+    # print(force_constant_params)
+    # print(numeric_matrices)
 
     ## LOGIC START ##
 
-    # print(max_layers, force_constant_params)
+    # TODO: check, this is just a first attempt
 
-    num_points = 300
-    min_x = -1
-    max_x = 1
+    # I have to solve the eq. of motion - omega^2 U = K U
 
-    x = np.linspace(min_x, max_x, num_points)
-    y = np.cos(x * np.pi * max_layers)
+    plot_data_x = []
+    plot_data_y = []
+    # TODO: add layer mass here should be a constant for all layers! and fix units
+    for num_layers in range(2, max_layers + 1):
+        K_matrix = np.zeros((num_layers * 3, num_layers * 3))
 
-    # sleep(0.5)
+        for block_idx in range(num_layers):
+            # Up interaction
+            if block_idx < num_layers - 1:  # Not in the last layer
+                current_block = numeric_matrices[block_idx % len(numeric_matrices)]
+                K_matrix[get_block_coordinates(block_idx, block_idx)] += current_block
+                K_matrix[
+                    get_block_coordinates(block_idx + 1, block_idx)
+                ] -= current_block
+            # Down interaction
+            if block_idx > 0:  # Not in the first layer
+                previous_block = numeric_matrices[
+                    (block_idx - 1) % len(numeric_matrices)
+                ]
+                K_matrix[get_block_coordinates(block_idx, block_idx)] += previous_block
+                K_matrix[
+                    get_block_coordinates(block_idx - 1, block_idx)
+                ] -= previous_block
+
+        eigvals, eigvects = np.linalg.eigh(K_matrix)
+
+        # The first three should be acoustic i.e. almost zero; the rest should be positive
+        assert np.sum(np.abs(eigvals[:3])) < 1.0e-10
+
+        plot_data_x += [num_layers] * 3 * (num_layers - 1)
+        plot_data_y += eigvals[3:].tolist()
 
     return_data = {
-        "x": list(x),
-        "y": list(y),
+        "x": plot_data_x,
+        "y": plot_data_y,
+        # TODO: THIS IS RANDOM!!! TO BE FIXED
         "isBackScattering": [
-            idx % 2 < 1 and (idx % 4 < 2) for idx in range(len(x))
+            idx % 2 < 1 and (idx % 4 < 2) for idx in range(len(plot_data_x))
         ],  # If it's not Raman active, then this is always False
-        "isRamanActive": [idx % 4 < 2 for idx in range(len(x))],
-        "isInfraredActive": [idx % 8 < 4 for idx in range(len(x))],
+        "isRamanActive": [idx % 4 < 2 for idx in range(len(plot_data_x))],
+        "isInfraredActive": [idx % 8 < 4 for idx in range(len(plot_data_x))],
     }
 
     ## LOGIC END ##
