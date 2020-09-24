@@ -79,10 +79,12 @@ def process_structure():
 
 
 VALID_EXAMPLES = {
+    "WTe2": ("WTe2-02f1827d-f339-436f-baf6-66d1cf142fcf_structure.xsf", 1.1),
+    "ZnCl2": ("ZnCl2-e5f429a4-3b02-4fb0-8921-0a7ab05078ed_structure.xsf", 1.1),
     # MoS2 bulk from Materials Cloud:
     # https://www.materialscloud.org/explore/2dstructures/details/6e58409f-4ab2-4883-9686-87d4d89c0bf9
     # (Originally from COD, 9007660, P6_3/mmc)
-    "MoS2": ("6e58409f-4ab2-4883-9686-87d4d89c0bf9_structure.xsf", 1.1),
+    "MoS2": ("MoS2-6e58409f-4ab2-4883-9686-87d4d89c0bf9_structure.xsf", 1.1),
 }
 
 
