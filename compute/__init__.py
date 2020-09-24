@@ -6,15 +6,25 @@ import traceback
 import flask
 import numpy as np
 
-from collections.abc import Iterable
-
-from .layer_raman_engine import (
-    parse_structure,
-    process_structure_core,
-    FlaskRedirectException,
+from .layer_raman_engine import process_structure_core
+from .utils.structures import parse_structure
+from .utils.matrices import (
+    replace_symbols_with_values,
+    replace_linear_combinations,
+    get_block_coordinates,
 )
+from .utils.response import make_response, FlaskRedirectException
 
-verbose = True
+
+VALID_EXAMPLES = {
+    "WTe2": ("WTe2-02f1827d-f339-436f-baf6-66d1cf142fcf_structure.xsf", 1.1),
+    "ZnCl2": ("ZnCl2-e5f429a4-3b02-4fb0-8921-0a7ab05078ed_structure.xsf", 1.1),
+    # MoS2 bulk from Materials Cloud:
+    # https://www.materialscloud.org/explore/2dstructures/details/6e58409f-4ab2-4883-9686-87d4d89c0bf9
+    # (Originally from COD, 9007660, P6_3/mmc)
+    "MoS2": ("MoS2-6e58409f-4ab2-4883-9686-87d4d89c0bf9_structure.xsf", 1.1),
+}
+
 
 logger = logging.getLogger("layer-raman-tool-app")
 blueprint = flask.Blueprint("compute", __name__, url_prefix="/compute")
@@ -78,16 +88,6 @@ def process_structure():
         return flask.redirect(flask.url_for("input_data"))
 
 
-VALID_EXAMPLES = {
-    "WTe2": ("WTe2-02f1827d-f339-436f-baf6-66d1cf142fcf_structure.xsf", 1.1),
-    "ZnCl2": ("ZnCl2-e5f429a4-3b02-4fb0-8921-0a7ab05078ed_structure.xsf", 1.1),
-    # MoS2 bulk from Materials Cloud:
-    # https://www.materialscloud.org/explore/2dstructures/details/6e58409f-4ab2-4883-9686-87d4d89c0bf9
-    # (Originally from COD, 9007660, P6_3/mmc)
-    "MoS2": ("MoS2-6e58409f-4ab2-4883-9686-87d4d89c0bf9_structure.xsf", 1.1),
-}
-
-
 @blueprint.route("/process_example_structure/", methods=["GET", "POST"])
 def process_example_structure():
     """
@@ -143,25 +143,6 @@ def process_example_structure():
             return flask.redirect(flask.url_for("input_data"))
     else:  # GET Request
         return flask.redirect(flask.url_for("input_data"))
-
-
-def make_response(message, error_code):
-    if verbose:
-        print(message)
-    return flask.make_response(message, error_code)
-
-
-def get_block_coordinates(i, j, block_size=3):
-    """Return numpy slice coordinates for block at (i, j) *block* coordinates.
-    
-    :param i: row block coordinate (for a block of size `block_size x block_size`)
-    :param j: column block coordinate (for a block of size `block_size x block_size`)
-    :param block_size: the block size
-    """
-    return (
-        slice(block_size * i, block_size * (i + 1)),
-        slice(block_size * j, block_size * (j + 1)),
-    )
 
 
 @blueprint.route("/api/modes/", methods=["POST"])
@@ -254,7 +235,7 @@ def get_modes():  # pylint: disable=too-many-locals
                     get_block_coordinates(block_idx - 1, block_idx)
                 ] -= previous_block
 
-        eigvals, eigvects = np.linalg.eigh(K_matrix)
+        eigvals, _ = np.linalg.eigh(K_matrix)  # using only eigenvalues for now
 
         # The first three should be acoustic i.e. almost zero; the rest should be positive
         assert np.sum(np.abs(eigvals[:3])) < 1.0e-10
@@ -276,55 +257,3 @@ def get_modes():  # pylint: disable=too-many-locals
     ## LOGIC END ##
 
     return flask.jsonify(return_data)
-
-
-def replace_symbols_with_values(list_of_lists, replacements):
-    """
-    Take iteratively a list of lists (at any depth level) and replace strings with
-    the corresponding values in the ``replacements`` dictionary, leaving other
-    types of values (floats, ints, ...) untouched.
-
-    :return: a new list_of_lists with the same shape, with strings replaced by numbers.
-    :raise ValueError: if one of the values is not found
-    """
-    if isinstance(list_of_lists, str):  # Check this first, a str is also Iterable
-        try:
-            return replacements[list_of_lists]
-        except KeyError:
-            raise ValueError("Unknown replacement '{}'".format(list_of_lists))
-    elif isinstance(list_of_lists, Iterable):
-        return [
-            replace_symbols_with_values(elem, replacements=replacements)
-            for elem in list_of_lists
-        ]
-    else:
-        return list_of_lists  # if it's a numeric value, for instance
-
-
-def replace_linear_combinations(list_of_3x3_matrices):
-    """
-    Given a list of 3x3 matrices, where elements can either be float values 
-    or lists representing linear combination of values, return a (copied) list
-    of 3x3 matrices, where linear combinations are replaced by their values.
-
-    For instance, a value ``[[0.1, 0.3], [0.8, 0.7]]`` means a combination 
-    ``0.1 * 0.3 + 0.8 * 0.7`` and will therefore be replaced by ``0.59``.
-    """
-    result = []
-
-    for matrix in list_of_3x3_matrices:
-        new_matrix = []
-        for row in matrix:
-            new_row = []
-            for entry in row:
-                if isinstance(entry, Iterable):
-                    new_entry = 0
-                    for value, factor in entry:
-                        new_entry += value * factor
-                    new_row.append(new_entry)
-                else:
-                    new_row.append(entry)
-            new_matrix.append(new_row)
-        result.append(new_matrix)
-
-    return result

@@ -1,26 +1,26 @@
 #!/usr/bin/env python
+import logging
 import sys
 
 import ase
 import ase.io
 
-from compute.layer_raman_engine import (
-    _find_layers,
-    find_common_transformation,
-    construct_all_matrices,
-)
+from compute.layer_raman_engine import process_structure_core
+from compute.utils.structures import tuple_from_ase
 
 
-def test_structure(filename, factor=1.1):
+def test_structure(filename, skin_factor=1.1):
+    logger = logging.getLogger("layer-raman-tool-app")
+
+    # Print to stderr, also DEBUG messages
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(logging.StreamHandler())
+
     asecell = ase.io.read(filename)
-    is_layered, asecell, layer_indices = _find_layers(asecell, factor=factor)
-    if not is_layered:
-        raise ValueError("The material is not layered")
-    rot, transl = find_common_transformation(asecell, layer_indices)
-    print("Common transformation found: ")
-    print(rot, transl)
-    all_matrices = construct_all_matrices(asecell, layer_indices, rot)
-    print(all_matrices)
+    structure = tuple_from_ase(asecell)
+    process_structure_core(
+        structure, logger, flask_request=None, skin_factor=skin_factor
+    )
 
 
 if __name__ == "__main__":
@@ -31,11 +31,11 @@ if __name__ == "__main__":
         sys.exit(1)
 
     try:
-        factor = float(sys.argv[2])
+        skin_factor = float(sys.argv[2])
     except IndexError:
-        factor = 1.1
+        skin_factor = 1.1
     except ValueError:
         print("The second parameter, if present, must be a float")
         sys.exit(1)
 
-    test_structure(filename, factor=factor)
+    test_structure(filename, skin_factor=skin_factor)
