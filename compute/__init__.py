@@ -23,6 +23,10 @@ VALID_EXAMPLES = {
     # https://www.materialscloud.org/explore/2dstructures/details/6e58409f-4ab2-4883-9686-87d4d89c0bf9
     # (Originally from COD, 9007660, P6_3/mmc)
     "MoS2": ("MoS2-6e58409f-4ab2-4883-9686-87d4d89c0bf9_structure.xsf", 1.1),
+    # black P bulk from Materials Cloud:
+    # https://www.materialscloud.org/explore/2dstructures/details/904c1f0e-da23-42f0-95b4-a4fee98e6d04
+    # (Originally from COD, 9012486, Cmce)
+    "blackP": ("P-904c1f0e-da23-42f0-95b4-a4fee98e6d04_structure.xsf", 1.1),
 }
 
 
