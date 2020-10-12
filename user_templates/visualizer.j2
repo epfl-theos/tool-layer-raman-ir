@@ -1,0 +1,435 @@
+        {% macro render_jsmol_visualizer(suffix, nx, ny, nz) %}
+        <div id='structure-outer-{{suffix}}' class='structure'>
+            <div class="shadow-box">
+                <div class="plot-diagram">
+                <div class="structure-container" id="structure-content-{{ suffix }}">
+                    <div id="crystal-{{suffix}}" ondblclick="toggleStrVisInteraction(false, 'str-overlay-{{suffix}}');"></div>
+                    <div id="str-overlay-{{suffix}}" class="overlay-div" ondblclick="toggleStrVisInteraction(true, 'str-overlay-{{suffix}}');">
+                    <span id="str-overlay-{{suffix}}-span" style="display: table-cell; vertical-align: middle; text-align: center;">
+                        Double click to toggle interaction
+                    </span>
+                </div>
+                </div>
+                </div>
+            </div>
+
+            <div class="jsmol-options">
+                <div class="option-section" style="display:flex;">
+                <form>
+                    <h4 class="inline-header">Supercell:</h4>
+                    <input id="nx-{{suffix}}" type="number" name="quantity" class="option-input" min="1" max= "10" value="{{nx}}">
+                    <input id="ny-{{suffix}}" type="number" name="quantity" class="option-input" min="1" max= "10" value="{{ny}}">
+                    <input id="nz-{{suffix}}" type="number" name="quantity" class="option-input" min="1" max= "10" value="{{nz}}">
+                    <button id="supercell-{{suffix}}" type="button" onclick="jsmolSupercell('{{suffix}}');">update</button>
+                    <button id="reset-{{suffix}}" type="button" onclick="jsmolResetSupercell('{{suffix}}', {{nx}}, {{ny}}, {{nz}});">reset {{nx}}x{{ny}}x{{nz}} cell</button>
+                </form>
+                </div>
+
+                <div class="option-section">
+                <h4 class="inline-header">Camera:</h4>
+                <button id="centerX-{{suffix}}" onclick="centerXaxis('{{suffix}}')">x</button>
+                <button id="centerY-{{suffix}}" onclick="centerYaxis('{{suffix}}')">y</button>
+                <button id="centerZ-{{suffix}}" onclick="centerZaxis('{{suffix}}')">z</button>
+                </div>
+
+                <div class="option-section">
+                <h4 class="inline-header">Axes:</h4>
+                <select id="axesMenu-{{suffix}}" onchange="jsmolDrawAxes('{{suffix}}');">
+                    <option value="xyz" selected>xyz axes</option>
+                    <option value="abc">abc vectors</option>
+                    <option value="noaxes">no axes</option>
+                </select>
+                </div>
+                <div class="option-section">
+                <div class="row">
+                    <div class="checkbox-option" id="bonds-{{suffix}}">
+                    <label>
+                        <input id="bonds-input-{{suffix}}" style='margin-right:4px' type="checkbox" onchange="showBonds('{{suffix}}');" checked>bonds
+                        <a href="" data-toggle="tooltip" title="Show bonds"><sup>[?]</sup></a>
+                    </label>
+                    </div>
+                    <div class="checkbox-option" id="labels-{{suffix}}">
+                    <label>
+                        <input id="labels-input-{{suffix}}" style='margin-right:4px' type="checkbox" onchange="showLabels('{{suffix}}')">atom labels
+                        <a href="" data-toggle="tooltip" title="Display element symbols"><sup>[?]</sup></a>
+                    </label>
+                    </div>
+                    <div class="checkbox-option" id="packed-{{suffix}}">
+                    <label>
+                        <input id="packed-input-{{suffix}}" style='margin-right:4px' type="checkbox" onchange="showPacked('{{suffix}}')">packed cell
+                        <a href="" data-toggle="tooltip" title="Show atoms on the edge of the cell or supercell"><sup>[?]</sup></a>
+                    </label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="checkbox-option" id="sphere-{{suffix}}">
+                    <label>
+                        <input id="spheres-input-{{suffix}}" style='margin-right:4px' type="checkbox" onchange="showSpheres('{{suffix}}')">space-filling
+                        <a href="" data-toggle="tooltip" title="Show atoms as spheres"><sup>[?]</sup></a>
+                    </label>
+                    </div>
+                    <div class="checkbox-option" id="spin-{{suffix}}">
+                    <label><input id="spin-input-{{suffix}}" style='margin-right:4px' type="checkbox" onchange="toggleRotation('{{suffix}}')">rotation</label>
+                    </div>
+                </div>
+                </div>
+            </div>
+            </div>
+        </div>
+        {% endmacro %}
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Fan diagrams and optically-active modes of layered materials</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="../../static/css/bootstrap.min.css">
+    <script src="../../static/js/bootstrap.min.js"></script>
+
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/series-label.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    
+    <link rel="stylesheet" type="text/css" href="../../static/css/jquery-ui.1.12.1.min.css"/>
+    <script src="../../static/js/jquery-3.1.0.min.js"></script>
+    <script src="../../static/js/jquery-ui.1.12.1.min.js"></script>
+
+    <!-- development version, includes helpful console warnings -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+    <!-- production version, optimized for size and speed -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/vue"></script> -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.1/dist/katex.css" integrity="sha384-b/NoaeRXkMxyKcrDw2KtVtYKkVg3dA0rTRgLoV7W2df3MzeR1eHLTi+l4//4fMwk" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.10.1/dist/katex.js" integrity="sha384-ern5NCRqs6nJ/a4Ik0nB9hnKVH5HwV2XRUYdQl09OB/vvd1Lmmqbg1Mh+mYUclXx" crossorigin="anonymous"></script>
+
+    <script src="../../user_static/js/jsmol/JSmol.min.nojq.js"></script>
+
+    <script>
+        // This data is injected from flask at page generation
+        var appData = {{ app_data_json | safe }};
+    </script>
+
+    <script>
+    $( function() {
+        $( "#accordion-initialcoords" ).accordion({
+            collapsible: true,
+            heightStyle: "content", // Avoid that all have the same height
+            active: false  // Start all closed
+            //active: -1  // Open the last one
+        });
+
+      // Independent accordions for each layer
+    {% for layer_info in layers %}
+        $( "#accordion-layer{{loop.index}}").accordion({
+            collapsible: true,
+            heightStyle: "content", // Avoid that all have the same height
+            active: false,  // Start all closed
+            activate: function(event, ui) {
+                // Refresh when opening, as it will probably not have loaded
+                // the correct size, since it was collapsed
+                Jmol.script(eval("jmolAppletlayer{{loop.index}}"), "refresh");
+            }            
+        });
+    {% endfor %}
+
+    });
+
+    // global variable
+    var bulkstructureviewer = null;
+    var layerstructureviewers = [
+        {% for layer_info in layers %}
+        null {% if not loop.last %}, {% endif %}
+        {% endfor %}
+    ];
+
+    var resize_canvases = function () {
+        // resize structure viewer
+        if (bulkstructureviewer) {
+            parentcanvas = document.getElementById('structure-outer-bulk');
+            the_width = parentcanvas.offsetWidth;
+            var jsmolcontent = document.getElementById('jmolAppletbulk_appletinfotablediv');
+            jsmolcontent.style.width = the_width + "px";
+        }
+
+        for (var i=0; i<layerstructureviewers.length; i++) {
+            layerstructureviewer = layerstructureviewers[i];
+            if (layerstructureviewer) {
+                parentcanvas = document.getElementById('structure-outer-layer'+i);
+                the_width = parentcanvas.offsetWidth;
+                var jsmolcontent = document.getElementById('jmolAppletlayer'+i+'_appletinfotablediv');
+                jsmolcontent.style.width = the_width + "px";
+            }
+        }
+    }
+    </script>
+    <script src="../../static/js/iframeResizer.contentWindow.min.js"></script>
+    <!-- I load these *after* jquery, to override the bootstrap defaults -->
+    <link rel="stylesheet" type="text/css" href="../../static/css/visualizer_base.min.css"/>
+    <link rel="stylesheet" type="text/css" media="screen" href="../../user_static/css/main.css">
+
+</head>
+<body onresize="resize_canvases()"> 
+
+    <div style="max-width: 800px; margin: auto;">
+        <div id="maintitle">
+            <h1>Fan diagrams and optically-active modes of layered materials</h1>
+        </div>
+
+        <div id="topinfo">
+            <div id="accordion-initialcoords">
+            <h2>Show parsed input coordinates (please double-check here if the parser worked properly)</h2>
+            <div>
+                <h3>Input cell vectors (&#8491;)</h3>
+                <table class="center">
+                <thead>
+                    <th style="padding-right: 15px; text-align: center">v</th>
+                    <th style="text-align: center">x</th>
+                    <th style="text-align: center">y</th>
+                    <th style="text-align: center">z</th>
+                </thead>
+                <tbody>
+                    {% for v in inputstructure_cell_vectors %}
+                    <tr>
+                    <td style="padding-right: 15px; text-align: center">v<sub>{{ v[0] }}</sub></td>
+                    <td style="text-align: right"><code>{{ "%.10f" % v[1]|float }}</code></td>
+                    <td style="text-align: right"><code>{{ "%.10f" % v[2]|float }}</code></td>
+                    <td style="text-align: right"><code>{{ "%.10f" % v[3]|float }}</code></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                </table>
+
+                <h3>Input atom coordinates (scaled)</h3>
+                <table class="center">
+                <thead>
+                    <th style="padding-right: 15px; text-align: center">Element</th>
+                    <th style="text-align: center">r<sub>1</sub></th>
+                    <th style="text-align: center">r<sub>2</sub></th>
+                    <th style="text-align: center">r<sub>3</sub></th>
+                </thead>
+                <tbody>
+                    {% for b in inputstructure_atoms_scaled %}
+                    <tr>
+                    <td style="padding-right: 15px; text-align: center">{{ b[0] }}</td>
+                    <td style="text-align: right"><code>{{ "%.10f" % b[1]|float }}</code></td>
+                    <td style="text-align: right"><code>{{ "%.10f" % b[2]|float }}</code></td>
+                    <td style="text-align: right"><code>{{ "%.10f" % b[3]|float }}</code></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                </table>
+
+                <h3>Input atom coordinates (Cartesian, &#8491;)</h3>
+                <table class="center">
+                <thead>
+                    <th style="padding-right: 15px; text-align: center">Element</th>
+                    <th style="text-align: center">x</th>
+                    <th style="text-align: center">y</th>
+                    <th style="text-align: center">z</th>
+                </thead>
+                <tbody>
+                    {% for b in inputstructure_atoms_cartesian %}
+                    <tr>
+                    <td style="padding-right: 15px; text-align: center">{{ b[0] }}</td>
+                    <td style="text-align: right"><code>{{ "%.10f" % b[1]|float }}</code></td>
+                    <td style="text-align: right"><code>{{ "%.10f" % b[2]|float }}</code></td>
+                    <td style="text-align: right"><code>{{ "%.10f" % b[3]|float }}</code></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                </table>
+            </div>
+            </div>
+        </div>
+
+        <div class='structureouter'>
+        <div id='structuretitle'><h2>Input crystal structure</h2><p><em>Drag to rotate, scroll to zoom, double-click to enable/disable interaction</em></p></div>
+        {{ render_jsmol_visualizer(suffix='bulk', nx=2, ny=2, nz=2) }}
+
+        <div id='layerstitle'><h2>Layer search</h2></div>
+        <div>
+            {% if layers %}
+
+            {{ layers|length }} layers found for this structure using a skin factor of {{ skin_factor }}. <br>
+
+            {% for layer_xsf, this_layer_indices in layers %}
+                <div id="accordion-layer{{loop.index}}">
+                    <h3>Layer {{loop.index}} (including the {{ this_layer_indices|length }} atoms with indices 
+                {% for index in this_layer_indices %}
+                    {{index}}{% if not loop.last %}, {% endif %}
+                {% endfor -%})</h3>
+                    <div>
+                        <div class='structureouter'>
+                            {# ~ is the jinja string-concatenation operator #}
+                            {{ render_jsmol_visualizer(suffix='layer' ~ loop.index, nx=3, ny=3, nz=1) }}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+
+            {% else %}    
+                No layers could be found for this structure and the specified skin factor of {{ skin_factor }}.
+            {% endif %}
+
+        </div>
+
+    {# Skip completely the fan-diagram block if we didn't find layers etc. #}
+    {% if app_data_json is not none %}
+    <div id='fandiagramtitle'><h2>Fan diagram</h2></div>
+    <div id="app">  <!-- Vue.js will work in here -->
+        <h3>Elastic force constant matrices</h3>
+        <div style="width: 100%; text-align: center;" v-html="getLatexHTML(latexCode)" id="test"></div>
+        <div>
+            {% raw %} 
+            <span class="warning-message"> {{ warningMessage }} </span> 
+            {% endraw %}
+        </div>
+
+        <h3>Force-constant parameters</h3>
+        <div style="max-width: 400px; margin: auto;">
+            <template v-for="variable in forceConstantVariables">
+                <div class="row">
+                    <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+                        {% raw %}
+                        <label :for="variable.name">{{variable.displayName}}</label>
+                        {% endraw %}
+                    </div>
+                    <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+                        <input type="number" step="any" class="form-control" :name="variable.name" v-model.number="variable.value" v-on:input="updateGraphDebounced">
+                    </div> 
+                </div> 
+            </template>
+        </div>
+
+        <div id="inputs">
+            <div>
+                <div style="width: 100%; text-align: center;"><span v-bind:class="{ invisible: !showSpinner }"><img src="../../user_static/img/loader-spinning.gif" height="40px"></img></span> 
+                </div>
+            </div>
+            <div style="width: 100%; text-align: center;">
+                <div class="slidecontainer">
+                    {# 
+                        Another way of avoiding escaping {{}} by Jinja, if they are
+                        Vue.JS constructs, is to escape them as strings:
+                        {{ '{{' }}
+                        and 
+                        {{ '}}' }}
+                        but I think it's uglier and less readable.
+
+                        Still, I think the {% raw %} should be confined to one
+                        or a few lines to avoid that, by just looking at a piece of
+                        source code in the tempate, it's hard to understand if it's
+                        a Jinja2 or Vue.js replacement.
+                    #}
+                    {% raw %} 
+                    Maximum number of layers in the plot: {{ maxLayers }}
+                    {% endraw %}
+                    <div style="width: 200px; margin-left: auto; margin-right: auto">
+                        <input type="range" min="5" max="30" value="10" step="1" v-model="maxLayers" v-on:input="updateGraphDebounced"> 
+                    </div>
+                </div>
+            </div>
+        </div>        
+
+
+        <div id="plotContainer" style="min-width: 310px; max-width: 800px; height: 600px; margin: 0 auto"></div>
+
+    </div>
+    {% endif %}
+
+    <div id='finalinfo'>
+        <p><span style="font-weight: bold;">
+            Technical info</span>:
+            Time spent to compute quantities: {{ '%.3f' % compute_time }} s.
+            <a href="https://wiki.fysik.dtu.dk/ase/index.html">ASE</a> version: {{ ase_version }}.
+            <a href="https://spglib.github.io/spglib/">spglib</a> version: {{ spglib_version }}.
+            <a href="https://github.com/materialscloud-org/tools-barebone">tools-barebone</a> version: {{tools_barebone_version}}.
+            This tool version: {{this_tool_version}}.
+    </div>
+    
+
+</div>
+<script src="../../user_static/js/main.js"></script>
+<script src="../../user_static/js/visualization.js"></script>
+<script>    
+    bulkstructureviewer = jsmolCrystal({{ xsfstructure|tojson|safe }}, "structure-content-bulk", "jmolAppletbulk", [2,2,2]);
+    {% for layer_xsf, this_layer_indices in layers %}
+       layerstructureviewers[{{loop.index}}] = jsmolCrystal({{ layer_xsf|tojson|safe }}, "structure-content-layer{{loop.index}}", "jmolAppletlayer{{loop.index}}", [3,3,1]);
+    {% endfor %}
+
+    $(document).ready(function(){
+          var divjsmol = document.getElementById('crystal-bulk');
+          var jsmolcontent = document.getElementById('jmolAppletbulk_appletinfotablediv');
+          divjsmol.appendChild(jsmolcontent);
+          enableDoubleTap(bulkstructureviewer['_mouseInterface'], function() {
+            toggleStrVisInteraction(false, 'str-overlay-bulk');
+          }, ignoreOnMove=true);
+
+          var stroverlay = document.getElementById('str-overlay-bulk');
+          stroverlay.onmouseenter = function()
+            {
+                this.style.backgroundColor = "rgba(230,230,230,0.5)";
+                document.getElementById('str-overlay-bulk-span').innerText = "Double click to toggle interaction";
+                // console.log(this, 'enter');
+            }
+          stroverlay.onmouseleave = function()
+            {
+                // 0.0 for alpha doesn't work properly, apparently
+                this.style.backgroundColor = "rgba(255,255,255,0.01)";
+                document.getElementById('str-overlay-bulk-span').innerText = "";
+                // console.log(this, 'leave');
+            }
+
+          // Enable double-tap events for phones
+          enableDoubleTap(stroverlay, function() {
+            toggleStrVisInteraction(true, 'str-overlay-bulk');
+          });
+
+
+        {% for layer_xsf, this_layer_indices in layers %}
+
+          var divjsmol = document.getElementById('crystal-layer{{loop.index}}');
+          var jsmolcontent = document.getElementById('jmolAppletlayer{{loop.index}}_appletinfotablediv');
+          divjsmol.appendChild(jsmolcontent);
+          enableDoubleTap(layerstructureviewers[{{loop.index}}]['_mouseInterface'], function() {
+            toggleStrVisInteraction(false, 'str-overlay-layer{{loop.index}}');
+          }, ignoreOnMove=true);
+
+          var stroverlay = document.getElementById('str-overlay-layer{{loop.index}}');
+          stroverlay.onmouseenter = function()
+            {
+                this.style.backgroundColor = "rgba(230,230,230,0.5)";
+                document.getElementById('str-overlay-layer{{loop.index}}-span').innerText = "Double click to toggle interaction";
+                // console.log(this, 'enter');
+            }
+          stroverlay.onmouseleave = function()
+            {
+                // 0.0 for alpha doesn't work properly, apparently
+                this.style.backgroundColor = "rgba(255,255,255,0.01)";
+                document.getElementById('str-overlay-layer{{loop.index}}-span').innerText = "";
+                // console.log(this, 'leave');
+            }
+
+          // Enable double-tap events for phones
+          enableDoubleTap(stroverlay, function() {
+            toggleStrVisInteraction(true, 'str-overlay-layer{{loop.index}}');
+          });
+
+        {% endfor %}
+
+        $('[data-toggle="tooltip"]').tooltip({placement: "top"});
+      });
+
+</script>
+
+<div style ="position: relative" data-iframe-height></div>
+</body>
+</html>

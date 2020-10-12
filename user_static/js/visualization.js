@@ -1,7 +1,7 @@
-function toggleStrVisInteraction(enableStrInteraction){
+function toggleStrVisInteraction(enableStrInteraction, str_overlay_id){
     if (enableStrInteraction){
         // enable interaction here
-        $("#str-overlay").css("display", "none")
+        $("#"+str_overlay_id).css("display", "none")
         .css("-webkit-touch-callout", "auto")
         .css("-webkit-user-select", "auto")
         .css("-khtml-user-select", "auto")
@@ -11,7 +11,7 @@ function toggleStrVisInteraction(enableStrInteraction){
     }
     else{
         // disable interaction here
-        $("#str-overlay").css("display", "table")
+        $("#"+str_overlay_id).css("display", "table")
         .css("-webkit-touch-callout", "none")
         .css("-webkit-user-select", "none")
         .css("-khtml-user-select", "none")
@@ -36,7 +36,7 @@ function jsmolCrystal(data, parentHtmlId, appletName, supercellOptions) {
         use: "HTML5",
         j2sPath: "../../user_static/js/jsmol/j2s",
         serverURL: "../../user_static/js/jsmol/php/jsmol.php",
-        console: "jmolApplet_infodiv"
+        console: appletName + "_infodiv"
     };
 
     var jsmolStructureviewer = Jmol.getApplet(appletName, Info);
@@ -75,64 +75,64 @@ function jsmolCrystal(data, parentHtmlId, appletName, supercellOptions) {
 
 var cellLine = "; unitcell 2";
 
-function toggleRotation(viewer) {
-    if ($("#spin-input").is(":checked")){
+function toggleRotation(viewerNameSuffix) {
+    if ($("#spin-input-" + viewerNameSuffix).is(":checked")){
         var jmolscript = "spin on";
     } else {
         var jmolscript = "spin off";
     }
-    Jmol.script(eval(viewer), jmolscript);
+    Jmol.script(eval('jmolApplet' + viewerNameSuffix), jmolscript);
     return jmolscript;
 };
 
-function showBonds(viewer) {
-    if ($("#bonds-input").is(":checked")){
+function showBonds(viewerNameSuffix) {
+    if ($("#bonds-input-" + viewerNameSuffix).is(":checked")){
         var jmolscript = "wireframe 0.15";
     } else {
         var jmolscript = "wireframe off";
     }
-    Jmol.script(eval(viewer), jmolscript);
+    Jmol.script(eval('jmolApplet' + viewerNameSuffix), jmolscript);
     return jmolscript;
 };
 
-function showPacked(viewer) {
-    var nx = $('#nx').val();
-    var ny = $('#ny').val();
-    var nz = $('#nz').val();
+function showPacked(viewerNameSuffix) {
+    var nx = $('#nx-' + viewerNameSuffix).val();
+    var ny = $('#ny-' + viewerNameSuffix).val();
+    var nz = $('#nz-' + viewerNameSuffix).val();
 
-    if ($("#packed-input").is(":checked")){
-        var jmolscript = "save orientation 0; load '' {" + nx + " " + ny + " " + nz + "} packed; unitcell primitive; restore orientation 0" + jsmolDrawAxes(viewer) + cellLine + "; " + showLabels(viewer) + "; " + showBonds(viewer);
+    if ($("#packed-input-" + viewerNameSuffix).is(":checked")){
+        var jmolscript = "save orientation 0; load '' {" + nx + " " + ny + " " + nz + "} packed; unitcell primitive; restore orientation 0" + jsmolDrawAxes(viewerNameSuffix) + cellLine + "; " + showLabels(viewerNameSuffix) + "; " + showBonds(viewerNameSuffix);
     } else {
-        var jmolscript = "save orientation 0; load '' {" + nx + " " + ny + " " + nz + "}; unitcell primitive; restore orientation 0" + jsmolDrawAxes(viewer) + cellLine + "; " + showLabels(viewer) + "; " + showBonds(viewer);
+        var jmolscript = "save orientation 0; load '' {" + nx + " " + ny + " " + nz + "}; unitcell primitive; restore orientation 0" + jsmolDrawAxes(viewerNameSuffix) + cellLine + "; " + showLabels(viewerNameSuffix) + "; " + showBonds(viewerNameSuffix);
     }
-    $("#spin-input").prop("checked", false);
-    $("#spheres-input").prop("checked", false);
-    Jmol.script(eval(viewer), jmolscript);
+    $("#spin-input-" + viewerNameSuffix).prop("checked", false);
+    $("#spheres-input-" + viewerNameSuffix).prop("checked", false);
+    Jmol.script(eval('jmolApplet' + viewerNameSuffix), jmolscript);
     return jmolscript;
 };
 
-function showLabels(viewer) {
-    if ($("#labels-input").is(":checked")){
+function showLabels(viewerNameSuffix) {
+    if ($("#labels-input-" + viewerNameSuffix).is(":checked")){
         var jmolscript = "label %a";
     } else {
         var jmolscript = "label off";
     }
-    Jmol.script(eval(viewer), jmolscript);
+    Jmol.script(eval('jmolApplet' + viewerNameSuffix), jmolscript);
     return jmolscript;
 };
 
-function showSpheres(viewer) {
-    if ($("#spheres-input").is(":checked")){
+function showSpheres(viewerNameSuffix) {
+    if ($("#spheres-input-" + viewerNameSuffix).is(":checked")){
         var jmolscript = "spacefill on";
     } else {
         var jmolscript = "spacefill 23%";
     }
-    Jmol.script(eval(viewer), jmolscript);
+    Jmol.script(eval('jmolApplet' + viewerNameSuffix), jmolscript);
     return jmolscript;
 };
 
-function jsmolDrawAxes(viewer) {
-    var e = document.getElementById("axesMenu");
+function jsmolDrawAxes(viewerNameSuffix) {
+    var e = document.getElementById("axesMenu-" + viewerNameSuffix);
     var selectedAxes = e.options[e.selectedIndex].value;
     switch (selectedAxes){
         case "xyz":
@@ -144,42 +144,43 @@ function jsmolDrawAxes(viewer) {
         case "noaxes":
             var jmolscript = "; draw xaxis delete; draw yaxis delete; draw zaxis delete; axes off";
     }
-    Jmol.script(eval(viewer), jmolscript);
+    Jmol.script(eval('jmolApplet' + viewerNameSuffix), jmolscript);
     return jmolscript;
 };
 
-function jsmolSupercell(viewer) {
-    var nx = $('#nx').val();
-    var ny = $('#ny').val();
-    var nz = $('#nz').val();
-    $("#spin-input").prop("checked", false);
-    $("#spheres-input").prop("checked", false);
-    $("#packed-input").prop("checked", false);
-    var jmolscript = "save orientation 0; load '' {" + nx + " " + ny + " " + nz + "}; unitcell primitive; restore orientation 0" + jsmolDrawAxes(viewer) + cellLine + "; " + showLabels(viewer) + "; " + showBonds(viewer);
-    Jmol.script(eval(viewer), jmolscript);
+function jsmolSupercell(viewerNameSuffix) {
+    var nx = $('#nx-' + viewerNameSuffix).val();
+    var ny = $('#ny-' + viewerNameSuffix).val();
+    var nz = $('#nz-' + viewerNameSuffix).val();
+    $("#spin-input-" + viewerNameSuffix).prop("checked", false);
+    $("#spheres-input-" + viewerNameSuffix).prop("checked", false);
+    $("#packed-input-" + viewerNameSuffix).prop("checked", false);
+    var jmolscript = "save orientation 0; load '' {" + nx + " " + ny + " " + nz + "}; unitcell primitive; restore orientation 0" + jsmolDrawAxes(viewerNameSuffix) + cellLine + "; " + showLabels(viewerNameSuffix) + "; " + showBonds(viewerNameSuffix);
+    Jmol.script(eval('jmolApplet' + viewerNameSuffix), jmolscript);
 };
 
-function jsmol222cell(viewer) {
-    $("#spin-input").prop("checked", false);
-    $("#spheres-input").prop("checked", false);
-    $("#packed-input").prop("checked", false);
-    // reset nx, ny, nz to 2,2,2
-    $('#nx').val(2);
-    $('#ny').val(2);
-    $('#nz').val(2);
-    Jmol.script(eval(viewer), "save orientation 0; load '' {2 2 2}; unitcell primitive; restore orientation 0" + jsmolDrawAxes(viewer) + cellLine + "; " + showLabels(viewer) + "; " + showBonds(viewer));
+function jsmolResetSupercell(viewerNameSuffix, nx, ny, nz) {
+    $("#spin-input-" + viewerNameSuffix).prop("checked", false);
+    $("#spheres-input-" + viewerNameSuffix).prop("checked", false);
+    $("#packed-input-" + viewerNameSuffix).prop("checked", false);
+    // reset nx, ny, nz to default values
+    $('#nx-' + viewerNameSuffix).val(nx);
+    $('#ny-' + viewerNameSuffix).val(ny);
+    $('#nz-' + viewerNameSuffix).val(nz);
+    Jmol.script(eval('jmolApplet' + viewerNameSuffix),
+    "save orientation 0; load '' {" + nx + " " + ny + " " + nz + "}; unitcell primitive; restore orientation 0" + jsmolDrawAxes(viewerNameSuffix) + cellLine + "; " + showLabels(viewerNameSuffix) + "; " + showBonds(viewerNameSuffix));
 };
 
-function centerXaxis(viewer){
-    Jmol.script(eval(viewer), "moveto 1 axis x");
+function centerXaxis(viewerNameSuffix){
+    Jmol.script(eval('jmolApplet' + viewerNameSuffix), "moveto 1 axis x");
 };
 
-function centerYaxis(viewer){
-    Jmol.script(eval(viewer), "moveto 1 axis y");
+function centerYaxis(viewerNameSuffix){
+    Jmol.script(eval('jmolApplet' + viewerNameSuffix), "moveto 1 axis y");
 };
 
-function centerZaxis(viewer){
-    Jmol.script(eval(viewer), "moveto 1 axis z");
+function centerZaxis(viewerNameSuffix){
+    Jmol.script(eval('jmolApplet' + viewerNameSuffix), "moveto 1 axis z");
 };
 
 $.fn.bindFirst = function(name, fn) {

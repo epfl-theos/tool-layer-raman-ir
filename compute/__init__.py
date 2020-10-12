@@ -75,7 +75,7 @@ def process_structure():
                 skin_factor=skin_factor,
             )
             return flask.render_template(
-                "user_templates/visualizer.html", **data_for_template
+                "user_templates/visualizer.j2", **data_for_template
             )
         except FlaskRedirectException as e:
             flask.flash(str(e))
@@ -132,7 +132,7 @@ def process_example_structure():
                 skin_factor=skin_factor,
             )
             return flask.render_template(
-                "user_templates/visualizer.html", **data_for_template
+                "user_templates/visualizer.j2", **data_for_template
             )
         except FlaskRedirectException as e:
             flask.flash(str(e))

@@ -86,10 +86,6 @@ emph {
 }
 
 
-structureviewer {
-  border: 0px;
-}
-
 #structuretitle {
    width: 100%;
    margin: 0px;
@@ -99,7 +95,7 @@ structureviewer {
    text-align: center;
 }
 
-#structure {
+.structure {
    background-color: #fff;
    width: 100%;
    height: 450px;
@@ -112,7 +108,7 @@ structureviewer {
    overflow: hidden;
 }
 
-#structureouter {
+.structureouter {
   width: 100%;
   max-width: 500px;
   margin: 0px;

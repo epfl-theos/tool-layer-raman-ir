@@ -10,10 +10,7 @@ import spglib
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-from .utils.structures import (
-    ase_from_tuple,
-    get_xsf_structure,
-)
+from .utils.structures import ase_from_tuple, get_xsf_structure, tuple_from_ase
 from tools_barebone import get_tools_barebone_version
 from .utils.layers import find_layers, find_common_transformation
 
@@ -27,16 +24,7 @@ def process_structure_core(
 ):  # pylint: disable=unused-argument, too-many-locals
     start_time = time.time()
 
-    asecell = ase_from_tuple(structure)
-    is_layered, asecell, layer_indices = find_layers(asecell, factor=skin_factor)
-    if not is_layered:
-        raise ValueError("The material is not layered")
-
-    rot, _ = find_common_transformation(
-        asecell, layer_indices
-    )  # second parameter: transl
-    all_matrices = construct_all_matrices(asecell, layer_indices, rot)
-
+    # Get information on the crystal structure to be shown later
     inputstructure_cell_vectors = [
         [idx, coords[0], coords[1], coords[2]]
         for idx, coords in enumerate(structure[0], start=1)
@@ -57,6 +45,58 @@ def process_structure_core(
         )
     ]
 
+    # prepare template dictionary to return later
+    return_data = {
+        "app_data_json": None,  # None by default, if e.g. layers are not found
+        "layers": [],  # Empty list if no layers found
+        "xsfstructure": get_xsf_structure(structure),
+        "inputstructure_cell_vectors": inputstructure_cell_vectors,
+        "inputstructure_atoms_scaled": inputstructure_atoms_scaled,
+        "inputstructure_atoms_cartesian": inputstructure_atoms_cartesian,
+        "skin_factor": skin_factor,
+        "spglib_version": spglib.__version__,
+        "ase_version": ase.__version__,
+        "tools_barebone_version": get_tools_barebone_version(),
+        "this_tool_version": __version__,
+    }
+
+    asecell = ase_from_tuple(structure)
+    is_layered, layer_structures, layer_indices, rotated_asecell = find_layers(
+        asecell, factor=skin_factor
+    )
+
+    if not is_layered:
+        # I return here; some sections will not be present in the output so they will not be shown.
+        compute_time = time.time() - start_time
+        return_data["compute_time"] = compute_time
+        logger.debug(json.dumps(return_data, indent=2, sort_keys=True))
+        return return_data
+
+    layer_xsfs = [
+        get_xsf_structure(tuple_from_ase(layer_structure))
+        for layer_structure in layer_structures
+    ]
+
+    return_data["layers"] = list(
+        zip(
+            layer_xsfs,
+            # Needed because this might return int64 numpy objects, not JSON-serializable
+            [
+                [int(index) for index in this_layer_indices]
+                for this_layer_indices in layer_indices
+            ],
+        )
+    )
+
+    print(is_layered, layer_structures, layer_indices, rotated_asecell)
+    if not is_layered:
+        raise ValueError("The material is not layered")
+
+    rot, _ = find_common_transformation(
+        rotated_asecell, layer_indices
+    )  # second parameter: transl
+    all_matrices = construct_all_matrices(rotated_asecell, layer_indices, rot)
+
     app_data = {
         "structure": structure,
         "symmetryInfo": {},
@@ -74,25 +114,13 @@ def process_structure_core(
             "matrices": [all_matrices],
         },
     }
+    # Add the JSON to the return_data
+    return_data["app_data_json"] = json.dumps(app_data)
 
+    # Add the total compute time and return th dictionary
     compute_time = time.time() - start_time
-
-    return_data = {
-        "app_data_json": json.dumps(app_data),
-        "xsfstructure": get_xsf_structure(structure),
-        "inputstructure_cell_vectors": inputstructure_cell_vectors,
-        "inputstructure_atoms_scaled": inputstructure_atoms_scaled,
-        "inputstructure_atoms_cartesian": inputstructure_atoms_cartesian,
-        "skin_factor": skin_factor,
-        "compute_time": compute_time,
-        "spglib_version": spglib.__version__,
-        "ase_version": ase.__version__,
-        "tools_barebone_version": get_tools_barebone_version(),
-        "this_tool_version": __version__,
-    }
-
+    return_data["compute_time"] = compute_time
     logger.debug(json.dumps(return_data, indent=2, sort_keys=True))
-
     return return_data
 
 

@@ -10,15 +10,17 @@ from .linalg import shortest_vector_index, gauss_reduce
 from .map_positions import are_same_except_order
 
 
-def find_layers(
-    asecell, factor=1.1, update_cell=True
-):  # pylint: disable=too-many-locals
+def find_layers(asecell, factor=1.1):  # pylint: disable=too-many-locals
     """
     Obtains all subunits of a given structure by looking
-    at the connectivity of the bonds
+    at the connectivity of the bonds.
 
+    :param asecell: the bulk unit cell (in ase.Atoms format)
+    :param factor: the skin factor
+    :return: a tuple with a boolean indicating if the material is layered, a list of layers in the structure (ase format),
+        a list of indices of the atoms in each layer, and a rotated bulk ASE cell (with stacking axis along z)
     """
-    tol = 1e-6
+    tol = 1.0e-6
     nl = NeighborList(
         factor * get_covalent_radii_array(asecell),
         bothways=True,
@@ -31,6 +33,8 @@ def find_layers(
     layer_structures = []
     layer_indices = []
     visited = []
+    aselayer = None
+
     for idx in range(len(asecell)):  # pylint: disable=too-many-nested-blocks
         layer = []
         if idx not in visited:
@@ -84,26 +88,30 @@ def find_layers(
                 layer_indices.append(layer)
             else:
                 is_layered = False
-    if is_layered and update_cell:
+    if is_layered:
         newcell = [vector1, vector2, vector3]
         # print ("BULK")
         # print asecell.cell
         if abs(np.linalg.det(newcell) / np.linalg.det(cell) - 1.0) > 1e-3:
             print("New cell has a different volume the original cell")
-        asecell = _update_and_rotate_cell(asecell, newcell, layer_indices)
+        rotated_asecell = _update_and_rotate_cell(asecell, newcell, layer_indices)
         # Re-order layers according to their projection
         # on the stacking direction
-        vert_direction = np.cross(asecell.cell[0], asecell.cell[1])
+        vert_direction = np.cross(rotated_asecell.cell[0], rotated_asecell.cell[1])
         vert_direction /= np.linalg.norm(vert_direction)
         stack_proj = [
             np.dot(layer.positions, vert_direction).mean()
-            for layer in [asecell[il] for il in layer_indices]
+            for layer in [rotated_asecell[il] for il in layer_indices]
         ]
         stack_order = np.argsort(stack_proj)
         # order layers with increasing coordinate along the stacking direction
         layer_indices = [layer_indices[il] for il in stack_order]
-        # print (asecell.cell)
-    return is_layered, asecell, layer_indices
+    else:
+        rotated_asecell = None
+
+    if not is_layered:
+        aselayer = None
+    return is_layered, layer_structures, layer_indices, rotated_asecell
 
 
 def layers_match(layers, ltol=0.2, stol=0.3, angle_tol=5.0):
