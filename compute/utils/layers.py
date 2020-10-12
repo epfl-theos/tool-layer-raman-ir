@@ -76,10 +76,6 @@ def find_layers(asecell, factor=1.1):  # pylint: disable=too-many-locals
                     vector3 = np.cross(vector1, vector2)
                 vector1, vector2 = gauss_reduce(vector1, vector2)
                 vector3 = np.cross(vector1, vector2)
-                # Set new_cell_length_z and uncomment next line if you want to create
-                # a larger cell
-                # TODO: is 'vector3' always of the correct length?
-                # vector3 *= new_cell_length_z / np.linalg.norm(vector3)
                 aselayer = _update_and_rotate_cell(
                     aselayer, [vector1, vector2, vector3], [list(range(len(aselayer)))]
                 )
@@ -101,7 +97,9 @@ def find_layers(asecell, factor=1.1):  # pylint: disable=too-many-locals
         # print ("BULK")
         # print asecell.cell
         if abs(np.linalg.det(newcell) / np.linalg.det(cell) - 1.0) > 1e-3:
-            print("New cell has a different volume the original cell")
+            raise ValueError(
+                "An error occurred. The new cell after rotation has a different volume than the original cell"
+            )
         rotated_asecell = _update_and_rotate_cell(asecell, newcell, layer_indices)
         # Re-order layers according to their projection
         # on the stacking direction
@@ -114,12 +112,18 @@ def find_layers(asecell, factor=1.1):  # pylint: disable=too-many-locals
         stack_order = np.argsort(stack_proj)
         # order layers with increasing coordinate along the stacking direction
         layer_indices = [layer_indices[il] for il in stack_order]
+
+        # I don't return the 'layer_structures' because there the atoms are moved
+        # from their positions and the z axis lenght might not be appropriate
+        final_layered_structures = [
+            rotated_asecell[this_layer_indices] for this_layer_indices in layer_indices
+        ]
     else:
         rotated_asecell = None
 
     if not is_layered:
         aselayer = None
-    return is_layered, layer_structures, layer_indices, rotated_asecell
+    return is_layered, final_layered_structures, layer_indices, rotated_asecell
 
 
 def layers_match(layers, ltol=0.2, stol=0.3, angle_tol=5.0):
@@ -219,16 +223,18 @@ def find_common_transformation(
     Given an input structure, in ASE format, and the list with 
     the indices of atoms belonging to each layer, determine
     if there exists a common transformation that brings one
-    layer to the next
+    layer to the next.
 
-    asecell:: ASE structure of the bulk, where the first two 
+    :param asecell: ASE structure of the bulk, where the first two 
               lattice vectors have been re-oriented to lie 
               in the plane of the layers
-    layer_indices:: list of lists containing the indices of the
+    :param layer_indices: list of lists containing the indices of the
                     atoms belonging to each layer
-    ltol:: tolerance on cell length 
-    stol:: tolerance on atomic site positions
-    angle_tol:: tolerance on cell angles
+    :param ltol: tolerance on cell length 
+    :param stol: tolerance on atomic site positions
+    :param angle_tol: tolerance on cell angles
+    :return: a tuple of length three: either (rot, transl, None) if there is a common transformation,
+        or (None, None, message) if a common transformation could not be found.
     """
     # instance of the adaptor to convert ASE structures to pymatgen format
     adaptor = AseAtomsAdaptor()
@@ -241,13 +247,11 @@ def find_common_transformation(
     # If there is only one layer, the transformation is
     # simply a translation along the third axis
     if num_layers == 1:
-        return np.eye(3), asecell.cell[2]
+        return np.eye(3), asecell.cell[2], None
     # First check that all layers are identical
     layers = [asecell[layer] for layer in layer_indices]
     if not layers_match(layers):
-        # an exception should be raised?
-        print("WARNING: layers are not identical")
-        return None, None
+        return None, None, "Layers are not identical"
     # Layers are already ordered according to their
     # projection along the stacking direction
     # we start by comparing the first and second layer
@@ -270,7 +274,6 @@ def find_common_transformation(
     op01 = SymmOp.from_rotation_and_translation(rot01, tr01)
 
     spg = SpacegroupAnalyzer(str0, symprec=symprec)
-    print(spg.get_symmetry_operations())
     # check that the same operation brings each layer into the next one
     # we need to check not only the symmetry operation found by pymatgen,
     # but also its combination with any of the point group operations of
@@ -311,9 +314,9 @@ def find_common_transformation(
             # is larger than the threshold the transformation is not the same
             # between all consecutive layers
             if distance.max() > stol:
-                # an exception should be raised?
-                print(
-                    "WARNING: transformation between consecutive layers not always the same"
+                return (
+                    None,
+                    None,
+                    "The transformation between consecutive layers is not always the same",
                 )
-                return None, None
-    return rot01, tr01
+    return rot01, tr01, None

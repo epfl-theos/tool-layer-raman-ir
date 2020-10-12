@@ -117,6 +117,23 @@
         var appData = {{ app_data_json | safe }};
     </script>
 
+    {% if common_layers_search is not none and common_layers_search['rot_latex'] is not none %}
+        <script>
+        $( function() {
+            window.katex.render(
+                {{common_layers_search['rot_latex']|tojson|safe}}, $("#coincidence-R")[0], {
+                    throwOnError: false,
+                    displayMode: true
+                });
+            window.katex.render(
+                {{common_layers_search['transl_latex']|tojson|safe}}, $("#coincidence-t")[0], {
+                    throwOnError: false,
+                    displayMode: true
+                });
+        });
+        </script>
+    {% endif %}
+
     <script>
     $( function() {
         $( "#accordion-initialcoords" ).accordion({
@@ -263,8 +280,8 @@
             {% for layer_xsf, this_layer_indices in layers %}
                 <div id="accordion-layer{{loop.index}}">
                     <h3>Layer {{loop.index}} (including the {{ this_layer_indices|length }} atoms with indices 
-                {% for index in this_layer_indices %}
-                    {{index}}{% if not loop.last %}, {% endif %}
+                {% for index in this_layer_indices|sort -%}
+                    {{index+1}}{% if not loop.last %}, {% endif -%}
                 {% endfor -%})</h3>
                     <div>
                         <div class='structureouter'>
@@ -280,6 +297,21 @@
             {% endif %}
 
         </div>
+
+    {% if common_layers_search is not none %}
+        <div id='layerstitle'><h2>Common-layer search</h2></div>
+        <div>
+        {% if common_layers_search['rot'] is not none %}
+            A common coincidence operation brings each layer onto the next.<br>
+            One possible coincidence operation is:
+            <div id="coincidence-R"></div>
+            <div id="coincidence-t"></div>
+        {% else %}
+            The structure does not seem to be a MDO polytype (i.e., composed by the same layer, with the same coincidence operation bringing each layer onto the next one):
+            {{ common_layers_search['message'] }}
+        {% endif %}
+        </div>
+    {% endif %}
 
     {# Skip completely the fan-diagram block if we didn't find layers etc. #}
     {% if app_data_json is not none %}

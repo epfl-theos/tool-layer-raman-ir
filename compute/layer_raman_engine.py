@@ -48,6 +48,7 @@ def process_structure_core(
     # prepare template dictionary to return later
     return_data = {
         "app_data_json": None,  # None by default, if e.g. layers are not found
+        "common_layers_search": None,  # None by default
         "layers": [],  # Empty list if no layers found
         "xsfstructure": get_xsf_structure(structure),
         "inputstructure_cell_vectors": inputstructure_cell_vectors,
@@ -91,10 +92,44 @@ def process_structure_core(
     if not is_layered:
         raise ValueError("The material is not layered")
 
-    rot, _ = find_common_transformation(
-        rotated_asecell, layer_indices
-    )  # second parameter: transl
-    all_matrices = construct_all_matrices(rotated_asecell, layer_indices, rot)
+    rot, transl, message = find_common_transformation(rotated_asecell, layer_indices)
+
+    if rot is None:
+        rot_latex = None
+    else:
+        rot_latex = (
+            "R = "
+            "\\left(\\begin{array}{ccc}%10.5f & %10.5f & %10.5f \\\\ %10.5f & %10.5f & %10.5f \\\\ %10.5f & %10.5f & %10.5f \\end{array}\\right)"
+            % (
+                rot[0, 0],
+                rot[0, 1],
+                rot[0, 2],
+                rot[1, 0],
+                rot[1, 1],
+                rot[1, 2],
+                rot[2, 0],
+                rot[2, 1],
+                rot[2, 2],
+            )
+        )
+
+    if transl is None:
+        transl_latex = None
+    else:
+        transl_latex = (
+            "\\tau = \\left(\\begin{array}{c}%10.5f\\\\%10.5f\\\\%10.5f\\end{array}\\right)"
+            % (transl[0], transl[0], transl[0])
+        )
+
+    return_data["common_layers_search"] = {
+        "rot_latex": rot_latex,
+        "transl_latex": transl_latex,
+        "message": message,
+    }
+
+    all_matrices = construct_all_matrices(
+        rotated_asecell, layer_indices, transformation=rot
+    )
 
     app_data = {
         "structure": structure,
@@ -146,7 +181,6 @@ def construct_all_matrices(asecell, layer_indices, transformation, symprec=1e-3)
     struct = AseAtomsAdaptor().get_structure(bilayer)
     # Find the spacegroup of the bilayer
     spg = SpacegroupAnalyzer(struct, symprec=symprec)
-    print(spg.get_point_group_symbol(), spg.get_crystal_system())
     # print(spg.get_point_group_operations(cartesian=True))
     cry_sys = spg.get_crystal_system()
     if cry_sys in [
