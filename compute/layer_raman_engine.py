@@ -88,7 +88,6 @@ def process_structure_core(
         )
     )
 
-    print(is_layered, layer_structures, layer_indices, rotated_asecell)
     if not is_layered:
         raise ValueError("The material is not layered")
 

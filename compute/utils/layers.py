@@ -35,9 +35,13 @@ def find_layers(asecell, factor=1.1):  # pylint: disable=too-many-locals
     visited = []
     aselayer = None
 
+    # Loop over atoms (idx: atom index)
     for idx in range(len(asecell)):  # pylint: disable=too-many-nested-blocks
+        # Will contain the indices of the atoms in the "current" layer
         layer = []
+        # Check if I already visited this atom
         if idx not in visited:
+            # Update 'layer' and 'visited'
             check_neighbors(idx, nl, asecell, visited, layer)
             aselayer = asecell.copy()[layer]
             layer_nl = NeighborList(
@@ -72,6 +76,10 @@ def find_layers(asecell, factor=1.1):  # pylint: disable=too-many-locals
                     vector3 = np.cross(vector1, vector2)
                 vector1, vector2 = gauss_reduce(vector1, vector2)
                 vector3 = np.cross(vector1, vector2)
+                # Set new_cell_length_z and uncomment next line if you want to create
+                # a larger cell
+                # TODO: is 'vector3' always of the correct length?
+                # vector3 *= new_cell_length_z / np.linalg.norm(vector3)
                 aselayer = _update_and_rotate_cell(
                     aselayer, [vector1, vector2, vector3], [list(range(len(aselayer)))]
                 )

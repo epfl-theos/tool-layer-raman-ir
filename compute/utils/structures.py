@@ -48,7 +48,8 @@ def tuple_from_ase(asecell: ase.Atoms):
     Convert an ase cell to a structure tuple.
     """
     cell = asecell.cell.tolist()
-    rel_pos = asecell.get_scaled_positions().tolist()
+    # Wrap=False to preserve the absolute positions of atoms
+    rel_pos = asecell.get_scaled_positions(wrap=False).tolist()
     numbers = [
         ase.atom.atomic_numbers[symbol] for symbol in asecell.get_chemical_symbols()
     ]
