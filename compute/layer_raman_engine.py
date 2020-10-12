@@ -114,16 +114,13 @@ def process_structure_core(
         )
 
     if transl is None:
-        transl_latex = None
+        transl_z_latex = None
     else:
-        transl_latex = (
-            "\\tau = \\left(\\begin{array}{c}%10.5f\\\\%10.5f\\\\%10.5f\\end{array}\\right)"
-            % (transl[0], transl[0], transl[0])
-        )
+        transl_z_latex = "\\tau_z = %10.5f" % (transl[0])
 
     return_data["common_layers_search"] = {
         "rot_latex": rot_latex,
-        "transl_latex": transl_latex,
+        "transl_z_latex": transl_z_latex,
         "message": message,
     }
 

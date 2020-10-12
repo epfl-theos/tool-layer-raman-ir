@@ -13,7 +13,8 @@ def test_structure(filename, skin_factor=1.1):
     logger = logging.getLogger("layer-raman-tool-app")
 
     # Print to stderr, also DEBUG messages
-    logger.setLevel(logging.DEBUG)
+    # logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.WARNING)
     logger.addHandler(logging.StreamHandler())
 
     asecell = ase.io.read(filename)

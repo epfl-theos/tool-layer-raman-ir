@@ -3,7 +3,6 @@ from ase.neighborlist import NeighborList
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.operations import SymmOp
 from pymatgen.io.ase import AseAtomsAdaptor
-from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 from .structures import get_covalent_radii_array
 from .linalg import shortest_vector_index, gauss_reduce
@@ -217,7 +216,7 @@ def _update_and_rotate_cell(asecell, newcell, layer_indices):
 
 
 def find_common_transformation(
-    asecell, layer_indices, ltol=0.05, stol=0.05, angle_tol=2.0, symprec=1e-3
+    asecell, layer_indices, ltol=0.05, stol=0.05, angle_tol=2.0
 ):  # pylint: disable=too-many-arguments,too-many-locals
     """
     Given an input structure, in ASE format, and the list with 
@@ -248,10 +247,13 @@ def find_common_transformation(
     # simply a translation along the third axis
     if num_layers == 1:
         return np.eye(3), asecell.cell[2], None
+
+    # If we are here, there are at least two layers
     # First check that all layers are identical
     layers = [asecell[layer] for layer in layer_indices]
     if not layers_match(layers):
         return None, None, "Layers are not identical"
+
     # Layers are already ordered according to their
     # projection along the stacking direction
     # we start by comparing the first and second layer
@@ -259,21 +261,63 @@ def find_common_transformation(
     layer1 = layers[1]
     str0 = adaptor.get_structure(layer0)
     str1 = adaptor.get_structure(layer1)
-    # This is the transformation that brings layer0 into layer1
+    # This is the transformation that brings layer0 onto layer1
+    # it is a tuple with a supercell matrix, a translation vector, and the indices
+    # of how atoms are rearranged
     transformation01 = sm.get_transformation(str1, str0)
     # define the common lattice of both layers (which is the one of the bulk)
-    common_lattice = str0.lattice
     # we use twice the same "common lattice" because they are identical in our case
     # in general we should have str0.lattice and str1.lattice (not necessarily in this order)
+    common_lattice = str0.lattice
+    # find the expression of the rotation in the common lattice
     rot01 = np.linalg.solve(
         np.dot(transformation01[0], common_lattice.matrix), common_lattice.matrix
     )
-    # translation vector in cartesian coordinates
+    # translation vector in Cartesian coordinates
     tr01 = np.matmul(common_lattice.matrix.T, transformation01[1])
+    print(transformation01)
     # this is the "symmetry" operation that brings layer0 into layer1
     op01 = SymmOp.from_rotation_and_translation(rot01, tr01)
 
-    spg = SpacegroupAnalyzer(str0, symprec=symprec)
+    # While on the x-y plane we are OK if we find a periodic image, on z we want to
+    # drop periodic boundary conditions, so finding a periodic image (using the periodicity
+    # of the bulk) is not OK.
+    # We therefore check if we can identify the same translation along z for all atoms
+    # Note that I only take the z coordinate (last column); this is in angstrom
+    required_z_shift_per_atom = (
+        layers[1].positions
+        - op01.operate_multi(layers[0].positions)[transformation01[2]]
+    )[:, 2]
+    # Note however that if the layers are not properly defined with all atoms closeby,
+    # The values of this array might not be all identical.
+    # E.g. if atoms of the same layer are not closeby unless one considers PBC.
+
+    cell_z_dir = common_lattice.matrix[2, 2]
+    required_scaled_z_shift_per_atom = required_z_shift_per_atom / cell_z_dir
+    print(required_scaled_z_shift_per_atom)
+
+    z_shift = required_z_shift_per_atom[0]
+    for atom_idx in range(1, len(required_z_shift_per_atom)):
+        # TODO: Use a proper combination of stol instead! Note however that the ?tol are
+        # in fractional coordinates
+        # NOTE: This test is not going to work in some cases, see below!
+        assert np.abs(z_shift - required_z_shift_per_atom[atom_idx]) < 1.0e-5
+
+    # Fix the translation vector to properly include.
+    # TODO: CHECK IF THIS IS THE CORRECT THING TO DO; ALSO, BELOW,
+    # ONE SHOULD CHECK IF THE SAME TRANSFORMATION BRINGS A LAYER INTO THE *NEXT* ONE
+    # by shifting down, applying, and shifting up again.
+    # tr01[2] += z_shift
+
+    print("~", tr01)
+
+    # TODO: check if they are all the same, if not FIX them (either here or before
+    # by making sure that layers are properly defined even without using PBC along z
+    # NOTE: it's not enough to do required_scaled_z_shift_per_atom % 1. !!
+    # In particular for LOC operations (R[2,2] == -1) this is not equivalent)
+
+    # TODO: TO COMPLETE HERE
+
     # check that the same operation brings each layer into the next one
     # we need to check not only the symmetry operation found by pymatgen,
     # but also its combination with any of the point group operations of
