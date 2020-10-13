@@ -89,9 +89,6 @@ def process_structure_core(
         )
     )
 
-    if not is_layered:
-        raise ValueError("The material is not layered")
-
     rot, transl, message = find_common_transformation(rotated_asecell, layer_indices)
 
     if rot is None:
@@ -116,7 +113,7 @@ def process_structure_core(
     if transl is None:
         transl_z_latex = None
     else:
-        transl_z_latex = "\\tau_z = %10.5f" % (transl[0])
+        transl_z_latex = "\\tau_z = %10.5f" % (transl[2])
 
     return_data["common_layers_search"] = {
         "rot_latex": rot_latex,
