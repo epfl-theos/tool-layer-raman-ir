@@ -246,7 +246,7 @@ def construct_all_matrices(asecell, layer_indices, transformation, symprec=1e-3)
     # Under the assumption that this transformation does not flip the z-axis, this
     # is also the transformation that brings a bilayer into the next one.
     # TODO: generalize to take into account the case of transformations that flip z
-    matrix_list = rotate_and_simplify_matrix(matrix_dict, np.identity(3))
+    matrix_list = rotate_and_simplify_matrix(matrix_dict, transformation)
     return matrix_list
 
 

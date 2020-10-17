@@ -112,6 +112,14 @@ def find_layers(asecell, factor=1.1):  # pylint: disable=too-many-locals
         # order layers with increasing coordinate along the stacking direction
         layer_indices = [layer_indices[il] for il in stack_order]
 
+        # Move the atoms along the third lattice vector so that 
+        # the first layer has zero projection along the vertical direction
+        trans_vector = -(
+            stack_proj[stack_order[0]] / np.dot(vert_direction, rotated_asecell.cell[2]) 
+            * rotated_asecell.cell[2]
+        )
+        rotated_asecell.translate(trans_vector)
+
         # I don't return the 'layer_structures' because there the atoms are moved
         # from their positions and the z axis lenght might not be appropriate
         final_layered_structures = [
