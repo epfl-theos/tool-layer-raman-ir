@@ -204,14 +204,18 @@ def _update_and_rotate_cell(asecell, newcell, layer_indices):
         proj = np.dot(asecell.positions[layer], [0, 0, 1])
         if len(layer_indices) == 1:
             # If there is only a single layer, center the atomic positions
-            asecell.positions[layer] -= [0, 0, proj.mean()]
+            asecell.positions[layer] -=  (
+                proj.mean() / asecell.cell[2, 2] * asecell.cell[2]
+            )
         else:
             # move back the vertical position of the layer within the cell
             asecell.positions[layer] -= (
                 np.floor(proj.mean() / asecell.cell[2, 2]) * asecell.cell[2]
             )
     # fix also the inplane component of the positions
-    asecell.positions[:, :2] = asecell.get_positions(wrap=True)[:, :2]
+    asecell.pbc = [True,True,False]
+    asecell.positions = asecell.get_positions(wrap=True)
+    asecell.pbc = [True,True,True]
     return asecell
 
 
