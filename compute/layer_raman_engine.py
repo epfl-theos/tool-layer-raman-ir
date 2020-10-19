@@ -209,10 +209,18 @@ def construct_all_matrices(asecell, layer_indices, transformation, symprec=1e-3)
     """
     # TODO: for now it works only when the transformation matrix
     # has no inversion along z
+    num_layers = len(layer_indices)
     # define the bilayer by taking the first two layers
     # (layers are already ordered according to their projection
     #  along the stacking direction)
-    bilayer = asecell[layer_indices[0]] + asecell[layer_indices[1]]
+    if num_layers > 1:
+        bilayer = asecell[layer_indices[0]] + asecell[layer_indices[1]]
+    else:
+        # If there is only one layer we need to consider the bilayer
+        # constructed with its periodic copy
+        bilayer = asecell[layer_indices[0]]
+        bilayer.translate(asecell.cell[2])
+        bilayer += asecell[layer_indices[0]]
     # put the third lattice of the bilayer orthogonal to the layers
     # and with a large magnitude
     bilayer.cell[2] = [
@@ -298,7 +306,7 @@ def construct_all_matrices(asecell, layer_indices, transformation, symprec=1e-3)
     matrix_lists = []
     matrix_dicts = [matrix_dict]
     this_transformation = np.identity(3)
-    for _ in range(len(layer_indices)):
+    for _ in range(num_layers):
         m_dict, m_list = rotate_and_simplify_matrix(matrix_dict, this_transformation)
         matrix_lists.append(m_list)
         for orig_dict in matrix_dicts:
