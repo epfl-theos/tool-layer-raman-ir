@@ -99,7 +99,7 @@ def process_structure_core(
     else:
         rot_latex = (
             "R = "
-            "\\left(\\begin{array}{ccc}%10.5f & %10.5f & %10.5f \\\\ %10.5f & %10.5f & %10.5f \\\\ %10.5f & %10.5f & %10.5f \\end{array}\\right)"
+            "\\left(\\begin{array}{ccc}%+10.5f & %+10.5f & %+10.5f \\\\ %+10.5f & %+10.5f & %+10.5f \\\\ %+10.5f & %+10.5f & %+10.5f \\end{array}\\right)"
             % (
                 rot[0, 0],
                 rot[0, 1],
@@ -114,39 +114,41 @@ def process_structure_core(
         )
 
     if transl is None:
-        transl_z_latex = None
+        transl_latex = None
     else:
-        transl_z_latex = "\\tau_z = %10.5f" % (transl[2])
-
+        transl_latex = (
+            "\\tau = \\left(\\begin{array}{c}%+10.5f \\\\%+10.5f \\\\%+10.5f \\end{array}\\right)\\text{\\AA}"
+            % (transl[0], transl[1], transl[2])
+        )
     return_data["common_layers_search"] = {
         "rot_latex": rot_latex,
-        "transl_z_latex": transl_z_latex,
+        "transl_latex": transl_latex,
         "message": message,
     }
 
     all_dicts, all_matrices = construct_all_matrices(
         rotated_asecell, layer_indices, transformation=rot
     )
-    
+
     fc_dict = construct_force_constant_dict(all_dicts, all_matrices)
 
     app_data = {
         "structure": structure,
         "symmetryInfo": {},
-        "forceConstants": fc_dict, 
-#        {
-#            # TO BE FIXED
-#            "description": "K^1_{\\alpha\\beta} = "
-#            "\\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right), "
-#            "K^2_{\\alpha\\beta} = \\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right)",
-#            # TO BE FIXED
-#            "variables": [
-#                {"name": "C111", "displayName": "a", "value": 1.0},
-#                {"name": "C133", "displayName": "c", "value": 2.0},
-#            ],
-#            # Check here what should actually be done
-#            "matrices": [all_matrices],
-#        },
+        "forceConstants": fc_dict,
+        #        {
+        #            # TO BE FIXED
+        #            "description": "K^1_{\\alpha\\beta} = "
+        #            "\\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right), "
+        #            "K^2_{\\alpha\\beta} = \\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right)",
+        #            # TO BE FIXED
+        #            "variables": [
+        #                {"name": "C111", "displayName": "a", "value": 1.0},
+        #                {"name": "C133", "displayName": "c", "value": 2.0},
+        #            ],
+        #            # Check here what should actually be done
+        #            "matrices": [all_matrices],
+        #        },
     }
     # Add the JSON to the return_data
     return_data["app_data_json"] = json.dumps(app_data)
@@ -157,6 +159,7 @@ def process_structure_core(
     logger.debug(json.dumps(return_data, indent=2, sort_keys=True))
     return return_data
 
+
 def construct_force_constant_dict(matrix_dicts, matrix_lists):
     """
     Construct the dictionary with force constant information
@@ -164,23 +167,28 @@ def construct_force_constant_dict(matrix_dicts, matrix_lists):
     fc_dict = {"matrices": matrix_lists}
     fc_dict.update({"variables": []})
     var_mapping = {}
-    for i, v in enumerate(sorted({k for m_dict in matrix_dicts for k in m_dict.keys()})):
-        fc_dict["variables"].append({
-            "name": v, 
-            "displayName": string.ascii_lowercase[i], 
-            "value": matrix_initialization(v),
-        }
+    for i, v in enumerate(
+        sorted({k for m_dict in matrix_dicts for k in m_dict.keys()})
+    ):
+        fc_dict["variables"].append(
+            {
+                "name": v,
+                "displayName": string.ascii_lowercase[i],
+                "value": matrix_initialization(v),
+            }
         )
         var_mapping.update({v: string.ascii_lowercase[i]})
-    description = "" 
+    description_list = []
     for ifc, matrix_dict in enumerate(matrix_dicts):
+        description = ""
         matrix_dict, matrix = rotate_and_simplify_matrix(matrix_dict, np.identity(3))
         matrix = replace_symbols_with_values(matrix, var_mapping)
-        description += "K^{}".format(ifc+1) + "_{\\alpha\\beta} = "
+        description += "K^{}".format(ifc + 1) + "_{\\alpha\\beta} = "
         description += "\\left(\\begin{array}{ccc}"
         for row in matrix:
             row_text = ""
-            for entry in row:
+            for entry_idx, entry in enumerate(row):
+                last = entry_idx == len(row) - 1
                 if isinstance(entry, Iterable):
                     for variable, factor in entry:
                         if abs(factor - 1.0) < 1e-4:
@@ -193,13 +201,16 @@ def construct_force_constant_dict(matrix_dicts, matrix_lists):
                     if abs(entry) < 1e-4:
                         row_text += " 0 "
                     else:
-                        row_text += " {:5.3f} ".format(entry) 
-                row_text += " & "
-            row_text = row_text[:-2] +  "\\\\ "  
-            description += row_text          
-        description += "\\end{array}\\right), "
-    fc_dict.update({"description": description[:-2]})
+                        row_text += " {:5.3f} ".format(entry)
+                if not last:
+                    row_text += " & "
+            row_text += "\\\\ "
+            description += row_text
+        description += "\\end{array}\\right)"
+        description_list.append(description)
+    fc_dict.update({"description": ",\\quad ".join(description_list)})
     return fc_dict
+
 
 def construct_all_matrices(asecell, layer_indices, transformation, symprec=1e-3):
     """
@@ -311,7 +322,7 @@ def construct_all_matrices(asecell, layer_indices, transformation, symprec=1e-3)
         matrix_lists.append(m_list)
         for orig_dict in matrix_dicts:
             for k, v in orig_dict.items():
-                if np.linalg.norm(np.array(m_dict[k]) - np.array(v)) > 1e-3:                
+                if np.linalg.norm(np.array(m_dict[k]) - np.array(v)) > 1e-3:
                     matrix_dicts.append(m_dict)
                     break
         this_transformation = np.matmul(transformation, this_transformation)
