@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-
+import numpy as np
 
 def replace_symbols_with_values(list_of_lists, replacements):
     """
@@ -64,3 +64,17 @@ def get_block_coordinates(i, j, block_size=3):
         slice(block_size * i, block_size * (i + 1)),
         slice(block_size * j, block_size * (j + 1)),
     )
+
+def matrix_initialization(variable):
+    """
+    Initialize the value of a varible inside a 
+    force constant matrix, assuming the variable name
+    has the form 'Cnab' where n is an integer identifying
+    a set of independent variables and a and b identify 
+    the directions (1,2 or 3)
+    """
+    if variable[-2:] == "33":
+        return np.round(5.0 * (1.0 + np.random.rand()), 2)
+    if variable[-1] == variable[-2]:
+        return  np.round(1.0 + 4.0 * np.random.rand(), 2)
+    return   np.round(-1.0 + 2 * np.random.rand(), 2)

@@ -1,5 +1,6 @@
 import json
 import time
+import string
 
 import ase
 import ase.io
@@ -7,13 +8,15 @@ import numpy as np
 from ase.data import chemical_symbols
 import spglib
 
+from collections.abc import Iterable
+
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 from .utils.structures import ase_from_tuple, get_xsf_structure, tuple_from_ase
 from tools_barebone import get_tools_barebone_version
 from .utils.layers import find_layers, find_common_transformation
-
+from .utils.matrices import matrix_initialization, replace_symbols_with_values
 
 # Version of this tool
 __version__ = "20.09.0"
@@ -121,26 +124,29 @@ def process_structure_core(
         "message": message,
     }
 
-    all_matrices = construct_all_matrices(
+    all_dicts, all_matrices = construct_all_matrices(
         rotated_asecell, layer_indices, transformation=rot
     )
+    
+    fc_dict = construct_force_constant_dict(all_dicts, all_matrices)
 
     app_data = {
         "structure": structure,
         "symmetryInfo": {},
-        "forceConstants": {
-            # TO BE FIXED
-            "description": "K^1_{\\alpha\\beta} = "
-            "\\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right), "
-            "K^2_{\\alpha\\beta} = \\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right)",
-            # TO BE FIXED
-            "variables": [
-                {"name": "C111", "displayName": "a", "value": 1.0},
-                {"name": "C133", "displayName": "c", "value": 2.0},
-            ],
-            # Check here what should actually be done
-            "matrices": [all_matrices],
-        },
+        "forceConstants": fc_dict, 
+#        {
+#            # TO BE FIXED
+#            "description": "K^1_{\\alpha\\beta} = "
+#            "\\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right), "
+#            "K^2_{\\alpha\\beta} = \\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right)",
+#            # TO BE FIXED
+#            "variables": [
+#                {"name": "C111", "displayName": "a", "value": 1.0},
+#                {"name": "C133", "displayName": "c", "value": 2.0},
+#            ],
+#            # Check here what should actually be done
+#            "matrices": [all_matrices],
+#        },
     }
     # Add the JSON to the return_data
     return_data["app_data_json"] = json.dumps(app_data)
@@ -151,6 +157,49 @@ def process_structure_core(
     logger.debug(json.dumps(return_data, indent=2, sort_keys=True))
     return return_data
 
+def construct_force_constant_dict(matrix_dicts, matrix_lists):
+    """
+    Construct the dictionary with force constant information
+    """
+    fc_dict = {"matrices": matrix_lists}
+    fc_dict.update({"variables": []})
+    var_mapping = {}
+    for i, v in enumerate(sorted({k for m_dict in matrix_dicts for k in m_dict.keys()})):
+        fc_dict["variables"].append({
+            "name": v, 
+            "displayName": string.ascii_lowercase[i], 
+            "value": matrix_initialization(v),
+        }
+        )
+        var_mapping.update({v: string.ascii_lowercase[i]})
+    description = "" 
+    for ifc, matrix_dict in enumerate(matrix_dicts):
+        matrix_dict, matrix = rotate_and_simplify_matrix(matrix_dict, np.identity(3))
+        matrix = replace_symbols_with_values(matrix, var_mapping)
+        description += "K^{}".format(ifc+1) + "_{\\alpha\\beta} = "
+        description += "\\left(\\begin{array}{ccc}"
+        for row in matrix:
+            row_text = ""
+            for entry in row:
+                if isinstance(entry, Iterable):
+                    for variable, factor in entry:
+                        if abs(factor - 1.0) < 1e-4:
+                            row_text += variable
+                        elif abs(factor + 1.0) < 1e-4:
+                            row_text += " - " + variable
+                        else:
+                            row_text += " {:5.3f} ".format(factor) + variable
+                else:
+                    if abs(entry) < 1e-4:
+                        row_text += " 0 "
+                    else:
+                        row_text += " {:5.3f} ".format(entry) 
+                row_text += " & "
+            row_text += "\\\\ "  
+            description += row_text          
+        description += "\\end{array}\\right), "
+    fc_dict.update({"description": description})
+    return fc_dict
 
 def construct_all_matrices(asecell, layer_indices, transformation, symprec=1e-3):
     """
@@ -246,8 +295,19 @@ def construct_all_matrices(asecell, layer_indices, transformation, symprec=1e-3)
     # Under the assumption that this transformation does not flip the z-axis, this
     # is also the transformation that brings a bilayer into the next one.
     # TODO: generalize to take into account the case of transformations that flip z
-    matrix_list = rotate_and_simplify_matrix(matrix_dict, transformation)
-    return matrix_list
+    matrix_lists = []
+    matrix_dicts = [matrix_dict]
+    this_transformation = np.identity(3)
+    for _ in range(len(layer_indices)):
+        m_dict, m_list = rotate_and_simplify_matrix(matrix_dict, this_transformation)
+        matrix_lists.append(m_list)
+        for orig_dict in matrix_dicts:
+            for k, v in orig_dict.items():
+                if np.linalg.norm(np.array(m_dict[k]) - np.array(v)) > 1e-3:                
+                    matrix_dicts.append(m_dict)
+                    break
+        this_transformation = np.matmul(transformation, this_transformation)
+    return matrix_dicts, matrix_lists
 
 
 def rotate_and_simplify_matrix(matrix_dict, transformation):
@@ -288,4 +348,4 @@ def rotate_and_simplify_matrix(matrix_dict, transformation):
             else:
                 row.append(entry)
         matrix_list.append(row)
-    return matrix_list
+    return new_matrix_dict, matrix_list
