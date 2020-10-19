@@ -1,6 +1,7 @@
 import numpy as np
 from ase.neighborlist import NeighborList
 from pymatgen.analysis.structure_matcher import StructureMatcher
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 from pymatgen.core.operations import SymmOp
 from pymatgen.io.ase import AseAtomsAdaptor
 
@@ -330,6 +331,27 @@ def find_common_transformation(
 
     # TODO: TO COMPLETE HERE
 
+    # if the transformation involves a flip in the z-direction
+    # we need to check if by combining it with a bulk symmetry
+    # that leaves the first layer at the origin invariant
+    # we get a transformation that does NOT flip z
+    # TODO: can we use instead the symmetry operations of the monolayer?
+    if transformation01[0][2,2] < 0:
+        # Get the spacegroup of the bulk
+        bulk = adaptor.get_structure(asecell)
+        spg0 = SpacegroupAnalyzer(bulk, symprec=1e-2)
+        for op in spg0.get_symmetry_operations(cartesian=True):
+            # as the first layer is at the origin we are interested
+            # only in fractional translations along z that are zero
+            if np.abs(op.translation_vector[2]) > 1e-3 :
+                continue 
+            affine_prod = np.dot(op01.affine_matrix, op.affine_matrix)
+            if affine_prod[2,2] > 0:
+                tr01 = affine_prod[0:3][:,3]
+                rot01 = affine_prod[0:3][:, 0:3]
+                op01 = SymmOp.from_rotation_and_translation(rot01, tr01)
+                print (rot01,tr01)
+                break
     # check that the same operation brings each layer into the next one
     # we need to check not only the symmetry operation found by pymatgen,
     # but also its combination with any of the point group operations of
@@ -337,8 +359,14 @@ def find_common_transformation(
     for il in range(1, num_layers):
         layer0 = layers[il]
         layer1 = layers[(il + 1) % num_layers]
-        # TODO: before transforming, translate back the two layers
-        # by il * cell[2]/num_layers
+        # translate back the two layers by il * cell[2]/num_layers
+        # if layer1 is the layer num_layer + 1 we need to translate it 
+        # by a full lattice vector
+        layer0.translate(-il * asecell.cell[2] / num_layers)
+        layer1.translate((
+            - il  * asecell.cell[2] / num_layers
+            + np.floor( (il + 1.0) / num_layers) * asecell.cell[2]
+        ))
         # the transformed positions of the atoms in the first layer
         pos0 = op01.operate_multi(layer0.positions)
         # that should be identical to the ones of the second layer
