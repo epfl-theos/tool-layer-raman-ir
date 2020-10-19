@@ -195,10 +195,10 @@ def construct_force_constant_dict(matrix_dicts, matrix_lists):
                     else:
                         row_text += " {:5.3f} ".format(entry) 
                 row_text += " & "
-            row_text += "\\\\ "  
+            row_text = row_text[:-2] +  "\\\\ "  
             description += row_text          
         description += "\\end{array}\\right), "
-    fc_dict.update({"description": description})
+    fc_dict.update({"description": description[:-2]})
     return fc_dict
 
 def construct_all_matrices(asecell, layer_indices, transformation, symprec=1e-3):
