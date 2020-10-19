@@ -314,7 +314,7 @@ def find_common_transformation(
         # TODO: Use a proper combination of stol instead! Note however that the ?tol are
         # in fractional coordinates
         # NOTE: This test is not going to work in some cases, see below!
-        assert np.abs(z_shift - required_z_shift_per_atom[atom_idx]) < 1.0e-5
+        assert np.abs(z_shift - required_z_shift_per_atom[atom_idx]) < 1.0e-4
 
     # Fix the translation vector to properly include.
     # TODO: CHECK IF THIS IS THE CORRECT THING TO DO; ALSO, BELOW,
