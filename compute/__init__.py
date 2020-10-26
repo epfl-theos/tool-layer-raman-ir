@@ -13,6 +13,8 @@ from .utils.matrices import (
     replace_linear_combinations,
     get_block_coordinates,
 )
+from .utils.optics import assign_representation, INFRARED, RAMAN, BACKSCATTERING
+from .utils.pointgroup import Pointgroup
 from .utils.response import make_response, FlaskRedirectException
 
 
@@ -222,14 +224,14 @@ def get_modes():  # pylint: disable=too-many-locals
         K_matrix = np.zeros((num_layers * 3, num_layers * 3))
 
         for block_idx in range(num_layers):
-            # Up interaction
+            # Interaction with upper layer
             if block_idx < num_layers - 1:  # Not in the last layer
                 current_block = numeric_matrices[block_idx % len(numeric_matrices)]
                 K_matrix[get_block_coordinates(block_idx, block_idx)] += current_block
                 K_matrix[
                     get_block_coordinates(block_idx + 1, block_idx)
                 ] -= current_block
-            # Down interaction
+            # Interaction with lower layer
             if block_idx > 0:  # Not in the first layer
                 previous_block = numeric_matrices[
                     (block_idx - 1) % len(numeric_matrices)
@@ -239,23 +241,48 @@ def get_modes():  # pylint: disable=too-many-locals
                     get_block_coordinates(block_idx - 1, block_idx)
                 ] -= previous_block
 
-        eigvals, _ = np.linalg.eigh(K_matrix)  # using only eigenvalues for now
-
+        # Get frequencies (eigvals) and eigenvectors (for mode analysis)
+        eigvals, eigvects = np.linalg.eigh(K_matrix)
         # The first three should be acoustic i.e. almost zero; the rest should be positive
         assert np.sum(np.abs(eigvals[:3])) < 1.0e-10
 
+        # TODO! Get the correct pointgroup name! (might depend on parity)
+        # Maybe have this transferred from the API?
+        pointgroup = Pointgroup("C2v")
+
+        is_infrared = []
+        is_raman = []
+        is_back_scattering = []
+        irrep_names = []
+        for eigvec in eigvects.T[3:]:  # Skip the first three acoustic modes
+            # First axis: layer displacement; second axis: xyz
+            # Note: the basis-set order is layer1_x, layer1_y, layer1_z, layer2_x, layer2_y, ...
+            displacements = eigvec.reshape((num_layers, 3))
+
+            # TODO: check!
+            # transormation is here always the identity matrix - in a more general code, it is used
+            # to rotate the stacking axis along z
+            irrep_name, activity = assign_representation(
+                displacements, pointgroup, transformation=np.identity(3)
+            )
+            is_infrared.append(activity[INFRARED])
+            is_raman.append(activity[RAMAN])
+            # Note: this can be true only when isRamanActive is True, as this means
+            # "visible in Raman spectroscopy in a back-scattering geometry".
+            # We don't check it, it should be the `assign_representation` function to correctly handle all cases
+            is_back_scattering.append(activity[BACKSCATTERING])
+            irrep_names.append(irrep_name)
+
+        # 3(N-1) modes, with x equal to the current number of layers (reminder: we are in a loop over num_layers)
         plot_data_x += [num_layers] * 3 * (num_layers - 1)
         plot_data_y += eigvals[3:].tolist()
 
     return_data = {
         "x": plot_data_x,
         "y": plot_data_y,
-        # TODO: THIS IS RANDOM!!! TO BE FIXED
-        "isBackScattering": [
-            idx % 2 < 1 and (idx % 4 < 2) for idx in range(len(plot_data_x))
-        ],  # If it's not Raman active, then this is always False
-        "isRamanActive": [idx % 4 < 2 for idx in range(len(plot_data_x))],
-        "isInfraredActive": [idx % 8 < 4 for idx in range(len(plot_data_x))],
+        "isBackScattering": is_back_scattering,
+        "isRamanActive": is_raman,
+        "isInfraredActive": is_infrared,
     }
 
     ## LOGIC END ##
