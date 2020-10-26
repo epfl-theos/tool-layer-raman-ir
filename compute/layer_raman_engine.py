@@ -134,21 +134,13 @@ def process_structure_core(
 
     app_data = {
         "structure": structure,
-        "symmetryInfo": {},
+        # TODO: pass the two pointgroups, DO NOT HARDCODE THEM!
+        "pointgroupEven": 20,
+        "pointgroupOdd": 26,
+        # This will be used to decide the mimimum number of layers to show - we don't want to ge below this,
+        # as the symmetries might be more.
+        "numLayersBulk": len(layer_indices),
         "forceConstants": fc_dict,
-        #        {
-        #            # TO BE FIXED
-        #            "description": "K^1_{\\alpha\\beta} = "
-        #            "\\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right), "
-        #            "K^2_{\\alpha\\beta} = \\left(\\begin{array}{ccc}a & 0 & 0 \\\\ 0 & a & 0 \\\\ 0 & 0 & c \\end{array}\\right)",
-        #            # TO BE FIXED
-        #            "variables": [
-        #                {"name": "C111", "displayName": "a", "value": 1.0},
-        #                {"name": "C133", "displayName": "c", "value": 2.0},
-        #            ],
-        #            # Check here what should actually be done
-        #            "matrices": [all_matrices],
-        #        },
     }
     # Add the JSON to the return_data
     return_data["app_data_json"] = json.dumps(app_data)

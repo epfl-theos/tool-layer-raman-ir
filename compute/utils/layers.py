@@ -291,7 +291,6 @@ def find_common_transformation(
     )
     # translation vector in Cartesian coordinates
     tr01 = np.matmul(common_lattice.matrix.T, transformation01[1])
-    print(transformation01)
     # this is the "symmetry" operation that brings layer0 into layer1
     op01 = SymmOp.from_rotation_and_translation(rot01, tr01)
 
@@ -310,6 +309,7 @@ def find_common_transformation(
 
     cell_z_dir = common_lattice.matrix[2, 2]
     required_scaled_z_shift_per_atom = required_z_shift_per_atom / cell_z_dir
+
     print(required_scaled_z_shift_per_atom)
 
     z_shift = required_z_shift_per_atom[0]
@@ -325,7 +325,7 @@ def find_common_transformation(
     # by shifting down, applying, and shifting up again.
     # tr01[2] += z_shift
 
-    print("~", tr01)
+    ### print("~", tr01)
 
     # TODO: check if they are all the same, if not FIX them (either here or before
     # by making sure that layers are properly defined even without using PBC along z
@@ -353,7 +353,7 @@ def find_common_transformation(
                 tr01 = affine_prod[0:3][:, 3]
                 rot01 = affine_prod[0:3][:, 0:3]
                 op01 = SymmOp.from_rotation_and_translation(rot01, tr01)
-                print(rot01, tr01)
+                ### print(rot01, tr01)
                 break
     # check that the same operation brings each layer into the next one
     # we need to check not only the symmetry operation found by pymatgen,

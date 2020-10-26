@@ -22,7 +22,6 @@ def symmetry_operation(matrix, displacements):
         return new_displacements
     if abs(matrix[2, 2] + 1) < tol:
         return new_displacements[::-1, :]
-    print(matrix)
     raise ValueError(
         ("Transformation not allowed as it does not leave the layers invariant!")
     )

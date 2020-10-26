@@ -14,7 +14,7 @@ from .utils.matrices import (
     get_block_coordinates,
 )
 from .utils.optics import assign_representation, INFRARED, RAMAN, BACKSCATTERING
-from .utils.pointgroup import Pointgroup
+from .utils.pointgroup import Pointgroup, POINTGROUP_MAPPING
 from .utils.response import make_response, FlaskRedirectException
 
 
@@ -152,14 +152,13 @@ def process_example_structure():
 
 
 @blueprint.route("/api/modes/", methods=["POST"])
-def get_modes():  # pylint: disable=too-many-locals
+def get_modes():  # pylint: disable=too-many-locals,too-many-statements,too-many-branches
     if flask.request.method != "POST":
         return make_response("Only POST method allowed", 405)
 
     # If not present, assume JSON, even if by default it is usually application/x-www-form-urlencoded
     content_type = flask.request.headers.get("Content-Type", "application/json")
     if content_type.partition(";")[0].strip() != "application/json":
-        print(content_type.partition(";")[0].strip())
         return make_response(
             "Invalid request, Content-Type must be 'application/json' instead of '{}'".format(
                 content_type
@@ -192,6 +191,40 @@ def get_modes():  # pylint: disable=too-many-locals
     except KeyError:
         return make_response("Invalid request, missing matrices", 400)
 
+    try:
+        num_layers_bulk = int(data["numLayersBulk"])
+        if num_layers_bulk < 1:
+            raise ValueError
+    except (KeyError, ValueError):
+        return make_response(
+            "Invalid request, numLayersBulk value not passed or not in valid range", 400
+        )
+
+    try:
+        pointgroupEven = int(data["pointgroupEven"])
+        if pointgroupEven < 1 or pointgroupEven > 32:
+            raise KeyError
+    except (KeyError, ValueError):
+        return make_response(
+            "Invalid request, pointgroupEven value not passed or not in valid range",
+            400,
+        )
+
+    try:
+        pointgroupOdd = int(data["pointgroupOdd"])
+        if pointgroupOdd < 1 or pointgroupOdd > 32:
+            raise KeyError
+    except (KeyError, ValueError):
+        return make_response(
+            "Invalid request, pointgroupOdd value not passed or not in valid range", 400
+        )
+
+    print("Valid request received")
+
+    # at least num_layers_bulk, but also at least 2 layers (otherwise for a single layer we only
+    # see the trivial acoustic modes)
+    min_num_layers = max(2, num_layers_bulk)
+
     ## an example of validation - to decide if we want to do it!
     # if 'C111' not in force_constant_params or force_constant_params['C111'] < 0:
     #    return make_response("missing or invalid C111", 400)
@@ -207,10 +240,6 @@ def get_modes():  # pylint: disable=too-many-locals
     ## [['C111', -0.5], ['C112', -0.5]] = -0.5 * C111 - 0.5 * C112
     numeric_matrices = replace_linear_combinations(numeric_matrices)
 
-    # print(symbolic_matrices)
-    # print(force_constant_params)
-    # print(numeric_matrices)
-
     ## LOGIC START ##
 
     # TODO: check, this is just a first attempt
@@ -220,7 +249,7 @@ def get_modes():  # pylint: disable=too-many-locals
     plot_data_x = []
     plot_data_y = []
     # TODO: add layer mass here should be a constant for all layers! and fix units
-    for num_layers in range(2, max_layers + 1):
+    for num_layers in range(min_num_layers, max_layers + 1):
         K_matrix = np.zeros((num_layers * 3, num_layers * 3))
 
         for block_idx in range(num_layers):
@@ -246,9 +275,9 @@ def get_modes():  # pylint: disable=too-many-locals
         # The first three should be acoustic i.e. almost zero; the rest should be positive
         assert np.sum(np.abs(eigvals[:3])) < 1.0e-10
 
-        # TODO! Get the correct pointgroup name! (might depend on parity)
-        # Maybe have this transferred from the API?
-        pointgroup = Pointgroup("C2v")
+        pointgroup_number = pointgroupOdd if num_layers % 2 else pointgroupEven
+        pointgroup_name = POINTGROUP_MAPPING[pointgroup_number][2]
+        pointgroup = Pointgroup(pointgroup_name)
 
         is_infrared = []
         is_raman = []
@@ -283,8 +312,11 @@ def get_modes():  # pylint: disable=too-many-locals
         "isBackScattering": is_back_scattering,
         "isRamanActive": is_raman,
         "isInfraredActive": is_infrared,
+        "irrepNames": irrep_names,
     }
 
     ## LOGIC END ##
+
+    print("Valid request processed")
 
     return flask.jsonify(return_data)

@@ -155,7 +155,9 @@ var app = new Vue({
                     _.map(vueApp.appData.forceConstants.variables, function(variable) {return variable['value'];})
                 ),
                 matrices: vueApp.appData.forceConstants.matrices,
-                symmetryInfo: vueApp.appData.symmetryInfo,
+                pointgroupEven: vueApp.appData.pointgroupEven,
+                pointgroupOdd: vueApp.appData.pointgroupOdd,
+                numLayersBulk: vueApp.appData.numLayersBulk,
                 maxLayers: vueApp.maxLayers,
                 xmin: xmin,
                 xmax: xmax
@@ -219,7 +221,7 @@ var app = new Vue({
                     ...
                 }
             */
-            var seriesWithData = _.chain([data.x, data.y, data.isBackScattering, data.isRamanActive, data.isInfraredActive])
+            var seriesWithData = _.chain([data.x, data.y, data.isBackScattering, data.isRamanActive, data.isInfraredActive, data.irrepNames])
             .unzip()
             .groupBy(function(point) {
                 return (
@@ -238,7 +240,8 @@ var app = new Vue({
                         meta: {
                             isBackScattering: singlePoint[2],
                             isRamanActive: singlePoint[3],
-                            isInfraredActive: singlePoint[4]
+                            isInfraredActive: singlePoint[4],
+                            irrepName: singlePoint[5]                            
                         }};
                 })
             })
@@ -358,7 +361,7 @@ var app = new Vue({
                         },
                         tooltip: {
                             headerFormat: '<b>{series.name}</b><br>',
-                            pointFormat: 'N={point.x}<br>Frequency={point.y}<br>isBackScattering={point.meta.isBackScattering}'
+                            pointFormat: 'N={point.x}<br>Frequency={point.y}<br>isBackScattering={point.meta.isBackScattering}<br>Irrep name: {point.meta.irrepName}'
                         }
                     }
                 },

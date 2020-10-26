@@ -7,6 +7,44 @@ from ase.quaternions import Quaternion
 import copy
 
 
+POINTGROUP_MAPPING = [
+    (0, "", ""),  # We put this so we can directly use indexing
+    (1, "1", "C1"),
+    (2, "-1", "Ci"),
+    (3, "2", "C2"),
+    (4, "m", "Cs"),
+    (5, "2/m", "C2h"),
+    (6, "222", "D2"),
+    (7, "mm2", "C2v"),
+    (8, "mmm", "D2h"),
+    (9, "4", "C4"),
+    (10, "-4", "S4"),
+    (11, "4/m", "C4h"),
+    (12, "422", "D4"),
+    (13, "4mm", "C4v"),
+    (14, "-42m", "D2d"),
+    (15, "4/mmm", "D4h"),
+    (16, "3", "C3"),
+    (17, "-3", "C3i"),
+    (18, "32", "D3"),
+    (19, "3m", "C3v"),
+    (20, "-3m", "D3d"),
+    (21, "6", "C6"),
+    (22, "-6", "C3h"),
+    (23, "6/m", "C6h"),
+    (24, "622", "D6"),
+    (25, "6mm", "C6v"),
+    (26, "-6m2", "D3h"),
+    (27, "6/mmm", "D6h"),
+    # Below are cubic, will not be really used in this code but we keep them for completeness
+    (28, "23", "T"),
+    (29, "m-3", "Th"),
+    (30, "432", "O"),
+    (31, "-43m", "Td"),
+    (32, "m-3m", "Oh"),
+]
+
+
 def rotation(axis, angle):
     """ 
     Generate the rotation matrix 
