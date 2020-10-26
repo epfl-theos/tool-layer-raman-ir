@@ -160,7 +160,9 @@ def process_structure_core(
     return return_data
 
 
-def construct_force_constant_dict(matrix_dicts, matrix_lists):
+def construct_force_constant_dict(  # pylint: disable=too-many-locals,too-many-nested-blocks,too-many-locals
+    matrix_dicts, matrix_lists
+):
     """
     Construct the dictionary with force constant information
     """
@@ -212,7 +214,9 @@ def construct_force_constant_dict(matrix_dicts, matrix_lists):
     return fc_dict
 
 
-def construct_all_matrices(asecell, layer_indices, transformation, symprec=1e-3):
+def construct_all_matrices(  # pylint: disable=too-many-locals
+    asecell, layer_indices, transformation, symprec=1e-3
+):
     """
     Construct the interlayer force constant matrices from the symmetries 
     of the bilayer and the trasformation matrix that brings EACH layer into

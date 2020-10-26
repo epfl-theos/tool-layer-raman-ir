@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 import numpy as np
 
+
 def replace_symbols_with_values(list_of_lists, replacements):
     """
     Take iteratively a list of lists (at any depth level) and replace strings with
@@ -65,16 +66,21 @@ def get_block_coordinates(i, j, block_size=3):
         slice(block_size * j, block_size * (j + 1)),
     )
 
+
 def matrix_initialization(variable):
     """
     Initialize the value of a varible inside a 
     force constant matrix, assuming the variable name
     has the form 'Cnab' where n is an integer identifying
     a set of independent variables and a and b identify 
-    the directions (1,2 or 3)
+    the directions (1,2 or 3).
+
+    Return a random number between 5 and 10 for the ab=33 component,
+    a random number between 1 and 4 for the 11 and 12 components,
+    and a random number between -1 and 1 for the off-diagonal components.s
     """
     if variable[-2:] == "33":
         return np.round(5.0 * (1.0 + np.random.rand()), 2)
     if variable[-1] == variable[-2]:
-        return  np.round(1.0 + 4.0 * np.random.rand(), 2)
-    return   np.round(-1.0 + 2 * np.random.rand(), 2)
+        return np.round(1.0 + 4.0 * np.random.rand(), 2)
+    return np.round(-1.0 + 2 * np.random.rand(), 2)

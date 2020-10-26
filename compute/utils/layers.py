@@ -10,7 +10,9 @@ from .linalg import shortest_vector_index, gauss_reduce
 from .map_positions import are_same_except_order
 
 
-def find_layers(asecell, factor=1.1):  # pylint: disable=too-many-locals
+def find_layers(  # pylint: disable=too-many-locals,too-many-statements,too-many-branches
+    asecell, factor=1.1
+):
     """
     Obtains all subunits of a given structure by looking
     at the connectivity of the bonds.
@@ -113,10 +115,11 @@ def find_layers(asecell, factor=1.1):  # pylint: disable=too-many-locals
         # order layers with increasing coordinate along the stacking direction
         layer_indices = [layer_indices[il] for il in stack_order]
 
-        # Move the atoms along the third lattice vector so that 
+        # Move the atoms along the third lattice vector so that
         # the first layer has zero projection along the vertical direction
         trans_vector = -(
-            stack_proj[stack_order[0]] / np.dot(vert_direction, rotated_asecell.cell[2]) 
+            stack_proj[stack_order[0]]
+            / np.dot(vert_direction, rotated_asecell.cell[2])
             * rotated_asecell.cell[2]
         )
         rotated_asecell.translate(trans_vector)
@@ -213,7 +216,7 @@ def _update_and_rotate_cell(asecell, newcell, layer_indices):
         proj = np.dot(asecell.positions[layer], [0, 0, 1])
         if len(layer_indices) == 1:
             # If there is only a single layer, center the atomic positions
-            asecell.positions[layer] -=  (
+            asecell.positions[layer] -= (
                 proj.mean() / asecell.cell[2, 2] * asecell.cell[2]
             )
         else:
@@ -222,9 +225,9 @@ def _update_and_rotate_cell(asecell, newcell, layer_indices):
                 np.floor(proj.mean() / asecell.cell[2, 2]) * asecell.cell[2]
             )
     # fix also the inplane component of the positions
-    asecell.pbc = [True,True,False]
+    asecell.pbc = [True, True, False]
     asecell.positions = asecell.get_positions(wrap=True)
-    asecell.pbc = [True,True,True]
+    asecell.pbc = [True, True, True]
     return asecell
 
 
@@ -336,21 +339,21 @@ def find_common_transformation(
     # that leaves the first layer at the origin invariant
     # we get a transformation that does NOT flip z
     # TODO: can we use instead the symmetry operations of the monolayer?
-    if transformation01[0][2,2] < 0:
+    if transformation01[0][2, 2] < 0:
         # Get the spacegroup of the bulk
         bulk = adaptor.get_structure(asecell)
         spg0 = SpacegroupAnalyzer(bulk, symprec=1e-2)
         for op in spg0.get_symmetry_operations(cartesian=True):
             # as the first layer is at the origin we are interested
             # only in fractional translations along z that are zero
-            if np.abs(op.translation_vector[2]) > 1e-3 :
-                continue 
+            if np.abs(op.translation_vector[2]) > 1e-3:
+                continue
             affine_prod = np.dot(op01.affine_matrix, op.affine_matrix)
-            if affine_prod[2,2] > 0:
-                tr01 = affine_prod[0:3][:,3]
+            if affine_prod[2, 2] > 0:
+                tr01 = affine_prod[0:3][:, 3]
                 rot01 = affine_prod[0:3][:, 0:3]
                 op01 = SymmOp.from_rotation_and_translation(rot01, tr01)
-                print (rot01,tr01)
+                print(rot01, tr01)
                 break
     # check that the same operation brings each layer into the next one
     # we need to check not only the symmetry operation found by pymatgen,
@@ -360,13 +363,15 @@ def find_common_transformation(
         layer0 = layers[il]
         layer1 = layers[(il + 1) % num_layers]
         # translate back the two layers by il * cell[2]/num_layers
-        # if layer1 is the layer num_layer + 1 we need to translate it 
+        # if layer1 is the layer num_layer + 1 we need to translate it
         # by a full lattice vector
         layer0.translate(-il * asecell.cell[2] / num_layers)
-        layer1.translate((
-            - il  * asecell.cell[2] / num_layers
-            + np.floor( (il + 1.0) / num_layers) * asecell.cell[2]
-        ))
+        layer1.translate(
+            (
+                -il * asecell.cell[2] / num_layers
+                + np.floor((il + 1.0) / num_layers) * asecell.cell[2]
+            )
+        )
         # the transformed positions of the atoms in the first layer
         pos0 = op01.operate_multi(layer0.positions)
         # that should be identical to the ones of the second layer
