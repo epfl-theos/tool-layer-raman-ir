@@ -22,9 +22,11 @@ var app = new Vue({
                 internalName: 'IR_Y+Raman_Y+BackScattering_Y',
                 name: 'Infrared + Raman active (visible in backscattering)',
                 marker: {
-                    symbol: 'diamond'
+                    symbol: 'mycrosscircle',
+                    lineWidth: 2,
+                    fillColor: 'rgba(255, 255, 255, 0)',
+                    lineColor: 'rgb(223, 83, 83)'
                 },
-                color: 'rgba(223, 83, 83, .8)',
                 data: [],
                 dataLabels: {
                     useHTML: true
@@ -34,9 +36,11 @@ var app = new Vue({
                 internalName: 'IR_Y+Raman_Y+BackScattering_N',
                 name: 'Infrared + Raman active (not visible in backscattering)',
                 marker: {
-                    symbol: 'diamond'
+                    symbol: 'mycrosscircle',
+                    lineWidth: 2,
+                    fillColor: 'rgba(255, 255, 255, 0)',
+                    lineColor: 'rgb(55, 126, 184)'
                 },
-                color: 'rgba(55, 126, 184, .8)',
                 data: [],
                 dataLabels: {
                     useHTML: true
@@ -46,9 +50,11 @@ var app = new Vue({
                 internalName: 'IR_Y+Raman_N+BackScattering_Y',
                 name: 'SHOULD_NOT_HAPPEN_Infrared active only (visible in backscattering)',
                 marker: {
-                    symbol: 'triangle'
+                    symbol: 'cross',
+                    lineWidth: 2,
+                    lineColor: 'rgb(223, 83, 83)'
                 },
-                color: 'rgba(223, 83, 83, .8)',
+                color: 'rgb(223, 83, 83)',
                 data: [],
                 dataLabels: {
                     useHTML: true
@@ -58,9 +64,11 @@ var app = new Vue({
                 internalName: 'IR_Y+Raman_N+BackScattering_N',
                 name: 'Infrared active only',
                 marker: {
-                    symbol: 'triangle'
+                    symbol: 'cross',
+                    lineWidth: 2,
+                    lineColor: 'rgb(55, 126, 184)'
                 },
-                color: 'rgba(55, 126, 184, .8)',
+                color: 'rgb(55, 126, 184)',
                 data: [],
                 dataLabels: {
                     useHTML: true
@@ -70,9 +78,11 @@ var app = new Vue({
                 internalName: 'IR_N+Raman_Y+BackScattering_Y',
                 name: 'Raman active only (visible in backscattering)',
                 marker: {
-                    symbol: 'triangle-down'
+                    symbol: 'mycircle',
+                    lineWidth: 2,
+                    fillColor: 'rgba(255, 255, 255, 0)',
+                    lineColor: 'rgb(223, 83, 83)'
                 },
-                color: 'rgba(223, 83, 83, .8)',
                 data: [],
                 dataLabels: {
                     useHTML: true
@@ -82,9 +92,11 @@ var app = new Vue({
                 internalName: 'IR_N+Raman_Y+BackScattering_N',
                 name: 'Raman active only (not visible in backscattering)',
                 marker: {
-                    symbol: 'triangle-down'
+                    symbol: 'mycircle',
+                    lineWidth: 2,
+                    fillColor: 'rgba(255, 255, 255, 0)',
+                    lineColor: 'rgb(55, 126, 184)'
                 },
-                color: 'rgba(55, 126, 184, .8)',
                 data: [],
                 dataLabels: {
                     useHTML: true
@@ -94,9 +106,9 @@ var app = new Vue({
                 internalName: 'IR_N+Raman_N+BackScattering_Y',
                 name: 'SHOULD_NOT_HAPPEN_Inactive (visible in backscattering)',
                 marker: {
-                    symbol: 'circle'
+                    symbol: 'square'
                 },
-                color: 'rgba(223, 83, 83, .8)',
+                color: 'rgb(223, 83, 83)',
                 data: [],
                 dataLabels: {
                     useHTML: true
@@ -106,9 +118,9 @@ var app = new Vue({
                 internalName: 'IR_N+Raman_N+BackScattering_N',
                 name: 'Inactive',
                 marker: {
-                    symbol: 'circle'
+                    symbol: 'square'
                 },
-                color: 'rgba(80, 80, 80, .8)',
+                color: 'rgb(80, 80, 80)',
                 data: [],
                 dataLabels: {
                     useHTML: true
@@ -221,7 +233,14 @@ var app = new Vue({
                     ...
                 }
             */
-            var seriesWithData = _.chain([data.x, data.y, data.isBackScattering, data.isRamanActive, data.isInfraredActive, data.irrepNames])
+            var yPrecision = 4;  // Precision for y-value (the value itself, but mostly for the tooltip)
+            var seriesWithData = _.chain([
+                data.x,
+                _.map(data.y, function (yval) {return Math.round(yval * Math.pow(10, yPrecision)) / Math.pow(10, yPrecision);}),
+                data.isBackScattering,
+                data.isRamanActive,
+                data.isInfraredActive,
+                data.irrepNames])
             .unzip()
             .groupBy(function(point) {
                 return (
@@ -404,12 +423,51 @@ var app = new Vue({
             );
 
             // Define custom symbols
+            window.Highcharts.SVGRenderer.prototype.symbols.mycrosscircle = function (x, y, w, h) {
+                // I do not want to make a cross in a square "w x h", but
+                // I want it to fit inside the circle inscribed in this rectangle/square.
+                var squeeze = (Math.sqrt(2) - 1)/(2. * Math.sqrt(2)); 
+
+                return [
+                    'M', x + w * squeeze, y + h * squeeze,
+                    'L', x + w * (1 - squeeze), y + h * (1 - squeeze),
+                    'M', x + w * (1 - squeeze), y + h * squeeze,
+                    'L', x + w * squeeze, y + h * (1 - squeeze),
+                    'z',
+                    'M', x, y+h/2, 'a', w/2, h/2, 0, 1, 0, w, 0, 'a', w/2, h/2, 0, 1, 0, -w, 0, 'z'
+                ];
+            };
+            if (window.Highcharts.VMLRenderer) {
+                window.Highcharts.VMLRenderer.prototype.symbols.mycrosscircle = window.Highcharts.SVGRenderer.prototype.symbols.mycrosscircle;
+            }
+
+
             window.Highcharts.SVGRenderer.prototype.symbols.cross = function (x, y, w, h) {
-                //console.log('cross', x, y, w, h);
-                return ['M', x, y, 'L', x + w, y + h, 'M', x + w, y, 'L', x, y + h, 'z'];
+                // I do not want to make a cross in a square "w x h", but
+                // I want it to fit inside the circle inscribed in this rectangle/square.
+                var squeeze = (Math.sqrt(2) - 1)/(2. * Math.sqrt(2)); 
+
+                return [
+                    'M', x + w * squeeze, y + h * squeeze,
+                    'L', x + w * (1 - squeeze), y + h * (1 - squeeze),
+                    'M', x + w * (1 - squeeze), y + h * squeeze,
+                    'L', x + w * squeeze, y + h * (1 - squeeze),
+                    'z'];
             };
             if (window.Highcharts.VMLRenderer) {
                 window.Highcharts.VMLRenderer.prototype.symbols.cross = window.Highcharts.SVGRenderer.prototype.symbols.cross;
+            }
+            window.Highcharts.SVGRenderer.prototype.symbols.mycircle = function (x, y, w, h) {
+               /* d="
+                M (CX - R), CY
+                a R,R 0 1,0 (R * 2),0
+                a R,R 0 1,0 -(R * 2),0
+                z
+                "*/
+                return ['M', x, y+h/2, 'a', w/2, h/2, 0, 1, 0, w, 0, 'a', w/2, h/2, 0, 1, 0, -w, 0, 'z'];
+            };
+            if (window.Highcharts.VMLRenderer) {
+                window.Highcharts.VMLRenderer.prototype.symbols.mycircle = window.Highcharts.SVGRenderer.prototype.symbols.mycircle;
             }
 
             // Create the chart, store in app

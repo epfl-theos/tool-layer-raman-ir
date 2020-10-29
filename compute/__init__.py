@@ -248,6 +248,11 @@ def get_modes():  # pylint: disable=too-many-locals,too-many-statements,too-many
 
     plot_data_x = []
     plot_data_y = []
+    is_infrared = []
+    is_raman = []
+    is_back_scattering = []
+    irrep_names = []
+
     # TODO: add layer mass here should be a constant for all layers! and fix units
     for num_layers in range(min_num_layers, max_layers + 1):
         K_matrix = np.zeros((num_layers * 3, num_layers * 3))
@@ -278,15 +283,15 @@ def get_modes():  # pylint: disable=too-many-locals,too-many-statements,too-many
         pointgroup_number = pointgroupOdd if num_layers % 2 else pointgroupEven
         pointgroup_name = POINTGROUP_MAPPING[pointgroup_number][2]
         pointgroup = Pointgroup(pointgroup_name)
+        print(num_layers, pointgroup_name)
 
-        is_infrared = []
-        is_raman = []
-        is_back_scattering = []
-        irrep_names = []
         for eigvec in eigvects.T[3:]:  # Skip the first three acoustic modes
             # First axis: layer displacement; second axis: xyz
             # Note: the basis-set order is layer1_x, layer1_y, layer1_z, layer2_x, layer2_y, ...
             displacements = eigvec.reshape((num_layers, 3))
+
+            if num_layers == 6:
+                print("H", displacements)
 
             # TODO: check!
             # transormation is here always the identity matrix - in a more general code, it is used
@@ -294,6 +299,8 @@ def get_modes():  # pylint: disable=too-many-locals,too-many-statements,too-many
             irrep_name, activity = assign_representation(
                 displacements, pointgroup, transformation=np.identity(3)
             )
+            if num_layers == 6:
+                print(irrep_name, activity)
             is_infrared.append(activity[INFRARED])
             is_raman.append(activity[RAMAN])
             # Note: this can be true only when isRamanActive is True, as this means
