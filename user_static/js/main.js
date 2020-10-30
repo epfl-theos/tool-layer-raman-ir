@@ -380,7 +380,7 @@ var app = new Vue({
                         },
                         tooltip: {
                             headerFormat: '<b>{series.name}</b><br>',
-                            pointFormat: 'N={point.x}<br>Frequency={point.y}<br>isBackScattering={point.meta.isBackScattering}<br>Irrep name: {point.meta.irrepName}'
+                            pointFormat: 'N={point.x}<br>Frequency={point.y}<br>Irrep name: {point.meta.irrepName}'
                         }
                     }
                 },
