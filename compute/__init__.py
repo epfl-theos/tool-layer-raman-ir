@@ -290,17 +290,12 @@ def get_modes():  # pylint: disable=too-many-locals,too-many-statements,too-many
             # Note: the basis-set order is layer1_x, layer1_y, layer1_z, layer2_x, layer2_y, ...
             displacements = eigvec.reshape((num_layers, 3))
 
-            if num_layers == 6:
-                print("H", displacements)
-
             # TODO: check!
             # transormation is here always the identity matrix - in a more general code, it is used
             # to rotate the stacking axis along z
             irrep_name, activity = assign_representation(
                 displacements, pointgroup, transformation=np.identity(3)
             )
-            if num_layers == 6:
-                print(irrep_name, activity)
             is_infrared.append(activity[INFRARED])
             is_raman.append(activity[RAMAN])
             # Note: this can be true only when isRamanActive is True, as this means

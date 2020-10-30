@@ -46,6 +46,11 @@ POINTGROUP_MAPPING = [
 ]
 
 
+def pg_number_from_hm_symbol(hm_symbol):
+    """Return the international number of a given pointgroup, given its H-M symbol."""
+    return [_[1] for _ in POINTGROUP_MAPPING].index(hm_symbol)
+
+
 def rotation(axis, angle):
     """ 
     Generate the rotation matrix 

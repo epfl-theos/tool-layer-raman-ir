@@ -17,7 +17,7 @@ from .utils.structures import ase_from_tuple, get_xsf_structure, tuple_from_ase
 from tools_barebone import get_tools_barebone_version
 from .utils.layers import find_layers, find_common_transformation
 from .utils.matrices import matrix_initialization, replace_symbols_with_values
-from .utils.pointgroup import POINTGROUP_MAPPING
+from .utils.pointgroup import POINTGROUP_MAPPING, pg_number_from_hm_symbol
 
 # Version of this tool
 __version__ = "20.11.0"
@@ -145,21 +145,40 @@ def process_structure_core(
         "message": message,
     }
 
-    all_dicts, all_matrices = construct_all_matrices(
-        rotated_asecell, layer_indices, transformation=rot
-    )
-
-    fc_dict = construct_force_constant_dict(all_dicts, all_matrices)
-
     # This is returned both in the return_data, for the HTML view, and in the app data,
     # to be set as a minimum for the REST API requests
-    return_data["num_layers_lulk"] = len(layer_indices)
+    num_layers_bulk = len(layer_indices)
+    return_data["num_layers_lulk"] = num_layers_bulk
+
+    spg_bilayer = get_symmetry_multilayer(rotated_asecell, layer_indices, num_layers=2)
+    all_dicts, all_matrices = construct_all_matrices(
+        spg_bilayer, num_layers_bulk, transformation=rot
+    )
+    fc_dict = construct_force_constant_dict(all_dicts, all_matrices)
 
     # TODO: compute and pass the four pointgroups, DO NOT HARDCODE THEM!
-    pg_even_number = 20
-    pg_odd_number = 26
-    pg_monolayer_number = 26
-    pg_bilayer_number = 20
+    pg_bilayer_number = pg_number_from_hm_symbol(spg_bilayer.get_point_group_symbol())
+    pg_monolayer_number = pg_number_from_hm_symbol(
+        get_symmetry_multilayer(
+            rotated_asecell, layer_indices, num_layers=1
+        ).get_point_group_symbol()
+    )
+    # Either a finite ML with num_layers_bulk, or num_layers_bulk + 1 (the even between the two)
+    pg_even_number = pg_number_from_hm_symbol(
+        get_symmetry_multilayer(
+            rotated_asecell,
+            layer_indices,
+            num_layers=num_layers_bulk + num_layers_bulk % 2,
+        ).get_point_group_symbol()
+    )
+    # Either a finite ML with num_layers_bulk, or num_layers_bulk + 1 (the odd between the two)
+    pg_odd_number = pg_number_from_hm_symbol(
+        get_symmetry_multilayer(
+            rotated_asecell,
+            layer_indices,
+            num_layers=num_layers_bulk + (num_layers_bulk + 1) % 2,
+        ).get_point_group_symbol()
+    )
 
     return_data["pointgroup_even"] = prepare_pointgroup(pg_even_number)
     return_data["pointgroup_odd"] = prepare_pointgroup(pg_odd_number)
@@ -172,7 +191,7 @@ def process_structure_core(
         "pointgroupOdd": pg_odd_number,
         # This will be used to decide the mimimum number of layers to show - we don't want to ge below this,
         # as the symmetries might be more.
-        "numLayersBulk": len(layer_indices),
+        "numLayersBulk": num_layers_bulk,
         "forceConstants": fc_dict,
     }
     # Add the JSON to the return_data
@@ -239,40 +258,68 @@ def construct_force_constant_dict(  # pylint: disable=too-many-locals,too-many-n
     return fc_dict
 
 
+def get_symmetry_multilayer(asecell, layer_indices, num_layers, symprec=1e-3):
+    """
+    Return the SpacegroupAnalyzer object for a finite multilayer with N layers of the given asecell
+
+    IMPORTANT: the layers must be already ordered according to their projection along the stacking direction
+    """
+    num_layers_bulk = len(layer_indices)
+    # define the N-multilayer by taking the first N layers
+    # (layers are already ordered according to their projection
+    #  along the stacking direction)
+    multilayer = asecell[layer_indices[0]]
+    for layer_idx in range(1, num_layers):
+        z_shift = layer_idx // num_layers_bulk
+        new_layer = asecell[layer_indices[layer_idx % num_layers_bulk]]
+        new_layer.translate(z_shift * asecell.cell[2])
+        multilayer += new_layer
+
+    print(
+        multilayer.cell,
+        [
+            np.linalg.norm(asecell.cell[0]),
+            np.linalg.norm(asecell.cell[1]),
+            np.linalg.norm(asecell.cell[2]),
+        ],
+    )
+    # put the third lattice of the multiayer orthogonal to the layers
+    # and with a large magnitude
+    multilayer.cell[2] = [
+        0,
+        0,
+        3.7
+        * np.max(
+            [
+                np.linalg.norm(asecell.cell[0]),
+                np.linalg.norm(asecell.cell[1]),
+                np.linalg.norm(asecell.cell[2]),
+            ]
+        ),
+    ]
+
+    print(num_layers, multilayer.positions, multilayer.cell)
+
+    # transform the structure to a pymatgen structure
+    struct = AseAtomsAdaptor().get_structure(multilayer)
+    # Find the spacegroup of the multilayer
+    spg = SpacegroupAnalyzer(struct, symprec=symprec)
+
+    print(spg.get_space_group_symbol(), spg.get_space_group_number())
+    return spg
+
+
 def construct_all_matrices(  # pylint: disable=too-many-locals
-    asecell, layer_indices, transformation, symprec=1e-3
+    spg, num_layers, transformation
 ):
     """
-    Construct the interlayer force constant matrices from the symmetries 
-    of the bilayer and the trasformation matrix that brings EACH layer into
-    the next one
+    Construct the interlayer force constant matrices given the spacegroup object of the bilayer (N=2)
+    and the trasformation matrix that brings EACH layer into the next one.
+
+    Note: in reality only the pointgroup is needed, but for simplicity we pass the whole spacegroup object
     """
     # TODO: for now it works only when the transformation matrix
     # has no inversion along z
-    num_layers = len(layer_indices)
-    # define the bilayer by taking the first two layers
-    # (layers are already ordered according to their projection
-    #  along the stacking direction)
-    if num_layers > 1:
-        bilayer = asecell[layer_indices[0]] + asecell[layer_indices[1]]
-    else:
-        # If there is only one layer we need to consider the bilayer
-        # constructed with its periodic copy
-        bilayer = asecell[layer_indices[0]]
-        bilayer.translate(asecell.cell[2])
-        bilayer += asecell[layer_indices[0]]
-    # put the third lattice of the bilayer orthogonal to the layers
-    # and with a large magnitude
-    bilayer.cell[2] = [
-        0,
-        0,
-        10 * np.max([np.linalg.norm(asecell.cell[0]), np.linalg.norm(asecell.cell[1])]),
-    ]
-    # transform the structure to a pymatgen structure
-    struct = AseAtomsAdaptor().get_structure(bilayer)
-    # Find the spacegroup of the bilayer
-    spg = SpacegroupAnalyzer(struct, symprec=symprec)
-    # print(spg.get_point_group_operations(cartesian=True))
     cry_sys = spg.get_crystal_system()
     if cry_sys in [
         "tetragonal",
