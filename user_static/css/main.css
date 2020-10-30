@@ -2,227 +2,274 @@
 */
 
 html {
-  background-color: #fff;
+    background-color: #fff;
 }
 
 body {
-  margin: 0;
-  /* font-family: 'Roboto', sans-serif; */
-  font-size: 14px;
-  font-style: normal;
-  font-variant: normal;
-  font-weight: 400;
-  line-height: 20px;
-
+    margin: 0;
+    /* font-family: 'Roboto', sans-serif; */
+    font-size: 14px;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: 400;
+    line-height: 20px;
 }
 
-.ui-accordion-content > h3 {
-  text-align: center;
-  font-weight: bold;
+.ui-accordion-content>h3 {
+    text-align: center;
+    font-weight: bold;
 }
 
 emph {
-  font-style: italic;
+    font-style: italic;
 }
 
 .slidecontainer {
-    max-width: 800px; 
+    max-width: 800px;
     margin: auto;
-  }
+}
 
 .noselect {
--webkit-touch-callout: none; /* iOS Safari */
-    -webkit-user-select: none; /* Safari */
-    -khtml-user-select: none; /* Konqueror HTML */
-        -moz-user-select: none; /* Firefox */
-        -ms-user-select: none; /* Internet Explorer/Edge */
-            user-select: none; /* Non-prefixed version, currently
+    -webkit-touch-callout: none;
+    /* iOS Safari */
+    -webkit-user-select: none;
+    /* Safari */
+    -khtml-user-select: none;
+    /* Konqueror HTML */
+    -moz-user-select: none;
+    /* Firefox */
+    -ms-user-select: none;
+    /* Internet Explorer/Edge */
+    user-select: none;
+    /* Non-prefixed version, currently
                                 supported by Chrome and Opera */
 }
 
-  /* The slider itself */
+
+/* The slider itself */
+
 .slider {
-    -webkit-appearance: none;  /* Override default CSS styles */
+    -webkit-appearance: none;
+    /* Override default CSS styles */
     appearance: none;
-    width: 100%; /* Full-width */
-    height: 10px; /* Specified height */
-    background: #d3d3d3; /* Grey background */
-    outline: none; /* Remove outline */
-    opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
-    -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+    width: 100%;
+    /* Full-width */
+    height: 10px;
+    /* Specified height */
+    background: #d3d3d3;
+    /* Grey background */
+    outline: none;
+    /* Remove outline */
+    opacity: 0.7;
+    /* Set transparency (for mouse-over effects on hover) */
+    -webkit-transition: .2s;
+    /* 0.2 seconds transition on hover */
     transition: opacity .2s;
-  }
-  
-  /* Mouse-over effects */
-  .slider:hover {
-    opacity: 1; /* Fully shown on mouse-over */
-  }
-  
-  /* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
-  .slider::-webkit-slider-thumb {
-    -webkit-appearance: none; /* Override default look */
+}
+
+
+/* Mouse-over effects */
+
+.slider:hover {
+    opacity: 1;
+    /* Fully shown on mouse-over */
+}
+
+
+/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    /* Override default look */
     appearance: none;
-    width: 20px; /* Set a specific slider handle width */
-    height: 20px; /* Slider handle height */
-    background: #4CAF50; /* Green background */
-    cursor: pointer; /* Cursor on hover */
-    border-radius: 50%; /* circle */    
-  }
-  
-  .slider::-moz-range-thumb {
-    width: 20px; /* Set a specific slider handle width */
-    height: 20px; /* Slider handle height */
-    background: #4CAF50; /* Green background */
-    cursor: pointer; /* Cursor on hover */
-    border-radius: 50%; /* circle */    
-  }
+    width: 20px;
+    /* Set a specific slider handle width */
+    height: 20px;
+    /* Slider handle height */
+    background: #4CAF50;
+    /* Green background */
+    cursor: pointer;
+    /* Cursor on hover */
+    border-radius: 50%;
+    /* circle */
+}
+
+.slider::-moz-range-thumb {
+    width: 20px;
+    /* Set a specific slider handle width */
+    height: 20px;
+    /* Slider handle height */
+    background: #4CAF50;
+    /* Green background */
+    cursor: pointer;
+    /* Cursor on hover */
+    border-radius: 50%;
+    /* circle */
+}
 
 .invisible {
-  visibility: hidden;
+    visibility: hidden;
 }
 
 .warning-message {
-  color: #b30000;
+    color: #b30000;
 }
 
-
 #structuretitle {
-   width: 100%;
-   margin: 0px;
-   padding: 0px;
-   position: relative;
-   top: 0px;
-   text-align: center;
+    width: 100%;
+    margin: 0px;
+    padding: 0px;
+    position: relative;
+    top: 0px;
+    text-align: center;
 }
 
 .structure {
-   background-color: #fff;
-   width: 100%;
-   height: 450px;
-   border: 1px solid #bbb;
-   margin: 0px;
-   padding: 0px;
-   position: relative;
-   top: 0px;
-   left: 0%;
-   overflow: hidden;
+    background-color: #fff;
+    width: 100%;
+    height: 450px;
+    border: 1px solid #bbb;
+    margin: 0px;
+    padding: 0px;
+    position: relative;
+    top: 0px;
+    left: 0%;
+    overflow: hidden;
 }
 
 .structureouter {
-  width: 100%;
-  max-width: 500px;
-  margin: 0px;
-  padding: 0px;
-  top: 0px;
-  margin-left: auto;
-  margin-right: auto;
-  float: center;
+    width: 100%;
+    max-width: 800px;
+    margin: 0px;
+    padding: 0px;
+    top: 0px;
+    margin-left: auto;
+    margin-right: auto;
+    float: center;
 }
 
 #maintitle {
-  background-color: #fff;
-  margin: 0px;
-  padding: 0px;
-  top: 0px;
-  right: 2%;
-  text-align: center;
+    background-color: #fff;
+    margin: 0px;
+    padding: 0px;
+    top: 0px;
+    right: 2%;
+    text-align: center;
 }
 
 .structure-container {
-  height: 300px;
+    height: 300px;
 }
 
-
-
-.jsmol-options{
-  text-align:left;
-}
-.jsmol-options .option-section{
-  width:100%
+.jsmol-options {
+    text-align: left;
 }
 
-.jsmol-options .option-input{
-  width:50px
+.jsmol-options .option-section {
+    width: 100%
 }
 
-.jsmol-options .inline-header{
-  display:inline-block;
-  margin-right:8px;
+.jsmol-options .option-input {
+    width: 50px
 }
 
-.jsmol-options .checkbox-option{
-  position:relative;
-  min-height:1px;
-  padding-left:10px;
-  padding-right:10px;
-  float:left;
-  width:33%;
+.jsmol-options .inline-header {
+    display: inline-block;
+    margin-right: 8px;
 }
 
-.jsmol-options button{
-  text-transform:none;
-  font-variant:small-caps;
-}
-.jsmol-options h4{
-  margin:2px;
-}
-
-.jsmol-options label{
-  font-weight:400;
-  font-family:Assistant,sans-serif;
+.jsmol-options .checkbox-option {
+    position: relative;
+    min-height: 1px;
+    padding-left: 10px;
+    padding-right: 10px;
+    float: left;
+    width: 33%;
 }
 
-.overlay-div{
-  position:absolute;
-  font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
-  z-index:10000;
-  width:100%;
-  height:100%;
-  display:table;
-  top:0;
-  left:0;
-  text-align:center;
-  vertical-align:middle;
-  cursor:pointer;
-  -webkit-touch-callout:none;
-  -webkit-user-select:none;
-  -khtml-user-select:none;
-  -moz-user-select:none;
-  -ms-user-select:none;
-  user-select:none;
-  background-color:rgba(230,230,230,.5);
-  color:#505050;
-  font-size:24px;
-  font-weight:700;
-  line-height:normal
+.jsmol-options button {
+    text-transform: none;
+    font-variant: small-caps;
+}
+
+.jsmol-options h4 {
+    margin: 2px;
+}
+
+.jsmol-options label {
+    font-weight: 400;
+    font-family: Assistant, sans-serif;
+}
+
+.overlay-div {
+    position: absolute;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    z-index: 10000;
+    width: 100%;
+    height: 100%;
+    display: table;
+    top: 0;
+    left: 0;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    background-color: rgba(230, 230, 230, .5);
+    color: #505050;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: normal
 }
 
 #layerstitle {
-  width: 100%;
-  margin: 0px;
-  padding: 0px;
-  position: relative;
-  top: 0px;
-  text-align: center;
+    width: 100%;
+    margin: 0px;
+    padding: 0px;
+    position: relative;
+    top: 0px;
+    text-align: center;
+}
+
+#layercouplingtitle {
+    width: 100%;
+    margin: 0px;
+    padding: 0px;
+    position: relative;
+    top: 0px;
+    text-align: center;
+}
+
+#symmetryinfotitle {
+    width: 100%;
+    margin: 0px;
+    padding: 0px;
+    position: relative;
+    top: 0px;
+    text-align: center;
 }
 
 #fandiagramtitle {
-  width: 100%;
-  margin: 0px;
-  padding: 0px;
-  position: relative;
-  top: 0px;
-  text-align: center;
+    width: 100%;
+    margin: 0px;
+    padding: 0px;
+    position: relative;
+    top: 0px;
+    text-align: center;
 }
 
 #finalinfo {
-  clear: both;
-  padding-top: 20px;
-  margin-left: 2%;
-  margin-right: 2%;
+    clear: both;
+    padding-top: 20px;
+    margin-left: 2%;
+    margin-right: 2%;
 }
 
 code {
-  color: #000;
-  background-color: transparent;
+    color: #000;
+    background-color: transparent;
 }

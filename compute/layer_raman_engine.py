@@ -17,9 +17,28 @@ from .utils.structures import ase_from_tuple, get_xsf_structure, tuple_from_ase
 from tools_barebone import get_tools_barebone_version
 from .utils.layers import find_layers, find_common_transformation
 from .utils.matrices import matrix_initialization, replace_symbols_with_values
+from .utils.pointgroup import POINTGROUP_MAPPING
 
 # Version of this tool
-__version__ = "20.09.0"
+__version__ = "20.11.0"
+
+
+def prepare_pointgroup(pg_number):
+    """Given a pointgroup number (between 1 and 32 inclusive), return a dictionary to be sent to jinja.
+
+    This includes the number itself, and the name both in Hermann-Mauguin notation and in Schönflies notation,
+    nicely formatted in HTML (so, will need the `safe` filter)."""
+    return {
+        "international_number": pg_number,
+        "hm_name": POINTGROUP_MAPPING[pg_number][1]
+        .replace("-1", '<span style="text-decoration:overline;">1</span>')
+        .replace("-3", '<span style="text-decoration:overline;">3</span>')
+        .replace("-4", '<span style="text-decoration:overline;">4</span>')
+        .replace("-6", '<span style="text-decoration:overline;">6</span>'),
+        "schoenflies_name": "{}<sub>{}</sub>".format(
+            POINTGROUP_MAPPING[pg_number][2][0], POINTGROUP_MAPPING[pg_number][2][1:]
+        ),
+    }
 
 
 def process_structure_core(
@@ -132,11 +151,25 @@ def process_structure_core(
 
     fc_dict = construct_force_constant_dict(all_dicts, all_matrices)
 
+    # This is returned both in the return_data, for the HTML view, and in the app data,
+    # to be set as a minimum for the REST API requests
+    return_data["num_layers_lulk"] = len(layer_indices)
+
+    # TODO: compute and pass the four pointgroups, DO NOT HARDCODE THEM!
+    pg_even_number = 20
+    pg_odd_number = 26
+    pg_monolayer_number = 26
+    pg_bilayer_number = 20
+
+    return_data["pointgroup_even"] = prepare_pointgroup(pg_even_number)
+    return_data["pointgroup_odd"] = prepare_pointgroup(pg_odd_number)
+    return_data["pointgroup_monolayer"] = prepare_pointgroup(pg_monolayer_number)
+    return_data["pointgroup_bilayer"] = prepare_pointgroup(pg_bilayer_number)
+
     app_data = {
         "structure": structure,
-        # TODO: pass the two pointgroups, DO NOT HARDCODE THEM!
-        "pointgroupEven": 20,
-        "pointgroupOdd": 26,
+        "pointgroupEven": pg_even_number,
+        "pointgroupOdd": pg_odd_number,
         # This will be used to decide the mimimum number of layers to show - we don't want to ge below this,
         # as the symmetries might be more.
         "numLayersBulk": len(layer_indices),

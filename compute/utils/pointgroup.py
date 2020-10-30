@@ -7,6 +7,7 @@ from ase.quaternions import Quaternion
 import copy
 
 
+# international number, Hermann-Mauguin notation, Schoenflies notation
 POINTGROUP_MAPPING = [
     (0, "", ""),  # We put this so we can directly use indexing
     (1, "1", "C1"),

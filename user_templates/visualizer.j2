@@ -1,82 +1,81 @@
-        {% macro render_jsmol_visualizer(suffix, nx, ny, nz) %}
-        <div id='structure-outer-{{suffix}}' class='structure'>
-            <div class="shadow-box">
-                <div class="plot-diagram">
-                <div class="structure-container" id="structure-content-{{ suffix }}">
-                    <div id="crystal-{{suffix}}" ondblclick="toggleStrVisInteraction(false, 'str-overlay-{{suffix}}');"></div>
-                    <div id="str-overlay-{{suffix}}" class="overlay-div" ondblclick="toggleStrVisInteraction(true, 'str-overlay-{{suffix}}');">
+{% macro render_jsmol_visualizer(suffix, nx, ny, nz) %}
+<div id='structure-outer-{{suffix}}' class='structure'>
+    <div class="shadow-box">
+        <div class="plot-diagram">
+            <div class="structure-container" id="structure-content-{{ suffix }}">
+                <div id="crystal-{{suffix}}" ondblclick="toggleStrVisInteraction(false, 'str-overlay-{{suffix}}');"></div>
+                <div id="str-overlay-{{suffix}}" class="overlay-div" ondblclick="toggleStrVisInteraction(true, 'str-overlay-{{suffix}}');">
                     <span id="str-overlay-{{suffix}}-span" style="display: table-cell; vertical-align: middle; text-align: center;">
                         Double click to toggle interaction
                     </span>
                 </div>
-                </div>
-                </div>
             </div>
+        </div>
+    </div>
 
-            <div class="jsmol-options">
-                <div class="option-section" style="display:flex;">
-                <form>
-                    <h4 class="inline-header">Supercell:</h4>
-                    <input id="nx-{{suffix}}" type="number" name="quantity" class="option-input" min="1" max= "10" value="{{nx}}">
-                    <input id="ny-{{suffix}}" type="number" name="quantity" class="option-input" min="1" max= "10" value="{{ny}}">
-                    <input id="nz-{{suffix}}" type="number" name="quantity" class="option-input" min="1" max= "10" value="{{nz}}">
-                    <button id="supercell-{{suffix}}" type="button" onclick="jsmolSupercell('{{suffix}}');">update</button>
-                    <button id="reset-{{suffix}}" type="button" onclick="jsmolResetSupercell('{{suffix}}', {{nx}}, {{ny}}, {{nz}});">reset {{nx}}x{{ny}}x{{nz}} cell</button>
-                </form>
-                </div>
+    <div class="jsmol-options">
+        <div class="option-section" style="display:flex;">
+            <form>
+                <h4 class="inline-header">Supercell:</h4>
+                <input id="nx-{{suffix}}" type="number" name="quantity" class="option-input" min="1" max="10" value="{{nx}}">
+                <input id="ny-{{suffix}}" type="number" name="quantity" class="option-input" min="1" max="10" value="{{ny}}">
+                <input id="nz-{{suffix}}" type="number" name="quantity" class="option-input" min="1" max="10" value="{{nz}}">
+                <button id="supercell-{{suffix}}" type="button" onclick="jsmolSupercell('{{suffix}}');">update</button>
+                <button id="reset-{{suffix}}" type="button" onclick="jsmolResetSupercell('{{suffix}}', {{nx}}, {{ny}}, {{nz}});">reset {{nx}}x{{ny}}x{{nz}} cell</button>
+            </form>
+        </div>
 
-                <div class="option-section">
-                <h4 class="inline-header">Camera:</h4>
-                <button id="centerX-{{suffix}}" onclick="centerXaxis('{{suffix}}')">x</button>
-                <button id="centerY-{{suffix}}" onclick="centerYaxis('{{suffix}}')">y</button>
-                <button id="centerZ-{{suffix}}" onclick="centerZaxis('{{suffix}}')">z</button>
-                </div>
+        <div class="option-section">
+            <h4 class="inline-header">Camera:</h4>
+            <button id="centerX-{{suffix}}" onclick="centerXaxis('{{suffix}}')">x</button>
+            <button id="centerY-{{suffix}}" onclick="centerYaxis('{{suffix}}')">y</button>
+            <button id="centerZ-{{suffix}}" onclick="centerZaxis('{{suffix}}')">z</button>
+        </div>
 
-                <div class="option-section">
-                <h4 class="inline-header">Axes:</h4>
-                <select id="axesMenu-{{suffix}}" onchange="jsmolDrawAxes('{{suffix}}');">
+        <div class="option-section">
+            <h4 class="inline-header">Axes:</h4>
+            <select id="axesMenu-{{suffix}}" onchange="jsmolDrawAxes('{{suffix}}');">
                     <option value="xyz" selected>xyz axes</option>
                     <option value="abc">abc vectors</option>
                     <option value="noaxes">no axes</option>
                 </select>
-                </div>
-                <div class="option-section">
-                <div class="row">
-                    <div class="checkbox-option" id="bonds-{{suffix}}">
+        </div>
+        <div class="option-section">
+            <div class="row">
+                <div class="checkbox-option" id="bonds-{{suffix}}">
                     <label>
                         <input id="bonds-input-{{suffix}}" style='margin-right:4px' type="checkbox" onchange="showBonds('{{suffix}}');" checked>bonds
                         <a href="" data-toggle="tooltip" title="Show bonds"><sup>[?]</sup></a>
                     </label>
-                    </div>
-                    <div class="checkbox-option" id="labels-{{suffix}}">
+                </div>
+                <div class="checkbox-option" id="labels-{{suffix}}">
                     <label>
                         <input id="labels-input-{{suffix}}" style='margin-right:4px' type="checkbox" onchange="showLabels('{{suffix}}')">atom labels
                         <a href="" data-toggle="tooltip" title="Display element symbols"><sup>[?]</sup></a>
                     </label>
-                    </div>
-                    <div class="checkbox-option" id="packed-{{suffix}}">
+                </div>
+                <div class="checkbox-option" id="packed-{{suffix}}">
                     <label>
                         <input id="packed-input-{{suffix}}" style='margin-right:4px' type="checkbox" onchange="showPacked('{{suffix}}')">packed cell
                         <a href="" data-toggle="tooltip" title="Show atoms on the edge of the cell or supercell"><sup>[?]</sup></a>
                     </label>
-                    </div>
                 </div>
-                <div class="row">
-                    <div class="checkbox-option" id="sphere-{{suffix}}">
+            </div>
+            <div class="row">
+                <div class="checkbox-option" id="sphere-{{suffix}}">
                     <label>
                         <input id="spheres-input-{{suffix}}" style='margin-right:4px' type="checkbox" onchange="showSpheres('{{suffix}}')">space-filling
                         <a href="" data-toggle="tooltip" title="Show atoms as spheres"><sup>[?]</sup></a>
                     </label>
-                    </div>
-                    <div class="checkbox-option" id="spin-{{suffix}}">
+                </div>
+                <div class="checkbox-option" id="spin-{{suffix}}">
                     <label><input id="spin-input-{{suffix}}" style='margin-right:4px' type="checkbox" onchange="toggleRotation('{{suffix}}')">rotation</label>
-                    </div>
                 </div>
-                </div>
-            </div>
             </div>
         </div>
-        {% endmacro %}
+    </div>
+</div>
+{% endmacro %}
 
 
 <!DOCTYPE html>
@@ -315,7 +314,18 @@
 
     {# Skip completely the fan-diagram block if we didn't find layers etc. #}
     {% if app_data_json is not none %}
-    <div id='fandiagramtitle'><h2>Fan diagram</h2></div>
+    <div id='symmetryinfotitle'><h2>Symmetry information</h2></div>
+
+    <div>
+        <ul>
+            <li>Monolayer pointgroup: {{ pointgroup_monolayer.schoenflies_name | safe }} ({{ pointgroup_monolayer.hm_name | safe }}, international number: {{ pointgroup_monolayer.international_number }})</li>
+            <li>Bilayer pointgroup: {{ pointgroup_bilayer.schoenflies_name | safe }} ({{ pointgroup_bilayer.hm_name | safe }}, international number: {{ pointgroup_bilayer.international_number }})</li>
+            <li>Pointgroup for even <emph>N</emph> ≥ {{ num_layers_lulk }}: {{ pointgroup_even.schoenflies_name | safe }} ({{ pointgroup_even.hm_name | safe }}, international number: {{ pointgroup_even.international_number }})</li>
+            <li>Pointgroup for odd <emph>N</emph> ≥ {{ num_layers_lulk }}: {{ pointgroup_odd.schoenflies_name | safe }} ({{ pointgroup_odd.hm_name | safe }}, international number: {{ pointgroup_odd.international_number }})</li>
+        </ul>
+    </div>
+
+    <div id='layercouplingtitle'><h2>Layer couplings</h2></div>
     <div id="app">  <!-- Vue.js will work in here -->
         <h3>Elastic force constant matrices</h3>
         <div style="width: 100%; text-align: center;" v-html="getLatexHTML(latexCode)" id="test"></div>
@@ -341,6 +351,15 @@
             </template>
         </div>
 
+        <div id='fandiagramtitle'><h2>Fan diagram</h2></div>
+        <div><h3>Instructions</h3>
+            <ul>
+                <li>Adapt the values of the force-constant parameters above. Those are chosen randomly, trying to reproduce their typical relative magnitude.</li>
+                <li>Hover on a data point to highlight only the corresponding data series, and to visualize a tooltip with useful information (including the irreducible-representation name).</li>
+                <li>Click on the legend at the bottom to hide/show specific data series.</li>
+                <li>Use the slider to select the maximum number of layers to show in the plot (the minimum value is at least two and is set to the number of layers in the bulk cell).</li>
+            </ul>
+        </div>
         <div id="inputs">
             <div>
                 <div style="width: 100%; text-align: center;"><span v-bind:class="{ invisible: !showSpinner }"><img src="../../user_static/img/loader-spinning.gif" height="40px"></img></span> 
@@ -372,7 +391,7 @@
         </div>        
 
 
-        <div id="plotContainer" style="min-width: 310px; max-width: 800px; height: 600px; margin: 0 auto"></div>
+        <div id="plotContainer" style="min-width: 310px; max-width: 1600px; height: 600px; margin: 0 auto"></div>
 
     </div>
     {% endif %}
@@ -463,5 +482,7 @@
 </script>
 
 <div style ="position: relative" data-iframe-height></div>
+
+</div>
 </body>
 </html>
