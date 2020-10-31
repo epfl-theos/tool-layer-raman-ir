@@ -136,13 +136,13 @@ def process_structure_core(
     num_layers_bulk = len(layer_indices)
     return_data["num_layers_lulk"] = num_layers_bulk
 
+    ## COMPUTE HERE VARIOUS POINTGROUP/SPACEGROUP INFORMATION FOR BULK AND VARIOUS MLs
     spg_bilayer = get_symmetry_multilayer(rotated_asecell, layer_indices, num_layers=2)
     all_dicts, all_matrices = construct_all_matrices(
         spg_bilayer, num_layers_bulk, transformation=rot
     )
     fc_dict = construct_force_constant_dict(all_dicts, all_matrices)
 
-    # TODO: compute and pass the four pointgroups, DO NOT HARDCODE THEM!
     pg_bilayer_number = pg_number_from_hm_symbol(spg_bilayer.get_point_group_symbol())
     pg_monolayer_number = pg_number_from_hm_symbol(
         get_symmetry_multilayer(
@@ -300,8 +300,7 @@ def construct_all_matrices(  # pylint: disable=too-many-locals
 
     Note: in reality only the pointgroup is needed, but for simplicity we pass the whole spacegroup object
     """
-    # TODO: for now it works only when the transformation matrix
-    # has no inversion along z
+    # TODO: for now it works only when the transformation matrix has no inversion along z
     cry_sys = spg.get_crystal_system()
     if cry_sys in [
         "tetragonal",

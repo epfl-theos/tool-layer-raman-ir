@@ -17,8 +17,6 @@ var app = new Vue({
         forceConstantVariables: [],
         seriesWithData: {},
 
-        // TODO: remove cases with Raman_N+BackScattering_Y
-
         seriesMetadata: Object.freeze([ // Initial series definition
             {
                 internalName: 'IR_Y+Raman_Y+BackScattering_Y',

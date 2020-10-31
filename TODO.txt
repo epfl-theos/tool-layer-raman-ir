@@ -1,0 +1,19 @@
+- Check ML pointgroup (in particular WTe2)
+
+- General TODO CHECK
+
+- check text in tool frontend (ack, and general checks)
+
+- add, in output, the 2x2 cell after rotation along z, and the coordinates of the atoms for each layer after rotation
+  (needed to correctly interpret the R and tau of the common transformation).
+  Maybe say also what is the transformation from the original cell?
+
+- Check all examples results
+
+- Implement automatic tests
+
+- add check on category I, II, III; if III, write that it's not implemented yet
+
+- clean up code, add license
+
+- make public, deploy in production
