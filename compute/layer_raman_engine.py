@@ -17,28 +17,14 @@ from .utils.structures import ase_from_tuple, get_xsf_structure, tuple_from_ase
 from tools_barebone import get_tools_barebone_version
 from .utils.layers import find_layers, find_common_transformation
 from .utils.matrices import matrix_initialization, replace_symbols_with_values
-from .utils.pointgroup import POINTGROUP_MAPPING, pg_number_from_hm_symbol
+from .utils.pointgroup import (
+    pg_number_from_hm_symbol,
+    prepare_pointgroup,
+    prepare_spacegroup,
+)
 
 # Version of this tool
 __version__ = "20.11.0"
-
-
-def prepare_pointgroup(pg_number):
-    """Given a pointgroup number (between 1 and 32 inclusive), return a dictionary to be sent to jinja.
-
-    This includes the number itself, and the name both in Hermann-Mauguin notation and in Schönflies notation,
-    nicely formatted in HTML (so, will need the `safe` filter)."""
-    return {
-        "international_number": pg_number,
-        "hm_name": POINTGROUP_MAPPING[pg_number][1]
-        .replace("-1", '<span style="text-decoration:overline;">1</span>')
-        .replace("-3", '<span style="text-decoration:overline;">3</span>')
-        .replace("-4", '<span style="text-decoration:overline;">4</span>')
-        .replace("-6", '<span style="text-decoration:overline;">6</span>'),
-        "schoenflies_name": "{}<sub>{}</sub>".format(
-            POINTGROUP_MAPPING[pg_number][2][0], POINTGROUP_MAPPING[pg_number][2][1:]
-        ),
-    }
 
 
 def process_structure_core(
@@ -180,10 +166,17 @@ def process_structure_core(
         ).get_point_group_symbol()
     )
 
+    bulk_spg = SpacegroupAnalyzer(
+        AseAtomsAdaptor().get_structure(asecell), symprec=1.0e-3
+    )
+    pg_bulk_number = pg_number_from_hm_symbol(bulk_spg.get_point_group_symbol())
+
     return_data["pointgroup_even"] = prepare_pointgroup(pg_even_number)
     return_data["pointgroup_odd"] = prepare_pointgroup(pg_odd_number)
     return_data["pointgroup_monolayer"] = prepare_pointgroup(pg_monolayer_number)
     return_data["pointgroup_bilayer"] = prepare_pointgroup(pg_bilayer_number)
+    return_data["pointgroup_bulk"] = prepare_pointgroup(pg_bulk_number)
+    return_data["spacegroup_bulk"] = prepare_spacegroup(bulk_spg)
 
     app_data = {
         "structure": structure,

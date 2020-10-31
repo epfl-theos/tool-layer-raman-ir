@@ -4,6 +4,7 @@ that we need to obtain the Raman/Infrared activity of layer modes
 """
 import numpy as n
 from ase.quaternions import Quaternion
+from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import copy
 
 
@@ -65,6 +66,44 @@ def rotation(axis, angle):
     matrix = q.rotation_matrix()
     matrix[abs(matrix) < tol] = 0.0
     return matrix
+
+
+def prepare_pointgroup(pg_number):
+    """Given a pointgroup number (between 1 and 32 inclusive), return a dictionary to be sent to jinja.
+
+    This includes the number itself, and the name both in Hermann-Mauguin notation and in Schönflies notation,
+    nicely formatted in HTML (so, will need the `safe` filter)."""
+    return {
+        "international_number": pg_number,
+        "hm_name": POINTGROUP_MAPPING[pg_number][1]
+        .replace("-1", '<span style="text-decoration:overline;">1</span>')
+        .replace("-3", '<span style="text-decoration:overline;">3</span>')
+        .replace("-4", '<span style="text-decoration:overline;">4</span>')
+        .replace("-6", '<span style="text-decoration:overline;">6</span>'),
+        "schoenflies_name": "{}<sub>{}</sub>".format(
+            POINTGROUP_MAPPING[pg_number][2][0], POINTGROUP_MAPPING[pg_number][2][1:]
+        ),
+    }
+
+
+def prepare_spacegroup(spg: SpacegroupAnalyzer):
+    """Given a spacegroup pypatgen object, return a dictionary to be sent to jinja.
+
+    This includes the international number, and the name in Hermann-Mauguin notation
+    nicely formatted in HTML (so, will need the `safe` filter)."""
+    return {
+        "international_number": spg.get_space_group_number(),
+        "hm_name": spg.get_space_group_symbol()
+        .replace("-1", '<span style="text-decoration:overline;">1</span>')
+        .replace("-3", '<span style="text-decoration:overline;">3</span>')
+        .replace("-4", '<span style="text-decoration:overline;">4</span>')
+        .replace("-6", '<span style="text-decoration:overline;">6</span>')
+        .replace("_1", "<sub>1</sub>")
+        .replace("_2", "<sub>2</sub>")
+        .replace("_3", "<sub>3</sub>")
+        .replace("_4", "<sub>4</sub>")
+        .replace("_5", "<sub>5</sub>"),
+    }
 
 
 def rotoreflection(axis, angle):

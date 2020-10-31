@@ -266,7 +266,6 @@ def get_modes():  # pylint: disable=too-many-statements
             pointgroup_number = pointgroupOdd if num_layers % 2 else pointgroupEven
             pointgroup_name = POINTGROUP_MAPPING[pointgroup_number][2]
             pointgroup = Pointgroup(pointgroup_name)
-            # print(num_layers, pointgroup_name)
 
             for eigvec in eigvects.T:  # Skip the first three acoustic modes
                 # First axis: layer displacement; second axis: xyz

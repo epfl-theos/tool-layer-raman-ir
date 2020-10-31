@@ -325,10 +325,12 @@
 
     <div>
         <ul>
-            <li>Monolayer pointgroup: {{ pointgroup_monolayer.schoenflies_name | safe }} ({{ pointgroup_monolayer.hm_name | safe }}, international number: {{ pointgroup_monolayer.international_number }})</li>
-            <li>Bilayer pointgroup: {{ pointgroup_bilayer.schoenflies_name | safe }} ({{ pointgroup_bilayer.hm_name | safe }}, international number: {{ pointgroup_bilayer.international_number }})</li>
-            <li>Pointgroup for even <emph>N</emph> ≥ {{ num_layers_lulk }}: {{ pointgroup_even.schoenflies_name | safe }} ({{ pointgroup_even.hm_name | safe }}, international number: {{ pointgroup_even.international_number }})</li>
-            <li>Pointgroup for odd <emph>N</emph> ≥ {{ num_layers_lulk }}: {{ pointgroup_odd.schoenflies_name | safe }} ({{ pointgroup_odd.hm_name | safe }}, international number: {{ pointgroup_odd.international_number }})</li>
+            <li>Monolayer point group: {{ pointgroup_monolayer.schoenflies_name | safe }} ({{ pointgroup_monolayer.hm_name | safe }}, international number: {{ pointgroup_monolayer.international_number }})</li>
+            <li>Bilayer point group: {{ pointgroup_bilayer.schoenflies_name | safe }} ({{ pointgroup_bilayer.hm_name | safe }}, international number: {{ pointgroup_bilayer.international_number }})</li>
+            <li>Multilayer point group for <emph>even N</emph> ≥ {{ num_layers_lulk }}: {{ pointgroup_even.schoenflies_name | safe }} ({{ pointgroup_even.hm_name | safe }}, international number: {{ pointgroup_even.international_number }})</li>
+            <li>Multilayer point group for <emph>odd N</emph> ≥ {{ num_layers_lulk }}: {{ pointgroup_odd.schoenflies_name | safe }} ({{ pointgroup_odd.hm_name | safe }}, international number: {{ pointgroup_odd.international_number }})</li>
+            <li>Bulk point group: {{ pointgroup_bulk.schoenflies_name | safe }} ({{ pointgroup_bulk.hm_name | safe }}, international number: {{ pointgroup_bulk.international_number }})</li>
+            <li>Bulk space group: {{ spacegroup_bulk.hm_name | safe }}, international number: {{ spacegroup_bulk.international_number }}</li>
         </ul>
     </div>
 
