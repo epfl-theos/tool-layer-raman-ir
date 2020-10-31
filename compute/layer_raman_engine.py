@@ -275,14 +275,6 @@ def get_symmetry_multilayer(asecell, layer_indices, num_layers, symprec=1e-3):
         new_layer.translate(z_shift * asecell.cell[2])
         multilayer += new_layer
 
-    print(
-        multilayer.cell,
-        [
-            np.linalg.norm(asecell.cell[0]),
-            np.linalg.norm(asecell.cell[1]),
-            np.linalg.norm(asecell.cell[2]),
-        ],
-    )
     # put the third lattice of the multiayer orthogonal to the layers
     # and with a large magnitude
     multilayer.cell[2] = [
@@ -298,14 +290,11 @@ def get_symmetry_multilayer(asecell, layer_indices, num_layers, symprec=1e-3):
         ),
     ]
 
-    print(num_layers, multilayer.positions, multilayer.cell)
-
     # transform the structure to a pymatgen structure
     struct = AseAtomsAdaptor().get_structure(multilayer)
     # Find the spacegroup of the multilayer
     spg = SpacegroupAnalyzer(struct, symprec=symprec)
 
-    print(spg.get_space_group_symbol(), spg.get_space_group_number())
     return spg
 
 

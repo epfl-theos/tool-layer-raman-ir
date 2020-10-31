@@ -1,17 +1,20 @@
 import json
 import logging
 import os
+import time
 import traceback
 
 import flask
 import numpy as np
+import scipy
+import scipy.linalg
 
 from .layer_raman_engine import process_structure_core
 from .utils.structures import parse_structure
 from .utils.matrices import (
     replace_symbols_with_values,
     replace_linear_combinations,
-    get_block_coordinates,
+    add_block,
 )
 from .utils.optics import assign_representation, INFRARED, RAMAN, BACKSCATTERING
 from .utils.pointgroup import Pointgroup, POINTGROUP_MAPPING
@@ -34,6 +37,85 @@ VALID_EXAMPLES = {
 
 logger = logging.getLogger("layer-raman-tool-app")
 blueprint = flask.Blueprint("compute", __name__, url_prefix="/compute")
+
+
+def get_eigvals_eigvects(num_layers, numeric_matrices, use_banded_algorithm=False):
+    """Given the number of layers and the `numeric_matrices`, construct internally the K matrix and diagonalize it
+    to obtain phonon frequencies and modes.
+    
+    :param num_layers: the number of layers in the multilayer
+    :param numeric_matrices: a list of numeric matrices (i.e., with all parameters replaced with numeric
+        values) with the interaction of each layer with the next one.
+    :param use_banded_algorithm: if True, use a banded diagonalization algorithm, otherwise diagonalize
+        the full matrix. The banded algorithm is always faster and scaled better with the number of
+        layers, so there is no reason to set it to False except for debug reasons.
+
+    :return: (eigvals, eigvects), where eigvals is a list of eigenvalues and eigvects a list of list of
+        eigenvectors. IMPORTANT! The first three acoustic modes are removed.
+        Moreover, the i-th eigenvector is eigenvect.T[i] (note the transpose).
+    """
+    if use_banded_algorithm:
+        # 3 blocks (below, same layer, and above) of size 3 => total width of 9
+        # Since we only store the upper part, we only need a width of 4 (diagonal + 3 superdiagonals)
+        K_matrix = np.zeros((4, num_layers * 3))
+    else:
+        K_matrix = np.zeros((num_layers * 3, num_layers * 3))
+
+    for block_idx in range(num_layers):
+        # Interaction with upper layer
+        if block_idx < num_layers - 1:  # Not in the last layer
+            current_block = np.array(
+                numeric_matrices[block_idx % len(numeric_matrices)]
+            )
+            add_block(
+                matrix=K_matrix,
+                block=current_block,
+                block_i=block_idx,
+                block_j=block_idx,
+                factor=+1,
+                banded=use_banded_algorithm,
+            )
+            add_block(
+                matrix=K_matrix,
+                block=current_block,
+                block_i=block_idx + 1,
+                block_j=block_idx,
+                factor=-1,
+                banded=use_banded_algorithm,
+            )
+        # Interaction with lower layer
+        if block_idx > 0:  # Not in the first layer
+            previous_block = np.array(
+                numeric_matrices[(block_idx - 1) % len(numeric_matrices)]
+            )
+            add_block(
+                matrix=K_matrix,
+                block=previous_block,
+                block_i=block_idx,
+                block_j=block_idx,
+                factor=+1,
+                banded=use_banded_algorithm,
+            )
+            add_block(
+                matrix=K_matrix,
+                block=previous_block,
+                block_i=block_idx - 1,
+                block_j=block_idx,
+                factor=-1,
+                banded=use_banded_algorithm,
+            )
+
+    # Get frequencies (eigvals) and eigenvectors (for mode analysis)
+    if use_banded_algorithm:
+        eigvals, eigvects = scipy.linalg.eig_banded(K_matrix, lower=False)
+    else:
+        eigvals, eigvects = np.linalg.eigh(K_matrix)
+
+    # The first three should be acoustic i.e. almost zero; the rest should be positive
+    assert np.sum(np.abs(eigvals[:3])) < 1.0e-8
+
+    # Remove the first three acoustic modes
+    return eigvals[3:], eigvects[:, 3:]
 
 
 @blueprint.route("/process_structure/", methods=["GET", "POST"])
@@ -153,6 +235,7 @@ def process_example_structure():
 
 @blueprint.route("/api/modes/", methods=["POST"])
 def get_modes():  # pylint: disable=too-many-locals,too-many-statements,too-many-branches
+    start_time = time.time()
     if flask.request.method != "POST":
         return make_response("Only POST method allowed", 405)
 
@@ -252,40 +335,20 @@ def get_modes():  # pylint: disable=too-many-locals,too-many-statements,too-many
     is_raman = []
     is_back_scattering = []
     irrep_names = []
+    along_x = []
+    along_y = []
+    along_z = []
 
     # TODO: add layer mass here should be a constant for all layers! and fix units
     for num_layers in range(min_num_layers, max_layers + 1):
-        K_matrix = np.zeros((num_layers * 3, num_layers * 3))
-
-        for block_idx in range(num_layers):
-            # Interaction with upper layer
-            if block_idx < num_layers - 1:  # Not in the last layer
-                current_block = numeric_matrices[block_idx % len(numeric_matrices)]
-                K_matrix[get_block_coordinates(block_idx, block_idx)] += current_block
-                K_matrix[
-                    get_block_coordinates(block_idx + 1, block_idx)
-                ] -= current_block
-            # Interaction with lower layer
-            if block_idx > 0:  # Not in the first layer
-                previous_block = numeric_matrices[
-                    (block_idx - 1) % len(numeric_matrices)
-                ]
-                K_matrix[get_block_coordinates(block_idx, block_idx)] += previous_block
-                K_matrix[
-                    get_block_coordinates(block_idx - 1, block_idx)
-                ] -= previous_block
-
-        # Get frequencies (eigvals) and eigenvectors (for mode analysis)
-        eigvals, eigvects = np.linalg.eigh(K_matrix)
-        # The first three should be acoustic i.e. almost zero; the rest should be positive
-        assert np.sum(np.abs(eigvals[:3])) < 1.0e-10
+        eigvals, eigvects = get_eigvals_eigvects(num_layers, numeric_matrices)
 
         pointgroup_number = pointgroupOdd if num_layers % 2 else pointgroupEven
         pointgroup_name = POINTGROUP_MAPPING[pointgroup_number][2]
         pointgroup = Pointgroup(pointgroup_name)
         print(num_layers, pointgroup_name)
 
-        for eigvec in eigvects.T[3:]:  # Skip the first three acoustic modes
+        for eigvec in eigvects.T:  # Skip the first three acoustic modes
             # First axis: layer displacement; second axis: xyz
             # Note: the basis-set order is layer1_x, layer1_y, layer1_z, layer2_x, layer2_y, ...
             displacements = eigvec.reshape((num_layers, 3))
@@ -303,10 +366,14 @@ def get_modes():  # pylint: disable=too-many-locals,too-many-statements,too-many
             # We don't check it, it should be the `assign_representation` function to correctly handle all cases
             is_back_scattering.append(activity[BACKSCATTERING])
             irrep_names.append(irrep_name)
+            max_displacement_cart_dir = np.abs(displacements.max(axis=0))
+            along_x.append(bool(max_displacement_cart_dir[0] > 1.0e-6))
+            along_y.append(bool(max_displacement_cart_dir[1] > 1.0e-6))
+            along_z.append(bool(max_displacement_cart_dir[2] > 1.0e-6))
 
         # 3(N-1) modes, with x equal to the current number of layers (reminder: we are in a loop over num_layers)
         plot_data_x += [num_layers] * 3 * (num_layers - 1)
-        plot_data_y += eigvals[3:].tolist()
+        plot_data_y += eigvals.tolist()
 
     return_data = {
         "x": plot_data_x,
@@ -315,10 +382,13 @@ def get_modes():  # pylint: disable=too-many-locals,too-many-statements,too-many
         "isRamanActive": is_raman,
         "isInfraredActive": is_infrared,
         "irrepNames": irrep_names,
+        "alongX": along_x,
+        "alongY": along_y,
+        "alongZ": along_z,
     }
 
     ## LOGIC END ##
 
-    print("Valid request processed")
+    print(f"Valid request processed in {time.time() - start_time} s.")
 
     return flask.jsonify(return_data)

@@ -19,9 +19,11 @@ def test_structure(filename, skin_factor=1.1):
 
     asecell = ase.io.read(filename)
     structure = tuple_from_ase(asecell)
-    process_structure_core(
+    return_data = process_structure_core(
         structure, logger, flask_request=None, skin_factor=skin_factor
     )
+    print("RETURN DATA:")
+    print(return_data)
 
 
 if __name__ == "__main__":

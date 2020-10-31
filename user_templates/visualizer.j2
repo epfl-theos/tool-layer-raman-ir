@@ -155,6 +155,13 @@
             }            
         });
     {% endfor %}
+    
+        $( "#accordion-instructions" ).accordion({
+            collapsible: true,
+            heightStyle: "content", // Avoid that all have the same height
+            active: false  // Start all closed
+            //active: -1  // Open the last one
+        });
 
     });
 
@@ -329,11 +336,6 @@
     <div id="app">  <!-- Vue.js will work in here -->
         <h3>Elastic force constant matrices</h3>
         <div style="width: 100%; text-align: center;" v-html="getLatexHTML(latexCode)" id="test"></div>
-        <div>
-            {% raw %} 
-            <span class="warning-message"> {{ warningMessage }} </span> 
-            {% endraw %}
-        </div>
 
         <h3>Force-constant parameters</h3>
         <div style="max-width: 400px; margin: auto;">
@@ -352,18 +354,28 @@
         </div>
 
         <div id='fandiagramtitle'><h2>Fan diagram</h2></div>
-        <div><h3>Instructions</h3>
-            <ul>
-                <li>Adapt the values of the force-constant parameters above. Those are chosen randomly, trying to reproduce their typical relative magnitude.</li>
-                <li>Hover on a data point to highlight only the corresponding data series, and to visualize a tooltip with useful information (including the irreducible-representation name).</li>
-                <li>Click on the legend at the bottom to hide/show specific data series.</li>
-                <li>Use the slider to select the maximum number of layers to show in the plot (the minimum value is at least two and is set to the number of layers in the bulk cell).</li>
-            </ul>
+        <div id="accordion-instructions">
+        <h3>Instructions</h3>
+            <div>
+                <ul>
+                    <li>Adapt the values of the force-constant parameters above. Those are chosen randomly, trying to reproduce their typical relative magnitude.</li>
+                    <li>Hover on a data point to highlight only the corresponding data series, and to visualize a tooltip with useful information (including the irreducible-representation name).</li>
+                    <li>Click on the legend at the bottom to hide/show specific data series.</li>
+                    <li>Use the slider to select the maximum number of layers to show in the plot (the minimum value is at least two and is set to the number of layers in the bulk cell).</li>
+                    <li>Use the dropdown menu to filter only modes that have non-zero oscillations along a given axis (where z is the stacking axis). Note! if a mode has, e.g., non-zero z component, it means it has a layer-breathing (LB) character, but depending on the symmetry it might not be a pure LB mode, also have shear character. The same concept holds for shear (C) modes.</li>
+                </ul>
+            </div>
         </div>
+
         <div id="inputs">
             <div>
                 <div style="width: 100%; text-align: center;"><span v-bind:class="{ invisible: !showSpinner }"><img src="../../user_static/img/loader-spinning.gif" height="40px"></img></span> 
                 </div>
+            </div>
+            <div>
+                {% raw %} 
+                <span class="warning-message"> {{ warningMessage }} </span> 
+                {% endraw %}
             </div>
             <div style="width: 100%; text-align: center;">
                 <div class="slidecontainer">
@@ -386,6 +398,15 @@
                     <div style="width: 200px; margin-left: auto; margin-right: auto">
                         <input type="range" min="5" max="20" value="10" step="1" v-model="maxLayers" v-on:input="updateGraphDebounced"> 
                     </div>
+                    Filter modes to show:
+                    <!--<div style="width: 200px; margin-left: auto; margin-right: auto">-->
+                    <select name="modes-filter" v-on:input="onChangeFilter">
+                        <option value="all">All modes</option>
+                        <option value="x">Non-zero oscillation along x (shear)</option>
+                        <option value="y">Non-zero oscillation along y (shear)</option>
+                        <option value="z">Non-zero oscillation along z (layer breathing)</option>
+                    </select>
+                    <!--</div>-->
                 </div>
             </div>
         </div>        

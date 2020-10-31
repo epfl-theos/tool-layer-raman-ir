@@ -26,8 +26,6 @@ function jsmolCrystal(data, parentHtmlId, appletName, supercellOptions) {
     var the_width = parentDiv.offsetWidth - 5;
     var the_height = parentDiv.offsetHeight - 5;
 
-    console.log('AAA', parentDiv, the_width, the_height);
-
     var Info = {
         width: the_width,
         height: the_height,

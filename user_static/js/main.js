@@ -13,7 +13,9 @@ var app = new Vue({
         currentRequest: null,
         appData: appData,
         latexCode: "",
+        modesFilter: "all",
         forceConstantVariables: [],
+        seriesWithData: {},
 
         // TODO: remove cases with Raman_N+BackScattering_Y
 
@@ -175,8 +177,6 @@ var app = new Vue({
                 xmax: xmax
             };
 
-            console.log('faud', dataToSend);
-
             this.currentRequest = $.post({
                 url: "/compute/api/modes/",
                 //method: "POST",
@@ -205,42 +205,17 @@ var app = new Vue({
 
             var vueApp = this;
 
-            // This is useful because it also keeps the order of the series
-            var seriesNames = _.pluck(vueApp.seriesMetadata, 'internalName');
-
-            // will eventually contain all data, for now put empty defaults
-            // form: 
-            /*
-                {
-                    'IR_Y+Raman_Y+BackScattering_Y': {
-                        data: [[]],
-                        visible: false
-                    },
-                    'IR_Y+Raman_Y+BackScattering_N': {
-                        data: [[]],
-                        visible: false
-                    },
-                    ...
-                }
-            */
-
-            // construct a dictionary with *only* the data series you got from the API
-            // form: 
-            /*
-                {
-                    'IR_Y+Raman_Y+BackScattering_Y': [[x1,y1], [x2,y2]],
-                    'IR_Y+Raman_Y+BackScattering_N': [[x1,y1], [x2,y2]],
-                    ...
-                }
-            */
             var yPrecision = 4;  // Precision for y-value (the value itself, but mostly for the tooltip)
-            var seriesWithData = _.chain([
+            vueApp.seriesWithData = _.chain([
                 data.x,
                 _.map(data.y, function (yval) {return Math.round(yval * Math.pow(10, yPrecision)) / Math.pow(10, yPrecision);}),
                 data.isBackScattering,
                 data.isRamanActive,
                 data.isInfraredActive,
-                data.irrepNames])
+                data.irrepNames,
+                data.alongX,
+                data.alongY,
+                data.alongZ])
             .unzip()
             .groupBy(function(point) {
                 return (
@@ -260,24 +235,72 @@ var app = new Vue({
                             isBackScattering: singlePoint[2],
                             isRamanActive: singlePoint[3],
                             isInfraredActive: singlePoint[4],
-                            irrepName: singlePoint[5]                            
+                            irrepName: singlePoint[5],
+                            alongX: singlePoint[6],
+                            alongY: singlePoint[7],
+                            alongZ: singlePoint[8]
                         }};
                 })
             })
             .value();
-            
-            //console.log(seriesNames, seriesWithData);
+
+            // Call redrawData, pass the value
+            vueApp.redrawData();
+        },
+        onChangeFilter: function(event) {
+            // The dropdown was changed. Update the internal variable, then call redrawData
+            var vueApp = this;
+            vueApp.modesFilter = event.target.value;
+            vueApp.redrawData();
+        },
+        filterData: function(data, modesFilter) {
+            // I am getting both the data and the modesFilter (the latter would also be in `this`,
+            // but I defined this function as a "class method" instead)
+
+            // Show only data points with non-zero component along a given direction
+            return _.filter(data, function(point) {
+                if (modesFilter == 'x') {
+                    return point.meta.alongX;    
+                }
+                else if (modesFilter == 'y') {
+                    return point.meta.alongY;
+                }
+                else if (modesFilter == 'z') {
+                    return point.meta.alongZ;
+                }
+                else {
+                    // All other cases, including the value 'all'
+                    return true;
+                }
+            });
+        },
+        redrawData: function() {            
+            var vueApp = this;
+
+            // This is useful because it also keeps the order of the series
+            var seriesNames = _.pluck(vueApp.seriesMetadata, 'internalName');
 
             // clean-up all series
             while(vueApp.chart.series.length > 0) {
                 vueApp.chart.series[0].remove();
             }
+            
+            // Fix the max of the y axis independent of the filter
+            var maxY = _.max( // get the maxY from the maxYPerEachSeries
+                _.map(
+                    _.values(vueApp.seriesWithData), // for each series...
+                    function(series) {
+                        //  ...get the max Y for this series
+                        return _.max(series, function(dataPoint) {return dataPoint.y;}).y;
+                    }
+                )
+            );
 
             // Recreate each of the series, in the right order
             _.each(
                 seriesNames, function(name, seriesIdx) {
                     // Hide first, if it's going to be invisible anyway
-                    if (_.has(seriesWithData, name)) {
+                    if (_.has(vueApp.seriesWithData, name)) {
                         var metaSeriesIndex = _.findIndex(vueApp.seriesMetadata, function(series){ return series.internalName == name; });
 
                         if (metaSeriesIndex == -1) {
@@ -288,7 +311,7 @@ var app = new Vue({
                                 _.extend(
                                     vueApp.seriesMetadata[metaSeriesIndex], 
                                     {
-                                        data: seriesWithData[name],
+                                        data: vueApp.filterData(vueApp.seriesWithData[name], vueApp.modesFilter),
                                         showInLegend: true
                                     }
                                 )
@@ -298,7 +321,8 @@ var app = new Vue({
                 }
             );
 
-            // this.chart.setTitle({text: 'Modes (<emph>k</emph> = ' + data.k + ')', useHTML: true});
+            // Fix the y range so it does not depend on the filtering
+            vueApp.chart.yAxis[0].update({min: 0, max: maxY}); // The min is always zero
         },
         clearData: function() {
             while(this.chart.series.length > 0) {
@@ -316,11 +340,6 @@ var app = new Vue({
                         redraw: function (event) {
                             var xmin = event.target.axes[0].min;
                             var xmax = event.target.axes[0].max;
-                            console.log('redraw', xmin, xmax);
-                            /*console.log('redraw', event.target.axes[1].coll, event.target.axes[1].min, event.target.axes[1].max);*/
-                            // DANGER! This will make infinite loops!!
-                            // Maybe check if it actually changed?
-                            // _this.fetchAndUpdateData(xmin, xmax);
                         }
                     }
                 },
