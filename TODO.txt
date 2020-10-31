@@ -14,6 +14,11 @@
 
 - add check on category I, II, III; if III, write that it's not implemented yet
 
+- check performance of assign_representation
+
+- check all warnings printed for some pointgroups
+
 - clean up code, add license
 
 - make public, deploy in production
+
