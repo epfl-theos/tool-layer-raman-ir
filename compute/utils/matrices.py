@@ -1,5 +1,7 @@
 from collections.abc import Iterable
 import numpy as np
+import scipy
+import scipy.linalg
 
 
 def replace_symbols_with_values(list_of_lists, replacements):
@@ -52,19 +54,6 @@ def replace_linear_combinations(list_of_3x3_matrices):
         result.append(new_matrix)
 
     return result
-
-
-# def get_block_coordinates(i, j, block_size=3):
-#    """Return numpy slice coordinates for block at (i, j) *block* coordinates.
-#
-#    :param i: row block coordinate (for a block of size `block_size x block_size`)
-#    :param j: column block coordinate (for a block of size `block_size x block_size`)
-#    :param block_size: the block size
-#    """
-#    return (
-#        slice(block_size * i, block_size * (i + 1)),
-#        slice(block_size * j, block_size * (j + 1)),
-#    )
 
 
 def add_block(
@@ -124,3 +113,87 @@ def matrix_initialization(variable):
     if variable[-1] == variable[-2]:
         return np.round(1.0 + 4.0 * np.random.rand(), 2)
     return np.round(-1.0 + 2 * np.random.rand(), 2)
+
+
+def get_eigvals_eigvects(num_layers, numeric_matrices, use_banded_algorithm=False):
+    """Given the number of layers and the `numeric_matrices`,
+    construct internally the K matrix and diagonalize it
+    to obtain phonon frequencies and modes.
+
+    I have to solve the eq. of motion: omega^2 U = K U
+
+    :param num_layers: the number of layers in the multilayer
+    :param numeric_matrices: a list of numeric matrices (i.e., with all parameters replaced with numeric
+        values) with the interaction of each layer with the next one.
+    :param use_banded_algorithm: if True, use a banded diagonalization algorithm, otherwise diagonalize
+        the full matrix. The banded algorithm is always faster and scaled better with the number of
+        layers, so there is no reason to set it to False except for debug reasons.
+
+    :return: (eigvals, eigvects), where eigvals is a list of eigenvalues and eigvects a list of list of
+        eigenvectors. IMPORTANT! The first three acoustic modes are removed.
+        Moreover, the i-th eigenvector is eigenvect.T[i] (note the transpose).
+    """
+    # TODO: add layer mass here should be a constant for all layers! and fix units
+
+    if use_banded_algorithm:
+        # 3 blocks (below, same layer, and above) of size 3 => total width of 9
+        # Since we only store the upper part, we only need a width of 4 (diagonal + 3 superdiagonals)
+        K_matrix = np.zeros((4, num_layers * 3))
+    else:
+        K_matrix = np.zeros((num_layers * 3, num_layers * 3))
+
+    for block_idx in range(num_layers):
+        # Interaction with upper layer
+        if block_idx < num_layers - 1:  # Not in the last layer
+            current_block = np.array(
+                numeric_matrices[block_idx % len(numeric_matrices)]
+            )
+            add_block(
+                matrix=K_matrix,
+                block=current_block,
+                block_i=block_idx,
+                block_j=block_idx,
+                factor=+1,
+                banded=use_banded_algorithm,
+            )
+            add_block(
+                matrix=K_matrix,
+                block=current_block,
+                block_i=block_idx + 1,
+                block_j=block_idx,
+                factor=-1,
+                banded=use_banded_algorithm,
+            )
+        # Interaction with lower layer
+        if block_idx > 0:  # Not in the first layer
+            previous_block = np.array(
+                numeric_matrices[(block_idx - 1) % len(numeric_matrices)]
+            )
+            add_block(
+                matrix=K_matrix,
+                block=previous_block,
+                block_i=block_idx,
+                block_j=block_idx,
+                factor=+1,
+                banded=use_banded_algorithm,
+            )
+            add_block(
+                matrix=K_matrix,
+                block=previous_block,
+                block_i=block_idx - 1,
+                block_j=block_idx,
+                factor=-1,
+                banded=use_banded_algorithm,
+            )
+
+    # Get frequencies (eigvals) and eigenvectors (for mode analysis)
+    if use_banded_algorithm:
+        eigvals, eigvects = scipy.linalg.eig_banded(K_matrix, lower=False)
+    else:
+        eigvals, eigvects = np.linalg.eigh(K_matrix)
+
+    # The first three should be acoustic i.e. almost zero; the rest should be positive
+    assert np.sum(np.abs(eigvals[:3])) < 1.0e-8
+
+    # Remove the first three acoustic modes
+    return eigvals[3:], eigvects[:, 3:]
