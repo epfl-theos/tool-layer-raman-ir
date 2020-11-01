@@ -1,0 +1,5 @@
+This code has been written by:
+
+- Giovanni Pizzi, École Polytechnique Fédérale de Lausanne (EPFL), Switzerland
+- Marco Gibertini, University of Modena and Reggio Emilia, Italy
+

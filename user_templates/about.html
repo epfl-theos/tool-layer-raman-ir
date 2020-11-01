@@ -1,1 +1,23 @@
-This tool allows to...
+<p>This tool allows users to upload the bulk crystal structure of a layered material
+in a number of common formats (or to choose from a few examples)
+and, after detection of bonds and of 2D layers, it determines the symmetry of
+the inter-layer force-constant matrices and the corresponding optical-activity fan diagram.
+</p>
+
+<p>
+The output page that is displayed includes relevant information on the structure
+(interactive visualizations of the bulk multilayer and of each layer, information on the coincidence operation and of the symmetry properties of the multilayer), and shows the independent components of the force-constant matrices.
+For the latter, random values are proposed, chosen so as to mimick their typical ratios.
+These can be changed interactively, and the tool then computes in real-time the corresponding fan diagram, including the optical activity for infrared and Raman spectroscopy
+(and, for Raman modes, it also shows if the mode would be detectable in a back-scattering geometry).
+</p>
+
+<p>
+In input, a skin factor parameter <em>f</em> can also be selected to tune the bond-detection algorithm.
+In particular, the tool will consider two atoms A and B bonded if their distance is smaller than <em>f(r<sub>A</sub> + r<sub>B</sub>)</em>, where <em>r<sub>A</sub></em> and <em>r<sub>B</sub></em> are the corresponding covalent atomic radii from the following paper: <a href="https://doi.org/10.1039/B801115J" target="_blank">B. Cordero <em>et al.</em>, <em>Covalent radii revisited</em>, Dalton Trans. 21, 2832 (2008)</a>.
+</p>
+
+<p>
+<em>Note</em>: the tool only works for structures that satisfy the maximum-degree-of-order hypotheses of order-disorder polytypes, and in particular that the structure is composed by a stacking of the same 2D layer, with the same coincidence relationship bringing any layer onto the next one.
+If any of the conditions is not satisfied, the tool will display a message informing that the structure does not satisfy the assumptions, and so the symmetry analysis cannot be applied.
+</p>

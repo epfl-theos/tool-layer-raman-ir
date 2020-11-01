@@ -2,8 +2,6 @@
 
 - General TODO CHECK
 
-- check text in tool frontend (ack, and general checks)
-
 - add, in output, the 2x2 cell after rotation along z, and the coordinates of the atoms for each layer after rotation
   (needed to correctly interpret the R and tau of the common transformation).
   Maybe say also what is the transformation from the original cell?
@@ -14,11 +12,13 @@
 
 - add check on category I, II, III; if III, write that it's not implemented yet
 
+- add comment on the superscript in the force-constant matrices?
+
 - check performance of assign_representation
 
 - check all warnings printed for some pointgroups
 
-- clean up code, add license
+- clean up code
 
 - make public, deploy in production
 

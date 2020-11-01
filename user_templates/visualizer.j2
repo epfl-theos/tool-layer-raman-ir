@@ -336,10 +336,14 @@
 
     <div id='layercouplingtitle'><h2>Layer couplings</h2></div>
     <div id="app">  <!-- Vue.js will work in here -->
-        <h3>Elastic force constant matrices</h3>
+        <h3>Elastic force-constant matrices</h3>
+        <p>General form of the interlayer force-constant matrices between a layer and the next one (whose symmetry depends on the symmetry of the bilayer):</p>
         <div style="width: 100%; text-align: center;" v-html="getLatexHTML(latexCode)" id="test"></div>
 
         <h3>Force-constant parameters</h3>
+        <p>Select here the values of the parameters appearing inside the elastic force-constant matrices above.</p>
+        <p>Important note: the starting parameters are chosen randomly, and their values are chosen so as to mimick their typical ratios.
+        Feel free to adapt their values either to fit experimental data or using values obtained from first-principles simulations.</p>
         <div style="max-width: 400px; margin: auto;">
             <template v-for="variable in forceConstantVariables">
                 <div class="row">
@@ -419,7 +423,16 @@
     </div>
     {% endif %}
 
+
+
     <div id='finalinfo'>
+        <div style="border: 1px solid #aaa;border-radius: 6px;margin-left: -5px;padding: 5px;margin-right: -5px;margin-bottom: 15px;padding-bottom: 0;background-color: #ededed;">
+            <p><strong>How to cite:</strong> If you use this tool, please cite:<br>
+            G. Pizzi, S. Milana, A. C. Ferrari, N. Marzari, M. Gibertini, 
+                <em>Shear and breathing modes of all layered materials</em>, to be submitted (2020).
+            </p>
+        </div>
+        <p>Found a bug or have a suggestion? Please <a href="https://github.com/epfl-theos/layer-raman-tool/issues" target="_blank">check existing issues here</a> and, if needed, open a new one.</p>
         <p><span style="font-weight: bold;">
             Technical info</span>:
             Time spent to compute quantities: {{ '%.3f' % compute_time }} s.
