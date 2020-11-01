@@ -122,7 +122,7 @@ def process_structure_core(
         transl_latex = None
     else:
         transl_latex = (
-            "\\tau = \\left(\\begin{array}{c}%+10.5f \\\\%+10.5f \\\\%+10.5f \\end{array}\\right)\\text{\\AA}"
+            "\\tau = \\left(\\begin{array}{c}%+15.10f \\\\%+15.10f \\\\%+15.10f \\end{array}\\right)\\text{\\AA}"
             % (transl[0], transl[1], transl[2])
         )
     return_data["common_layers_search"] = {
@@ -135,6 +135,23 @@ def process_structure_core(
     # to be set as a minimum for the REST API requests
     num_layers_bulk = len(layer_indices)
     return_data["num_layers_lulk"] = num_layers_bulk
+
+    cell2d = rotated_asecell.cell[:2, :2].tolist()
+    return_data["rotated_cell"] = {
+        "cell2d": cell2d,
+        # "\\left(\\begin{array}{cc}%+15.10f & %+15.10f \\\\"
+        # "%+15.10f & %+15.10f\\end{array}\\right)\\text{\\AA}" % (
+        #    cell2d[0][0], cell2d[0][1], cell2d[1][0], cell2d[1][1]),
+        "layer_atoms": [
+            list(
+                zip(
+                    rotated_asecell[this_layer_indices].symbols,
+                    rotated_asecell[this_layer_indices].positions.tolist(),
+                )
+            )
+            for this_layer_indices in layer_indices
+        ],
+    }
 
     ## COMPUTE HERE VARIOUS POINTGROUP/SPACEGROUP INFORMATION FOR BULK AND VARIOUS MLs
     spg_bilayer = get_symmetry_multilayer(rotated_asecell, layer_indices, num_layers=2)

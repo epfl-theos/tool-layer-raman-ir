@@ -129,6 +129,11 @@
                     throwOnError: false,
                     displayMode: true
                 });
+            window.katex.render(
+                {{rotated_cell['cell2d']|tojson|safe}}, $("#rotatedCell2D")[0], {
+                    throwOnError: false,
+                    displayMode: true
+                });
         });
         </script>
     {% endif %}
@@ -157,6 +162,13 @@
     {% endfor %}
     
         $( "#accordion-instructions" ).accordion({
+            collapsible: true,
+            heightStyle: "content", // Avoid that all have the same height
+            active: false  // Start all closed
+            //active: -1  // Open the last one
+        });
+
+        $( "#accordion-cell-after-rotation" ).accordion({
             collapsible: true,
             heightStyle: "content", // Avoid that all have the same height
             active: false  // Start all closed
@@ -281,6 +293,8 @@
         <div>
             {% if layers %}
 
+            <h3>Layers identification</h3>
+
             {{ layers|length }} layers found for this structure using a skin factor of {{ skin_factor }}. <br>
 
             {% for layer_xsf, this_layer_indices in layers %}
@@ -297,6 +311,57 @@
                     </div>
                 </div>
             {% endfor %}
+
+            <h3>Cell rotation and layer reordering</h3>
+
+            <div id="accordion-cell-after-rotation">
+            <h2>Unit cell after rotation</h2>
+            <div>
+            <p>We report here the rotated unit cell after rotation, so as to have the stacking axis along <em>z</em>
+            and orthogonal to the layer planes.</p>
+
+            <h3>In-plane cell vectors (&#8491;)</h3>
+                <table class="center">
+                <thead>
+                    <th style="padding-right: 15px; text-align: center">v</th>
+                    <th style="text-align: center">x</th>
+                    <th style="text-align: center">y</th>
+                </thead>
+                <tbody>
+                    {% for v in rotated_cell['cell2d'] %}
+                    <tr>
+                    <td style="padding-right: 15px; text-align: center">v<sub>{{ loop.index }}</sub></td>
+                    <td style="text-align: right"><code>{{ "%.10f" % v[0]|float }}</code></td>
+                    <td style="text-align: right"><code>{{ "%.10f" % v[1]|float }}</code></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                </table>
+
+            <h3>Atomic Cartesian coordinates (&#8491;), grouped per layer</h3>
+            {% for this_layer_atoms in rotated_cell['layer_atoms'] %}
+                <table class="center">
+                <thead>
+                    <tr><th style="padding-right: 15px; text-align: center">Layer {{ loop.index }}</th>
+                    <th style="text-align: center">x</th>
+                    <th style="text-align: center">y</th>
+                    <th style="text-align: center">z</th>
+                </tr></thead>
+                <tbody>
+                
+                {% for atom_info in this_layer_atoms %}
+                    <tr>
+                        <td style="padding-right: 15px; text-align: center">{{ atom_info[0] }}</td>
+                        <td style="text-align: right"><code>{{  "%.10f" % atom_info[1][0] | float }}</code></td>
+                        <td style="text-align: right"><code>{{ "%.10f" % atom_info[1][1] | float }}</code></td>
+                        <td style="text-align: right"><code>{{ "%.10f" % atom_info[1][2] | float }}</code></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                </table>
+            {% endfor %}
+            </div>
+            </div>
 
             {% else %}    
                 No layers could be found for this structure and the specified skin factor of {{ skin_factor }}.

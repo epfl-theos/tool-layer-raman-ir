@@ -2,10 +2,6 @@
 
 - General TODO CHECK
 
-- add, in output, the 2x2 cell after rotation along z, and the coordinates of the atoms for each layer after rotation
-  (needed to correctly interpret the R and tau of the common transformation).
-  Maybe say also what is the transformation from the original cell?
-
 - Check all examples results
 
 - Implement automatic tests
