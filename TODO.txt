@@ -1,20 +1,29 @@
-- Check ML pointgroup (in particular WTe2)
+HIGH PRIORITY:
+- Check ML pointgroup (in particular WTe2) - is it correct?
 
-- General TODO CHECK
+- General TODO CHECK: check *all* TODOs in the code
+
+- check all warnings printed for some pointgroups on the logs - are they bugs? should they be errors?
 
 - Check all examples results
 
-- Implement automatic tests
+
+MID PRIORITY/PRE-PUBLICATION:
 
 - add check on category I, II, III; if III, write that it's not implemented yet
 
-- add comment on the superscript in the force-constant matrices?
-
-- check performance of assign_representation
-
-- check all warnings printed for some pointgroups
+- double check all text
+  - in particular: add comment on the meaning of the superscript in the force-constant matrices?
 
 - clean up code
 
-- make public, deploy in production
+- make github repo public
+
+- Implement automatic tests
+  - Note: they could be the current examples, but also add examples of 3D, examples of 2D but different layers, etc.
+
+- Add more 2D examples, possibly with different pointgroups
+
+LOW PRIORITY/NOT CRITICAL:
+- check performance of assign_representation
 
