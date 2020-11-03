@@ -15,6 +15,10 @@ MID PRIORITY/PRE-PUBLICATION:
 - double check all text
   - in particular: add comment on the meaning of the superscript in the force-constant matrices?
 
+- add a variable symm_threshold to be used all over the code as precision for symmetry checks (default to 5e-2)
+
+- add checkboxes instead of a dropdown menu to select one (or more) set of modes to be visualised (e.g. the two shear but not the breathing)
+
 - clean up code
 
 - make github repo public
@@ -26,4 +30,4 @@ MID PRIORITY/PRE-PUBLICATION:
 
 LOW PRIORITY/NOT CRITICAL:
 - check performance of assign_representation
-
+- if possible, change default input parser to cif
