@@ -8,6 +8,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from .structures import get_covalent_radii_array
 from .linalg import shortest_vector_index, gauss_reduce
 from .map_positions import are_same_except_order
+from .pointgroup import SYMPREC
 
 
 def find_layers(  # pylint: disable=too-many-locals,too-many-statements,too-many-branches
@@ -343,7 +344,7 @@ def find_common_transformation(
     if transformation01[0][2, 2] < 0:
         # Get the spacegroup of the bulk
         bulk = adaptor.get_structure(asecell)
-        spg0 = SpacegroupAnalyzer(bulk, symprec=1e-2)
+        spg0 = SpacegroupAnalyzer(bulk, symprec=SYMPREC)
         for op in spg0.get_symmetry_operations(cartesian=True):
             # as the first layer is at the origin we are interested
             # only in fractional translations along z that are zero

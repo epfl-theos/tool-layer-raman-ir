@@ -8,6 +8,8 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import copy
 
 
+SYMPREC = 5.0e-2
+
 # international number, Hermann-Mauguin notation, Schoenflies notation
 POINTGROUP_MAPPING = [
     (0, "", ""),  # We put this so we can directly use indexing

@@ -21,6 +21,7 @@ from .utils.pointgroup import (
     pg_number_from_hm_symbol,
     prepare_pointgroup,
     prepare_spacegroup,
+    SYMPREC,
 )
 
 # Version of this tool
@@ -193,7 +194,7 @@ def process_structure_core(
     )
 
     bulk_spg = SpacegroupAnalyzer(
-        AseAtomsAdaptor().get_structure(asecell), symprec=1.0e-3
+        AseAtomsAdaptor().get_structure(asecell), symprec=SYMPREC
     )
     pg_bulk_number = pg_number_from_hm_symbol(bulk_spg.get_point_group_symbol())
 
@@ -277,7 +278,7 @@ def construct_force_constant_dict(  # pylint: disable=too-many-locals,too-many-n
     return fc_dict
 
 
-def get_symmetry_multilayer(asecell, layer_indices, num_layers, symprec=1e-3):
+def get_symmetry_multilayer(asecell, layer_indices, num_layers, symprec=SYMPREC):
     """
     Return the SpacegroupAnalyzer object for a finite multilayer with N layers of the given asecell
 
