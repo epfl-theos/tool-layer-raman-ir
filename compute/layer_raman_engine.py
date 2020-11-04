@@ -55,9 +55,12 @@ def process_structure_core(
 
     # prepare template dictionary to return later
     return_data = {
-        "app_data_json": None,  # None by default, if e.g. layers are not found
+        "app_data_json": json.dumps(
+            None
+        ),  # None by default, if e.g. layers are not found
         "common_layers_search": None,  # None by default
         "layers": [],  # Empty list if no layers found
+        "has_common_layers": False,
         "xsfstructure": get_xsf_structure(structure),
         "inputstructure_cell_vectors": inputstructure_cell_vectors,
         "inputstructure_atoms_scaled": inputstructure_atoms_scaled,
@@ -139,9 +142,6 @@ def process_structure_core(
     cell2d = rotated_asecell.cell[:2, :2].tolist()
     return_data["rotated_cell"] = {
         "cell2d": cell2d,
-        # "\\left(\\begin{array}{cc}%+15.10f & %+15.10f \\\\"
-        # "%+15.10f & %+15.10f\\end{array}\\right)\\text{\\AA}" % (
-        #    cell2d[0][0], cell2d[0][1], cell2d[1][0], cell2d[1][1]),
         "layer_atoms": [
             list(
                 zip(
@@ -152,6 +152,15 @@ def process_structure_core(
             for this_layer_indices in layer_indices
         ],
     }
+
+    if rot is None:
+        # I return here; some sections will not be present in the output so they will not be shown.
+        compute_time = time.time() - start_time
+        return_data["compute_time"] = compute_time
+        logger.debug(json.dumps(return_data, indent=2, sort_keys=True))
+        return return_data
+
+    return_data["has_common_layers"] = True
 
     ## COMPUTE HERE VARIOUS POINTGROUP/SPACEGROUP INFORMATION FOR BULK AND VARIOUS MLs
     spg_bilayer = get_symmetry_multilayer(rotated_asecell, layer_indices, num_layers=2)

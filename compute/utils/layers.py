@@ -36,6 +36,7 @@ def find_layers(  # pylint: disable=too-many-locals,too-many-statements,too-many
     layer_indices = []
     visited = []
     aselayer = None
+    final_layered_structures = None
 
     # Loop over atoms (idx: atom index)
     for idx in range(len(asecell)):  # pylint: disable=too-many-nested-blocks

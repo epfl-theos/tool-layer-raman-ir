@@ -297,27 +297,10 @@
 
             {{ layers|length }} layers found for this structure using a skin factor of {{ skin_factor }}. <br>
 
-            {% for layer_xsf, this_layer_indices in layers %}
-                <div id="accordion-layer{{loop.index}}">
-                    <h3>Layer {{loop.index}} (including the {{ this_layer_indices|length }} atoms with indices 
-                {% for index in this_layer_indices|sort -%}
-                    {{index+1}}{% if not loop.last %}, {% endif -%}
-                {% endfor -%})</h3>
-                    <div>
-                        <div class='structureouter'>
-                            {# ~ is the jinja string-concatenation operator #}
-                            {{ render_jsmol_visualizer(suffix='layer' ~ loop.index, nx=3, ny=3, nz=1) }}
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-
-            <h3>Cell rotation and layer reordering</h3>
-
             <div id="accordion-cell-after-rotation">
-            <h2>Unit cell after rotation</h2>
+            <h2>Unit cell after rotation (with stacking axis along <em>z</em></h2>
             <div>
-            <p>We report here the rotated unit cell after rotation, so as to have the stacking axis along <em>z</em>
+            <p>We report here the rotated unit cell after rotation, so as to have the stacking axis along <em>z)</em>
             and orthogonal to the layer planes.</p>
 
             <h3>In-plane cell vectors (&#8491;)</h3>
@@ -363,6 +346,23 @@
             </div>
             </div>
 
+            <h3>Layer visualization</h3>
+
+            {% for layer_xsf, this_layer_indices in layers %}
+                <div id="accordion-layer{{loop.index}}">
+                    <h3>Layer {{loop.index}} (including the {{ this_layer_indices|length }} atoms with indices 
+                {% for index in this_layer_indices|sort -%}
+                    {{index+1}}{% if not loop.last %}, {% endif -%}
+                {% endfor -%})</h3>
+                    <div>
+                        <div class='structureouter'>
+                            {# ~ is the jinja string-concatenation operator #}
+                            {{ render_jsmol_visualizer(suffix='layer' ~ loop.index, nx=3, ny=3, nz=1) }}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+
             {% else %}    
                 No layers could be found for this structure and the specified skin factor of {{ skin_factor }}.
             {% endif %}
@@ -372,20 +372,20 @@
     {% if common_layers_search is not none %}
         <div id='layerstitle'><h2>Common-layer search</h2></div>
         <div>
-        {% if common_layers_search['rot'] is not none %}
+        {% if common_layers_search['rot_latex'] is not none %}
             A common coincidence operation brings each layer onto the next.<br>
             One possible coincidence operation is:
             <div id="coincidence-R"></div>
             <div id="coincidence-t"></div>
         {% else %}
-            The structure does not seem to be a MDO polytype (i.e., composed by the same layer, with the same coincidence operation bringing each layer onto the next one):
-            {{ common_layers_search['message'] }}
+            The structure is layered, but does not seem to be a MDO polytype (i.e., composed of repetitions of the same layer, with the same coincidence operation bringing each layer onto the next one):
+            {{ common_layers_search['message'] }}.
         {% endif %}
         </div>
     {% endif %}
 
     {# Skip completely the fan-diagram block if we didn't find layers etc. #}
-    {% if app_data_json is not none %}
+    {% if has_common_layers %}
     <div id='symmetryinfotitle'><h2>Symmetry information</h2></div>
 
     <div>
@@ -472,12 +472,12 @@
 
                     <div class="form-check form-check-inline">
                         Show modes that have a non-zero oscillation along:
-                        <input class="form-check-input" type="checkbox" id="modes-filter-x" value="yes" checked v-on:input="onChangeFilter">
-                        <label class="form-check-label" for="modes-filter-x">x (shear)</label>
-                        <input class="form-check-input" type="checkbox" id="modes-filter-y" value="yes" checked v-on:input="onChangeFilter">
-                        <label class="form-check-label" for="modes-filter-y">y (shear)</label>
-                        <input class="form-check-input" type="checkbox" id="modes-filter-z" value="yes" checked v-on:input="onChangeFilter">
-                        <label class="form-check-label" for="modes-filter-z">z (layer-breathing)</label>
+                        <input type="checkbox" id="modes-filter-x" value="yes" checked v-on:input="onChangeFilter">
+                        <label for="modes-filter-x">x (shear)</label>
+                        <input type="checkbox" id="modes-filter-y" value="yes" checked v-on:input="onChangeFilter">
+                        <label for="modes-filter-y">y (shear)</label>
+                        <input type="checkbox" id="modes-filter-z" value="yes" checked v-on:input="onChangeFilter">
+                        <label for="modes-filter-z">z (layer-breathing)</label>
                     </div>
                 </div>
             </div>
@@ -488,7 +488,7 @@
     </div>
     {% endif %}
 
-
+    <hr style="margin-top: 40px;">
 
     <div id='finalinfo'>
         <div style="border: 1px solid #aaa;border-radius: 6px;margin-left: -5px;padding: 5px;margin-right: -5px;margin-bottom: 15px;padding-bottom: 0;background-color: #ededed;">
@@ -509,7 +509,10 @@
     
 
 </div>
+{% if has_common_layers %}
+{# Only show if the vue div has been put on the page #}
 <script src="../../user_static/js/main.js"></script>
+{% endif %}
 <script src="../../user_static/js/visualization.js"></script>
 <script>    
     bulkstructureviewer = jsmolCrystal({{ xsfstructure|tojson|safe }}, "structure-content-bulk", "jmolAppletbulk", [2,2,2]);

@@ -21,8 +21,7 @@ MID PRIORITY/PRE-PUBLICATION:
 
 - make github repo public
 
-- Implement automatic tests
-  - Note: they could be the current examples, but also add examples of 3D, examples of 2D but different layers, etc.
+- Implement automatic tests (using the examples in the folder)
 
 - Add more 2D examples, possibly with different pointgroups
 
