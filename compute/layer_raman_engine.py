@@ -171,11 +171,24 @@ def process_structure_core(
     fc_dict = construct_force_constant_dict(all_dicts, all_matrices)
 
     pg_bilayer_number = pg_number_from_hm_symbol(spg_bilayer.get_point_group_symbol())
-    pg_monolayer_number = pg_number_from_hm_symbol(
-        get_symmetry_multilayer(
-            rotated_asecell, layer_indices, num_layers=1
-        ).get_point_group_symbol()
+
+    spg_monolayer = get_symmetry_multilayer(
+        rotated_asecell, layer_indices, num_layers=1
     )
+    pg_monolayer_number = pg_number_from_hm_symbol(
+        spg_monolayer.get_point_group_symbol()
+    )
+
+    # This list contains either -1 or 1; if there is at least one -1, it means that the layer is non-polar
+    # (e.g. has inversion symetry or a mirror orthogonal to the stacking axis)
+    monolayer_has_z_inversion = any(
+        abs(value + 1) < 1.0e-6
+        for value in (
+            operation.rotation_matrix[2, 2]
+            for operation in spg_monolayer.get_point_group_operations()
+        )
+    )
+
     # Either a finite ML with num_layers_bulk, or num_layers_bulk + 1 (the even between the two)
     pg_even_number = pg_number_from_hm_symbol(
         get_symmetry_multilayer(
@@ -201,6 +214,7 @@ def process_structure_core(
     return_data["pointgroup_even"] = prepare_pointgroup(pg_even_number)
     return_data["pointgroup_odd"] = prepare_pointgroup(pg_odd_number)
     return_data["pointgroup_monolayer"] = prepare_pointgroup(pg_monolayer_number)
+    return_data["monolayer_has_z_inversion"] = monolayer_has_z_inversion
     return_data["pointgroup_bilayer"] = prepare_pointgroup(pg_bilayer_number)
     return_data["pointgroup_bulk"] = prepare_pointgroup(pg_bulk_number)
     return_data["spacegroup_bulk"] = prepare_spacegroup(bulk_spg)
@@ -401,6 +415,7 @@ def construct_all_matrices(  # pylint: disable=too-many-locals
     matrix_lists = []
     matrix_dicts = [matrix_dict]
     this_transformation = np.identity(3)
+    # TODO: check - e.g. for MoS2 there are two layers but only one matrix?
     for _ in range(num_layers):
         m_dict, m_list = rotate_and_simplify_matrix(matrix_dict, this_transformation)
         matrix_lists.append(m_list)

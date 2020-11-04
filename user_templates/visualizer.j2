@@ -390,12 +390,24 @@
 
     <div>
         <ul>
-            <li>Monolayer point group: {{ pointgroup_monolayer.schoenflies_name | safe }} ({{ pointgroup_monolayer.hm_name | safe }})</li>
-            <li>Bilayer point group: {{ pointgroup_bilayer.schoenflies_name | safe }} ({{ pointgroup_bilayer.hm_name | safe }})</li>
-            <li>Multilayer point group for <emph>even N</emph> ≥ {{ num_layers_lulk }}: {{ pointgroup_even.schoenflies_name | safe }} ({{ pointgroup_even.hm_name | safe }})</li>
-            <li>Multilayer point group for <emph>odd N</emph> ≥ {{ num_layers_lulk }}: {{ pointgroup_odd.schoenflies_name | safe }} ({{ pointgroup_odd.hm_name | safe }})</li>
-            <li>Bulk point group: {{ pointgroup_bulk.schoenflies_name | safe }} ({{ pointgroup_bulk.hm_name | safe }})</li>
-            <li>Bulk space group: {{ spacegroup_bulk.hm_name | safe }}, international number: {{ spacegroup_bulk.international_number }}</li>
+            <li>Monolayer point group: {{ pointgroup_monolayer.schoenflies_name | safe }} ({{ pointgroup_monolayer.hm_name | safe }}).
+                <ul>
+                    <li>The monolayer is {% if monolayer_has_z_inversion %}non-{% endif %}polar, i.e., it {% if monolayer_has_z_inversion %}has{% else %}does not have{% endif %} operations that flip the <em>z</em> axis.</li>
+                </ul>
+            </li>
+            <li>Bilayer point group: {{ pointgroup_bilayer.schoenflies_name | safe }} ({{ pointgroup_bilayer.hm_name | safe }}).</li>
+            <li>Multilayer point group:
+                <ul>            
+                    <li>for <emph>even N</emph> ≥ {{ num_layers_lulk }}: {{ pointgroup_even.schoenflies_name | safe }} ({{ pointgroup_even.hm_name | safe }}).</li>
+                    <li>for <emph>odd N</emph> ≥ {{ num_layers_lulk }}: {{ pointgroup_odd.schoenflies_name | safe }} ({{ pointgroup_odd.hm_name | safe }}).</li>
+                </ul>
+            </li>
+            <li>Bulk symmetry:
+                <ul>
+                    <li>Bulk point group: {{ pointgroup_bulk.schoenflies_name | safe }} ({{ pointgroup_bulk.hm_name | safe }}).</li>
+                    <li>Bulk space group: {{ spacegroup_bulk.hm_name | safe }} (international number: {{ spacegroup_bulk.international_number }}).</li>
+                </ul>
+            </li>
         </ul>
     </div>
 

@@ -7,17 +7,13 @@ HIGH PRIORITY/QUICK:
 
 
 HIGH PRIORITY:
-- [MARCO] Check ML pointgroup (in particular WTe2) - is it correct?
-
 - [MARCO+GIO] General TODO CHECK: check *all* TODOs in the code
 
 - [MARCO] check all warnings printed for some pointgroups on the logs - are they bugs? should they be errors?
 
 - [MARCO] Check all examples results
 
-- [GIO] add check on category I, II, III; if III, write that it's not implemented yet
-
-- [GIO] add example for category III (E.g. Bi2TeI, but will probably need to change the interlayer-distance to make it category III; or create one artificially, e.g. take BiTeCl and flip it).
+- [GIO] Understand what happens for category III. Also, add example for category III (E.g. Bi2TeI, but will probably need to change the interlayer-distance to make it category III; or create one artificially, e.g. take BiTeCl and flip it).
 
 MID PRIORITY/PRE-PUBLICATION:
 
