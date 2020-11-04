@@ -4,6 +4,7 @@ import os
 import pytest
 
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.by import By
 from urllib.parse import urlparse
 
 # Note: you need to build docker and start it with
@@ -100,9 +101,8 @@ def submit_structure(selenium, file_abspath, parser_name):
         with open(extra_file) as fhandle:
             extra_data = json.load(fhandle)
         for extra_name, extra_value in extra_data.items():
-            selenium.find_element_by_xpath(
-                "//input[@name='{}']".format(extra_name)
-            ).send_keys(str(extra_value))
+            selenium.find_element(By.NAME, extra_name).send_keys(str(extra_value))
+        selenium.save_screenshot("screenshot.png")
 
     # Submit form
     # selenium.find_element_by_xpath("//input[@value='Calculate my structure']").click()

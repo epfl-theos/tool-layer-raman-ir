@@ -13,6 +13,8 @@ HIGH PRIORITY:
 
 - [MARCO] Check all examples results -> The strings are in the tests!
 
+- [GIO] fix problematic tests
+
 - [GIO] Understand what happens for category III. Also, add example for category III (E.g. Bi2TeI, but will probably need to change the interlayer-distance to make it category III; or create one artificially, e.g. take BiTeCl and flip it).
 
 MID PRIORITY/PRE-PUBLICATION:
