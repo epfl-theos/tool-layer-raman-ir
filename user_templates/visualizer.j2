@@ -469,19 +469,19 @@
                     <div style="width: 200px; margin-left: auto; margin-right: auto">
                         <input type="range" min="5" max="20" value="10" step="1" v-model="maxLayers" v-on:input="updateGraphDebounced"> 
                     </div>
-                    Filter modes to show:
-                    <!--<div style="width: 200px; margin-left: auto; margin-right: auto">-->
-                    <select name="modes-filter" v-on:input="onChangeFilter">
-                        <option value="all">All modes</option>
-                        <option value="x">Non-zero oscillation along x (shear)</option>
-                        <option value="y">Non-zero oscillation along y (shear)</option>
-                        <option value="z">Non-zero oscillation along z (layer breathing)</option>
-                    </select>
-                    <!--</div>-->
+
+                    <div class="form-check form-check-inline">
+                        Show modes that have a non-zero oscillation along:
+                        <input class="form-check-input" type="checkbox" id="modes-filter-x" value="yes" checked v-on:input="onChangeFilter">
+                        <label class="form-check-label" for="modes-filter-x">x (shear)</label>
+                        <input class="form-check-input" type="checkbox" id="modes-filter-y" value="yes" checked v-on:input="onChangeFilter">
+                        <label class="form-check-label" for="modes-filter-y">y (shear)</label>
+                        <input class="form-check-input" type="checkbox" id="modes-filter-z" value="yes" checked v-on:input="onChangeFilter">
+                        <label class="form-check-label" for="modes-filter-z">z (layer-breathing)</label>
+                    </div>
                 </div>
             </div>
         </div>        
-
 
         <div id="plotContainer" style="min-width: 310px; max-width: 1600px; height: 600px; margin: 0 auto"></div>
 

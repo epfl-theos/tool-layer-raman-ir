@@ -13,7 +13,9 @@ var app = new Vue({
         currentRequest: null,
         appData: appData,
         latexCode: "",
-        modesFilter: "all",
+        modesFilterX: true,
+        modesFilterY: true,
+        modesFilterZ: true,
         forceConstantVariables: [],
         seriesWithData: {},
 
@@ -248,28 +250,27 @@ var app = new Vue({
         onChangeFilter: function(event) {
             // The dropdown was changed. Update the internal variable, then call redrawData
             var vueApp = this;
-            vueApp.modesFilter = event.target.value;
+            if (event.target.id == "modes-filter-x") {
+                vueApp.modesFilterX = event.target.checked;
+            } else if (event.target.id == "modes-filter-y") {
+                vueApp.modesFilterY = event.target.checked;
+            } else if (event.target.id == "modes-filter-z") {
+                vueApp.modesFilterZ = event.target.checked;
+            }
+            // ignore other cases - it should not happen
             vueApp.redrawData();
         },
-        filterData: function(data, modesFilter) {
+        filterData: function(data, filterX, filterY, filterZ) {
             // I am getting both the data and the modesFilter (the latter would also be in `this`,
             // but I defined this function as a "class method" instead)
 
             // Show only data points with non-zero component along a given direction
             return _.filter(data, function(point) {
-                if (modesFilter == 'x') {
-                    return point.meta.alongX;    
-                }
-                else if (modesFilter == 'y') {
-                    return point.meta.alongY;
-                }
-                else if (modesFilter == 'z') {
-                    return point.meta.alongZ;
-                }
-                else {
-                    // All other cases, including the value 'all'
-                    return true;
-                }
+                return (
+                    (filterX && point.meta.alongX ) ||
+                    (filterY && point.meta.alongY ) ||
+                    (filterZ && point.meta.alongZ )
+                );
             });
         },
         redrawData: function() {            
@@ -309,7 +310,7 @@ var app = new Vue({
                                 _.extend(
                                     vueApp.seriesMetadata[metaSeriesIndex], 
                                     {
-                                        data: vueApp.filterData(vueApp.seriesWithData[name], vueApp.modesFilter),
+                                        data: vueApp.filterData(vueApp.seriesWithData[name], vueApp.modesFilterX, vueApp.modesFilterY, vueApp.modesFilterZ),
                                         showInLegend: true
                                     }
                                 )
@@ -428,7 +429,6 @@ var app = new Vue({
 
         this.$nextTick(function () {
             // code that assumes this.$el is in-document
-            //console.log('mounted', this.$el);
 
             // at this point everything should be loaded
             this.latexCode = window.appData.forceConstants.description;
