@@ -30,6 +30,9 @@ VALID_EXAMPLES = {
     # https://www.materialscloud.org/explore/2dstructures/details/904c1f0e-da23-42f0-95b4-a4fee98e6d04
     # (Originally from COD, 9012486, Cmce)
     "blackP": ("P-904c1f0e-da23-42f0-95b4-a4fee98e6d04_structure.xsf", 1.1),
+    "graphite": ("graphite-544d62e4-8ebe-404c-aa17-b99be62ea70b.xsf", 1.1),
+    "BN": ("BN-P6_3mmc-f7e2ff32-27ed-4c89-9c3c-4acbaffbb897.xsf", 1.1),
+    "BiTeCl": ("BiTeCl-ICSD79362-category-II.xsf", 1.3),
 }
 
 

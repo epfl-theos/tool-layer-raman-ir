@@ -1,30 +1,46 @@
+HIGH PRIORITY/QUICK:
+- [MARCO] Check BN P-6m2 (in xsf-examples/not-layered): is it true that it does not have a common transformation?
+
+- [MARCO] Also, check the structures for graphite and BN - they come from COD from the 2D project, but the stacking does not seem right for one of the two?
+
+- [MARCO] double check all text; in particular: add comment on the meaning of the superscript in the force-constant matrices?
+
+
 HIGH PRIORITY:
-- Check ML pointgroup (in particular WTe2) - is it correct?
+- [MARCO] Check ML pointgroup (in particular WTe2) - is it correct?
 
-- General TODO CHECK: check *all* TODOs in the code
+- [MARCO+GIO] General TODO CHECK: check *all* TODOs in the code
 
-- check all warnings printed for some pointgroups on the logs - are they bugs? should they be errors?
+- [MARCO] check all warnings printed for some pointgroups on the logs - are they bugs? should they be errors?
 
-- Check all examples results
+- [MARCO] Check all examples results
 
+- [GIO] add check on category I, II, III; if III, write that it's not implemented yet
+
+- [GIO] add example for category III (E.g. Bi2TeI, but will probably need to change the interlayer-distance to make it category III; or create one artificially, e.g. take BiTeCl and flip it).
 
 MID PRIORITY/PRE-PUBLICATION:
 
-- add check on category I, II, III; if III, write that it's not implemented yet
+- [GIO] Implement automatic tests (using the examples in the folder)
 
-- double check all text
-  - in particular: add comment on the meaning of the superscript in the force-constant matrices?
+- [MARCO] add a variable symm_threshold to be used all over the code as precision for symmetry checks (default to 5e-2)
 
-- add a variable symm_threshold to be used all over the code as precision for symmetry checks (default to 5e-2)
+- [MARCO] Add more 2D examples, possibly with different pointgroups
 
-- clean up code
 
-- make github repo public
 
-- Implement automatic tests (using the examples in the folder)
+BEFORE PUBLICATION:
 
-- Add more 2D examples, possibly with different pointgroups
+- [GIO] clean up code, add README.md
+
+- [GIO] make github repo public
+
+- [GIO] add git tag to release a version (20.11.0?)
+
+
 
 LOW PRIORITY/NOT CRITICAL:
-- check performance of assign_representation
-- if possible, change default input parser to cif
+
+- [GIO] check performance of assign_representation
+
+- [GIO] if possible, change default input parser to cif
