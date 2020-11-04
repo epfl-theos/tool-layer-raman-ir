@@ -295,10 +295,10 @@
 
             <h3>Layers identification</h3>
 
-            {{ layers|length }} layers found for this structure using a skin factor of {{ skin_factor }}. <br>
+            {{ layers|length }} layer{% if layers|length != 1 %}s{% endif %} found for this structure using a skin factor of {{ skin_factor }}. <br>
 
             <div id="accordion-cell-after-rotation">
-            <h2>Unit cell after rotation (with stacking axis along <em>z</em></h2>
+            <h2>Unit cell after rotation (with stacking axis along <em>z</em>)</h2>
             <div>
             <p>We report here the rotated unit cell after rotation, so as to have the stacking axis along <em>z)</em>
             and orthogonal to the layer planes.</p>

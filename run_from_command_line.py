@@ -9,7 +9,7 @@ from compute.layer_raman_engine import process_structure_core
 from compute.utils.structures import tuple_from_ase
 
 
-def test_structure(filename, skin_factor=1.1):
+def run_from_command_line(filename, skin_factor=1.1):
     logger = logging.getLogger("layer-raman-tool-app")
 
     # Print to stderr, also DEBUG messages
@@ -41,4 +41,4 @@ if __name__ == "__main__":
         print("The second parameter, if present, must be a float")
         sys.exit(1)
 
-    test_structure(filename, skin_factor=skin_factor)
+    run_from_command_line(filename, skin_factor=skin_factor)
