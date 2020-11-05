@@ -4,7 +4,6 @@ HIGH PRIORITY/QUICK:
 
 - [MARCO] Check all examples results -> The strings are in the tests!
 
-
 HIGH PRIORITY:
 - [MARCO+GIO] General TODO CHECK: check *all* TODOs in the code
 
@@ -34,7 +33,5 @@ LOW PRIORITY/NOT CRITICAL:
 - [GIO] check performance of assign_representation
 
 - [GIO] if possible, change default input parser to cif
-
-- [GIO] use same bonds in JSMol
 
 - [GIO] Add units dropdown for force-constants and frequency
