@@ -4,14 +4,31 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+# This could fail if the image is not there, so I temporarily set +e
+set +e
+OLDIMAGE=`docker images | awk '{print $1, $2, $3}' | grep '^layer-raman-tool\ latest\ ' | awk '{print $3}'`
+set -e
+
 # To build container
 docker build -t layer-raman-tool "$DIR/.."
+
+# Check the new image name
+NEWIMAGE=`docker images | awk '{print $1, $2, $3}' | grep '^layer-raman-tool\ latest\ ' | awk '{print $3}'`
 
 LAYER_CONTAINER=`docker ps --filter="name=layer-raman-tool-instance" -q`
 if [ "$LAYER_CONTAINER" != "" ]
 then
     docker kill "$LAYER_CONTAINER"
 fi  
+
+# If it built correctly, remove the old image (otherwise it remains there as `<none>`)
+# Note: I need to do it after killing the corresponding container
+# Also, avoid to remove it if nothing had changed, caching was used, and so
+# the new one is the same as the old one
+if [ "$OLDIMAGE" != "" -a "$OLDIMAGE" != "$NEWIMAGE" ]
+then
+    docker rmi "$OLDIMAGE"
+fi
 
 # To launch container
 docker run -d -p 8091:80 --rm --name=layer-raman-tool-instance layer-raman-tool
