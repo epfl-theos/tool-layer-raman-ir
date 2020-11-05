@@ -163,6 +163,3 @@ def test_send_structure(request, selenium, parser_name, file_relpath, expected_s
         # Create a screenshot and raise
         selenium.save_screenshot(f"{request.node.name}.png")
         raise
-    else:
-        # For now, store a screenshot anyway
-        selenium.save_screenshot(f"{request.node.name}.png")
