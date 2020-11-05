@@ -114,6 +114,7 @@
     <script>
         // This data is injected from flask at page generation
         var appData = {{ app_data_json | safe }};
+        var jsmolBondCommand = {{ jsmol_bond_command | safe }};
     </script>
 
     {% if common_layers_search is not none and common_layers_search['rot_latex'] is not none %}
@@ -288,7 +289,7 @@
         <div class='structureouter'>
         <div id='structuretitle'><h2>Input crystal structure</h2>
         <p><em>Drag to rotate, scroll to zoom, double-click to enable/disable interaction</em></p>
-        <p><em>NB: bonds drawn by the visualizer are not necessarily the ones used internally to find layers</em></p>
+        <p><em>Note: bonds drawn by the visualizer are those used internally to find layers</em></p>
         </div>
         {{ render_jsmol_visualizer(suffix='bulk', nx=2, ny=2, nz=2) }}
 

@@ -13,7 +13,12 @@ from collections.abc import Iterable
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-from .utils.structures import ase_from_tuple, get_xsf_structure, tuple_from_ase
+from .utils.structures import (
+    ase_from_tuple,
+    get_xsf_structure,
+    tuple_from_ase,
+    get_covalent_radii_array,
+)
 from tools_barebone import get_tools_barebone_version
 from .utils.layers import find_layers, find_common_transformation
 from .utils.matrices import matrix_initialization, replace_symbols_with_values
@@ -30,7 +35,7 @@ __version__ = "20.11.0"
 
 def process_structure_core(
     structure, logger, flask_request, skin_factor
-):  # pylint: disable=unused-argument, too-many-locals
+):  # pylint: disable=unused-argument, too-many-locals, too-many-statements
     start_time = time.time()
 
     # Get information on the crystal structure to be shown later
@@ -77,6 +82,36 @@ def process_structure_core(
     is_layered, layer_structures, layer_indices, rotated_asecell = find_layers(
         asecell, factor=skin_factor
     )
+
+    scaled_radii_per_site = skin_factor * get_covalent_radii_array(asecell)
+    # This is a dict of the form {"Na": 1.3, "C": 1.5}, ..
+    scaled_radii_per_kind = {
+        atom.symbol: scaled_radius
+        for atom, scaled_radius in zip(asecell, scaled_radii_per_site)
+    }
+
+    # I now construct the list of *pairwise* threshold distances, to be passed to JSMOL
+    # In theory, I could use simply "set bondTolerance 0;" and "{_P}.bondingRadius = 1.4158" (in this example, for
+    # the P element). However, it does not seem to be setting the threshold for showing a bond at the sum,
+    # but at some different value.
+    # Therefore, I instead compute the pairwise threshold distance, say for elements Ga and As, and pass the following
+    # JSMOL string (if, say, I don't want bonds for atoms closer than 0.2 ang, and the threshold distance is 2.27 ang):
+    # "connect 0.2 2.27 {_Ga} {_As};"
+    # It is good to prepend this with "set autobond off;" before loading, or use first a "connect delete;" to remove
+    # existing bonds
+    jsmol_bond_commands = []
+    min_bonding_distance = 0.2  # ang
+    for kind1, radius1 in scaled_radii_per_kind.items():
+        for kind2, radius2 in scaled_radii_per_kind.items():
+            if kind1 > kind2:
+                # Just do one of the two pairs
+                continue
+            jsmol_bond_commands.append(
+                f"connect {min_bonding_distance} {radius1+radius2} {{_{kind1}}} {{_{kind2}}}; "
+            )
+
+    # Encode as JSON string before sending, so it's safe to inject in the code
+    return_data["jsmol_bond_command"] = json.dumps("".join(jsmol_bond_commands))
 
     if not is_layered:
         # I return here; some sections will not be present in the output so they will not be shown.
