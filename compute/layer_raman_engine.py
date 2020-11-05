@@ -332,12 +332,10 @@ def get_symmetry_multilayer(asecell, layer_indices, num_layers, symprec=SYMPREC)
     return spg
 
 
-def construct_all_matrices(  # pylint: disable=too-many-locals
-    spg, num_layers, transformation, unique_matrix_dict=False
-):
+def construct_first_matrix(spg):
     """
-    Construct the interlayer force constant matrices given the spacegroup object of the bilayer (N=2)
-    and the trasformation matrix that brings EACH layer into the next one.
+    Construct the interlayer force constant matrix between the first and the second layer
+    based on the symmetry of this bilayer. 
 
     Note: in reality only the pointgroup is needed, but for simplicity we pass the whole spacegroup object
     """
@@ -410,6 +408,19 @@ def construct_all_matrices(  # pylint: disable=too-many-locals
         )
     else:
         raise ValueError("Bilayer crystal system not valid")
+    return matrix_dict
+
+
+def construct_all_matrices(  # pylint: disable=too-many-locals
+    spg, num_layers, transformation, unique_matrix_dict=False
+):
+    """
+    Construct the interlayer force constant matrices given the spacegroup object of the bilayer (N=2)
+    and the trasformation matrix that brings EACH layer into the next one.
+
+    Note: in reality only the pointgroup is needed, but for simplicity we pass the whole spacegroup object
+    """
+    matrix_dict = construct_first_matrix(spg)
     # Under the assumption that this transformation does not flip the z-axis, this
     # is also the transformation that brings a bilayer into the next one.
     # TODO: generalize to take into account the case of transformations that flip z
