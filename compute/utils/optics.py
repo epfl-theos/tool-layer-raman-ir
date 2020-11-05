@@ -38,8 +38,8 @@ def assign_representation(
     :param pg: the point group (an instance of utils.Pointgroup)
     :param transformation: a 3x3 matrix that transforms the axes by swapping them
     """
-    tol = 2 * n.finfo(n.float).eps
-    idir = n.argwhere(transformation[:, 2] == 1)[0, 0]
+    tol = 1e-3 #2 * n.finfo(n.float).eps
+    idir = n.argwhere(transformation[2, :] == 1)[0, 0]
     activity = {RAMAN: False, INFRARED: False, BACKSCATTERING: False}
     found = False
     foundtwice = False
@@ -50,7 +50,7 @@ def assign_representation(
         for c, sym_ops in pg.classes.items():
             for sym_op in sym_ops:
                 this_sym_op = n.dot(
-                    n.dot(transformation, sym_op), transformation.transpose()
+                    n.dot(transformation.transpose(), sym_op), transformation
                 )
                 if do_print and irrep_idx == 0:
                     print("this_sym_op:")
@@ -84,7 +84,7 @@ def assign_representation(
                     print("!!!! Found more than once non-complex irrep")
             found = True
             # check that the projection is 1, within a threshold
-            if abs(proj - 1) > 1.0e-6:
+            if abs(proj - 1) > tol:
                 print("!!!! Not one or zero, {}, {}, {}".format(proj, irrep, pg.symbol))
             this_irrep = irrep
             if do_print:

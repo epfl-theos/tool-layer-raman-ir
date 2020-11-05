@@ -190,20 +190,24 @@ def process_structure_core(
     )
 
     # Either a finite ML with num_layers_bulk, or num_layers_bulk + 1 (the even between the two)
-    pg_even_number = pg_number_from_hm_symbol(
-        get_symmetry_multilayer(
+    spg_even = get_symmetry_multilayer(
             rotated_asecell,
             layer_indices,
             num_layers=num_layers_bulk + num_layers_bulk % 2,
-        ).get_point_group_symbol()
+        )
+
+    pg_even_number = pg_number_from_hm_symbol(
+        spg_even.get_point_group_symbol()
     )
     # Either a finite ML with num_layers_bulk, or num_layers_bulk + 1 (the odd between the two)
-    pg_odd_number = pg_number_from_hm_symbol(
-        get_symmetry_multilayer(
+    spg_odd = get_symmetry_multilayer(
             rotated_asecell,
             layer_indices,
             num_layers=num_layers_bulk + (num_layers_bulk + 1) % 2,
-        ).get_point_group_symbol()
+        )
+
+    pg_odd_number = pg_number_from_hm_symbol(
+        spg_odd.get_point_group_symbol()
     )
 
     bulk_spg = SpacegroupAnalyzer(
@@ -223,6 +227,8 @@ def process_structure_core(
         "structure": structure,
         "pointgroupEven": pg_even_number,
         "pointgroupOdd": pg_odd_number,
+        "uniqueAxisTransformationEven": find_unique_axis_transformation(spg_even),
+        "uniqueAxisTransformationOdd": find_unique_axis_transformation(spg_odd),
         # This will be used to decide the mimimum number of layers to show - we don't want to ge below this,
         # as the symmetries might be more.
         "numLayersBulk": num_layers_bulk,
@@ -331,11 +337,50 @@ def get_symmetry_multilayer(asecell, layer_indices, num_layers, symprec=SYMPREC)
 
     return spg
 
+def find_unique_axis_transformation(spg):
+    """
+    Obtain the transformation matrix that brings a unique axis
+    along the z direction. Relevant only for monoclinic systems or 
+    orthorhombic with pointgroup mm2 (in which case the rotation 
+    axis is takes as unique axis)
+    For other systems it is either irrelevant (triclinic, other orthorhombic) 
+    or already along z by construction (tetragonal, hexagonal, trigonal)
+    """
+    cry_sys = spg.get_crystal_system()
+    if cry_sys == 'monoclinic':
+        unique_direction = find_unique_axis_monoclinic(spg)
+    elif cry_sys == 'orthorhombic' and spg.get_point_group_symbol() == '2/m':
+        # the unique direction is associated with the two-fold rotation
+        for symop in spg.get_point_group_operations(cartesian=True):
+            # so we need to discard roto-reflections and the identity
+            if np.linalg.det(symop) > 0 and np.sum(np.diag(symop)) < 2.5:
+                unique_direction = np.argwhere(np.diag(symop) > 0.0)[0][0]
+    else:
+        unique_direction = 2 
+
+    return rotate_unique_axis(unique_direction).tolist()
+
+def rotate_unique_axis(unique_dir):
+    """
+    Return the transformation that brings the direction in input
+    into the z-direction
+    """
+    transformation = np.identity(3)
+    # if the unique_dir is not already 2 we need to rotate so
+    # that the unique_dir becomes 2
+    if unique_dir != 2:
+        transformation[2,2] = 0.0
+        transformation[unique_dir,unique_dir] = 0.0 
+        transformation[2,unique_dir] = 1.0
+        transformation[unique_dir,2] = -1.0
+
+    return transformation
 
 def find_unique_axis_monoclinic(spg):
     """
     Find the unique axis for a monoclinic system
-    """"
+    given the pymatgen spacegroup object spg
+    """
     # initialize a random tensor
     orig_tensor = np.reshape([np.random.rand() for i in range(9)], (3, 3))
     # impose that the tensor is symmetric
@@ -364,7 +409,7 @@ def find_unique_axis_monoclinic(spg):
     for i in nonzero[0]:
         direction.remove(i)
     return direction[0]
-        
+ 
 def construct_first_matrix(spg):
     """
     Construct the interlayer force constant matrix between the first and the second layer
@@ -405,7 +450,7 @@ def construct_first_matrix(spg):
         matrix = np.zeros((3, 3))
         # and set to one the correct off-diagonal elements
         matrix[[nonzero], [nonzero[::-1]]] = 1.0
-        matrix_dict.update({"C1{}{}".format(*(nonzero[0] + 1)): matrix})
+        matrix_dict.update({"C1{}{}".format(*(_ + 1 for _ in nonzero)): matrix})
     elif cry_sys == "triclinic":
         matrix_dict = {
             "C111": [[1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],

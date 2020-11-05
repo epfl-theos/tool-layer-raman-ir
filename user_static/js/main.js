@@ -171,6 +171,8 @@ var app = new Vue({
                 matrices: vueApp.appData.forceConstants.matrices,
                 pointgroupEven: vueApp.appData.pointgroupEven,
                 pointgroupOdd: vueApp.appData.pointgroupOdd,
+                uniqueAxisTransformationEven: vueApp.appData.uniqueAxisTransformationEven,
+                uniqueAxisTransformationOdd: vueApp.appData.uniqueAxisTransformationOdd,
                 numLayersBulk: vueApp.appData.numLayersBulk,
                 maxLayers: vueApp.maxLayers,
                 xmin: xmin,

@@ -233,6 +233,17 @@ def get_modes():  # pylint: disable=too-many-statements
                 400,
             )
 
+        try:
+            transformationEven = np.array(data["uniqueAxisTransformationEven"])
+        except KeyError:
+            return make_response("Invalid request, missing uniqueAxisTransformationEven", 400)
+
+
+        try:
+            transformationOdd = np.array(data["uniqueAxisTransformationOdd"])
+        except KeyError:
+            return make_response("Invalid request, missing uniqueAxisTransformationOdd", 400)
+
         # at least num_layers_bulk, but also at least 2 layers (otherwise for a single layer we only
         # see the trivial acoustic modes)
         min_num_layers = max(2, num_layers_bulk)
@@ -267,6 +278,7 @@ def get_modes():  # pylint: disable=too-many-statements
             eigvals, eigvects = get_eigvals_eigvects(num_layers, numeric_matrices)
 
             pointgroup_number = pointgroupOdd if num_layers % 2 else pointgroupEven
+            transformation = transformationOdd if num_layers % 2 else transformationEven
             pointgroup_name = POINTGROUP_MAPPING[pointgroup_number][2]
             pointgroup = Pointgroup(pointgroup_name)
 
@@ -275,12 +287,8 @@ def get_modes():  # pylint: disable=too-many-statements
                 # Note: the basis-set order is layer1_x, layer1_y, layer1_z, layer2_x, layer2_y, ...
                 displacements = eigvec.reshape((num_layers, 3))
 
-                # TODO: check this assumption!
-                # Transformation is here always the identity matrix, because
-                # we are always rotating the cell so that the stacking axis is along z.
-                # In a more general code, it is used to rotate the stacking axis along z.
                 irrep_name, activity = assign_representation(
-                    displacements, pointgroup, transformation=np.identity(3)
+                    displacements, pointgroup, transformation=transformation
                 )
                 is_infrared.append(activity[INFRARED])
                 is_raman.append(activity[RAMAN])
