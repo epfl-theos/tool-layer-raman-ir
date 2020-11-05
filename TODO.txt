@@ -1,10 +1,5 @@
 HIGH PRIORITY/QUICK:
-- [MARCO] Check BN P-6m2 (in xsf-examples/not-layered): is it true that it does not have a common transformation? -> FIX ALSO IN TESTS
-
-- [MARCO] Also, check the structures for graphite and BN - they come from COD from the 2D project, but the stacking does not seem right for one of the two? -> FIX ALSO IN TESTS
-
 - [MARCO] double check all text; in particular: add comment on the meaning of the superscript in the force-constant matrices?
-
 
 HIGH PRIORITY:
 - [MARCO+GIO] General TODO CHECK: check *all* TODOs in the code
@@ -12,8 +7,6 @@ HIGH PRIORITY:
 - [MARCO] check all warnings printed for some pointgroups on the logs - are they bugs? should they be errors?
 
 - [MARCO] Check all examples results -> The strings are in the tests!
-
-- [GIO] fix problematic tests
 
 - [GIO] Understand what happens for category III. Also, add example for category III (E.g. Bi2TeI, but will probably need to change the interlayer-distance to make it category III; or create one artificially, e.g. take BiTeCl and flip it).
 
