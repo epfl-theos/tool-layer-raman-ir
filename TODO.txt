@@ -1,7 +1,6 @@
 HIGH PRIORITY/QUICK:
 - [MARCO] double check all text
   - in particular: add comment on the meaning of the superscript in the force-constant matrices?
-  - Add warning that bonds shown in visualization are not the same as the one used internally
   - Explain the 'units' of the frequency as a function of the units of the force-constant parameters
 
 - [MARCO] Check all examples results -> The strings are in the tests!
