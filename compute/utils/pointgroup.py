@@ -57,7 +57,7 @@ def pg_number_from_hm_symbol(hm_symbol):
 def rotation(axis, angle):
     """ 
     Generate the rotation matrix 
-    given the ratation axis and angle
+    given the rotation axis and angle
     """
     norm = n.linalg.norm(axis)
     tol = 2 * n.finfo(n.float).eps
