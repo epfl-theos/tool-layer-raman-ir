@@ -342,6 +342,7 @@ def construct_all_matrices(  # pylint: disable=too-many-locals
     Note: in reality only the pointgroup is needed, but for simplicity we pass the whole spacegroup object
     """
     # TODO: for now it works only when the transformation matrix has no inversion along z
+    # (category III, where it is not possible to find one operation without flip along z)
     cry_sys = spg.get_crystal_system()
     if cry_sys in [
         "tetragonal",

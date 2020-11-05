@@ -276,7 +276,7 @@ def get_modes():  # pylint: disable=too-many-statements
                 displacements = eigvec.reshape((num_layers, 3))
 
                 # TODO: check this assumption!
-                # transformation is here always the identity matrix, because
+                # Transformation is here always the identity matrix, because
                 # we are always rotating the cell so that the stacking axis is along z.
                 # In a more general code, it is used to rotate the stacking axis along z.
                 irrep_name, activity = assign_representation(

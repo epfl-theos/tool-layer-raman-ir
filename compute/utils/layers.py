@@ -357,10 +357,7 @@ def find_common_transformation(
                 op01 = SymmOp.from_rotation_and_translation(rot01, tr01)
                 ### print(rot01, tr01)
                 break
-    # check that the same operation brings each layer into the next one
-    # we need to check not only the symmetry operation found by pymatgen,
-    # but also its combination with any of the point group operations of
-    # the monolayer: TODO
+
     for il in range(1, num_layers):
         layer0 = layers[il]
         layer1 = layers[(il + 1) % num_layers]
