@@ -235,16 +235,16 @@ def get_modes():  # pylint: disable=too-many-statements
 
         try:
             transformationEven = np.array(data["uniqueAxisTransformationEven"])
-        except KeyError:
+        except (KeyError, ValueError):
             return make_response(
-                "Invalid request, missing uniqueAxisTransformationEven", 400
+                "Invalid request, missing or wrong uniqueAxisTransformationEven", 400
             )
 
         try:
             transformationOdd = np.array(data["uniqueAxisTransformationOdd"])
-        except KeyError:
+        except (KeyError, ValueError):
             return make_response(
-                "Invalid request, missing uniqueAxisTransformationOdd", 400
+                "Invalid request, missing or wrong uniqueAxisTransformationOdd", 400
             )
 
         # at least num_layers_bulk, but also at least 2 layers (otherwise for a single layer we only

@@ -1,21 +1,13 @@
-HIGH PRIORITY/QUICK:
-- [MARCO] double check all text
-  - Explain the 'units' of the frequency as a function of the units of the force-constant parameters
+TASKS:
+- [MARCO] Check all examples results
 
-- [MARCO] Check all examples results -> The strings are in the tests!
-
-HIGH PRIORITY:
 - [MARCO+GIO] General TODO CHECK: check *all* TODOs in the code
 
-- [MARCO] check all warnings printed for some pointgroups on the logs - are they bugs? should they be errors?
+- [MARCO] check all warnings printed for some pointgroups on the logs - are they bugs?
 
 - [GIO] Understand what happens for category III. Also, add example for category III (E.g. Bi2TeI, but will probably need to change the interlayer-distance to make it category III; or create one artificially, e.g. take BiTeCl and flip it).
 
-
-MID PRIORITY/PRE-PUBLICATION:
-
-- [MARCO] Add more 2D examples, possibly with different pointgroups (both as examples and as tests)
-
+- [GIO] Add units dropdown for force-constants and frequency, and explain the 'units' of the frequency as a function of the units of the force-constant parameters
 
 
 BEFORE PUBLICATION:
@@ -23,13 +15,3 @@ BEFORE PUBLICATION:
 - [GIO] clean up code
 
 - [GIO] add git tag to release a version (20.11.0?)
-
-
-
-LOW PRIORITY/NOT CRITICAL:
-
-- [GIO] check performance of assign_representation
-
-- [GIO] if possible, change default input parser to cif
-
-- [GIO] Add units dropdown for force-constants and frequency
