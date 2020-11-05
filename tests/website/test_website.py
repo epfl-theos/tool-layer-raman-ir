@@ -143,18 +143,26 @@ def submit_structure(
 @pytest.mark.parametrize(
     "parser_name, file_relpath, expected_strings", get_file_examples()
 )
-def test_send_structure(selenium, parser_name, file_relpath, expected_strings):
+def test_send_structure(request, selenium, parser_name, file_relpath, expected_strings):
     """Test submitting various files."""
     selenium.get(TEST_URL)
 
-    # Load file
-    file_abspath = os.path.join(STRUCTURE_EXAMPLES_PATH, parser_name, file_relpath)
-    submit_structure(selenium, file_abspath, parser_name)
+    try:
+        # Load file
+        file_abspath = os.path.join(STRUCTURE_EXAMPLES_PATH, parser_name, file_relpath)
+        submit_structure(selenium, file_abspath, parser_name)
 
-    # We should have been redirected back to /
-    assert urlparse(selenium.current_url).path == "/compute/process_structure/"
+        # We should have been redirected back to /
+        assert urlparse(selenium.current_url).path == "/compute/process_structure/"
 
-    assert "Input crystal structure" in selenium.page_source
+        assert "Input crystal structure" in selenium.page_source
 
-    for expected_string in expected_strings:
-        assert expected_string in selenium.page_source
+        for expected_string in expected_strings:
+            assert expected_string in selenium.page_source
+    except Exception:
+        # Create a screenshot and raise
+        selenium.save_screenshot(f"{request.node.name}.png")
+        raise
+    else:
+        # For now, store a screenshot anyway
+        selenium.save_screenshot(f"{request.node.name}.png")
