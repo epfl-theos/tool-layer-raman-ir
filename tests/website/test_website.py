@@ -5,6 +5,7 @@ import pytest
 
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from urllib.parse import urlparse
 
 # Note: you need to build docker and start it with
@@ -78,7 +79,9 @@ def get_file_examples():
     return retval
 
 
-def submit_structure(selenium, file_abspath, parser_name):
+def submit_structure(
+    selenium, file_abspath, parser_name
+):  # pylint: disable=too-many-locals
     """Given a selenium driver, submit a file."""
     # Load file
     file_upload = selenium.find_element_by_name("structurefile")
@@ -101,7 +104,33 @@ def submit_structure(selenium, file_abspath, parser_name):
         with open(extra_file) as fhandle:
             extra_data = json.load(fhandle)
         for extra_name, extra_value in extra_data.items():
-            selenium.find_element(By.NAME, extra_name).send_keys(str(extra_value))
+            if extra_name == "skin-factor":
+                # Move the slider one step at a time; I do it by clicking on the
+                # right arrow enough times
+
+                element = selenium.find_element(By.NAME, extra_name)
+                current_value = float(element.get_attribute("value"))
+                target_value = float(extra_value)
+                # I expect a step of 0.01
+                step = 0.01
+                assert abs(step - float(element.get_attribute("step"))) < 1.0e-5
+
+                count = int(round((target_value - current_value) / step))
+
+                for _ in range(abs(count)):
+                    if count > 0:
+                        element.send_keys(Keys.RIGHT)
+                    else:
+                        element.send_keys(Keys.LEFT)
+
+                assert (
+                    abs(extra_value - float(element.get_attribute("value"))) < 1.0e-5
+                ), "I tried to move the slider but I failed, I wanted {}, I got {}".format(
+                    extra_value, float(element.get_attribute("value"))
+                )
+
+            else:
+                selenium.find_element(By.NAME, extra_name).send_keys(str(extra_value))
         selenium.save_screenshot("screenshot.png")
 
     # Submit form
