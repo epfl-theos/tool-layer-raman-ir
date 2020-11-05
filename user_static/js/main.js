@@ -18,6 +18,7 @@ var app = new Vue({
         modesFilterZ: true,
         forceConstantVariables: [],
         seriesWithData: {},
+        forceConstantUnits: "meV_over_angsquare",
 
         seriesMetadata: Object.freeze([ // Initial series definition
             {
@@ -148,7 +149,7 @@ var app = new Vue({
             // will be replaced later in 'mount', but needs to be there already
             // see https://vuejs.org/v2/guide/reactivity.html#Declaring-Reactive-Properties
         },
-        fetchAndUpdateData: function(xmin, xmax) {
+        fetchAndUpdateData: function() {
             try {
                 this.currentRequest.abort();
             } catch(err) {
@@ -169,15 +170,14 @@ var app = new Vue({
                     _.map(vueApp.appData.forceConstants.variables, function(variable) {return variable['value'];})
                 ),
                 matrices: vueApp.appData.forceConstants.matrices,
+                forceConstantUnits: vueApp.forceConstantUnits,
                 pointgroupEven: vueApp.appData.pointgroupEven,
                 pointgroupOdd: vueApp.appData.pointgroupOdd,
                 uniqueAxisTransformationEven: vueApp.appData.uniqueAxisTransformationEven,
                 uniqueAxisTransformationOdd: vueApp.appData.uniqueAxisTransformationOdd,
                 layerMassAmu: vueApp.appData.layerMassAmu,
                 numLayersBulk: vueApp.appData.numLayersBulk,
-                maxLayers: vueApp.maxLayers,
-                xmin: xmin,
-                xmax: xmax
+                maxLayers: vueApp.maxLayers
             };
 
             this.currentRequest = $.post({

@@ -27,7 +27,7 @@ def replace_symbols_with_values(list_of_lists, replacements):
         return list_of_lists  # if it's a numeric value, for instance
 
 
-def replace_linear_combinations(list_of_3x3_matrices):
+def replace_linear_combinations(list_of_3x3_matrices, force_constant_prefactor):
     """
     Given a list of 3x3 matrices, where elements can either be float values 
     or lists representing linear combination of values, return a (copied) list
@@ -35,6 +35,9 @@ def replace_linear_combinations(list_of_3x3_matrices):
 
     For instance, a value ``[[0.1, 0.3], [0.8, 0.7]]`` means a combination 
     ``0.1 * 0.3 + 0.8 * 0.7`` and will therefore be replaced by ``0.59``.
+
+    :return: a list of 3x3 lists, each being a numeric 3x3 force-constant matrix.
+    The prefactor is multiplied to each value before returning.
     """
     result = []
 
@@ -47,9 +50,9 @@ def replace_linear_combinations(list_of_3x3_matrices):
                     new_entry = 0
                     for value, factor in entry:
                         new_entry += value * factor
-                    new_row.append(new_entry)
+                    new_row.append(new_entry * force_constant_prefactor)
                 else:
-                    new_row.append(entry)
+                    new_row.append(entry * force_constant_prefactor)
             new_matrix.append(new_row)
         result.append(new_matrix)
 

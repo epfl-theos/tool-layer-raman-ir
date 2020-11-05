@@ -35,6 +35,12 @@ VALID_EXAMPLES = {
     "BiTeCl": ("BiTeCl-ICSD79362-category-II.xsf", 1.3),
 }
 
+# The key should be a valid value of the various options of the "force-constant-units" <select> dropdown menu.
+# The value should be the conversion factor to be *multiplied to the values* to get values in eV/Ang^2
+FORCE_CONSTANT_PREFACTORS = {
+    "eV_over_angsquare": 1.0,
+    "meV_over_angsquare": 0.001,
+}
 
 logger = logging.getLogger("layer-raman-tool-app")
 blueprint = flask.Blueprint("compute", __name__, url_prefix="/compute")
@@ -254,6 +260,17 @@ def get_modes():  # pylint: disable=too-many-statements
                 "Invalid request, missing or invalid layerMassAmu", 400
             )
 
+        try:
+            forceConstantUnits = data["forceConstantUnits"]
+        except KeyError:
+            return make_response("Invalid request, missing forceConstantUnits", 400)
+        try:
+            force_constant_prefactor = FORCE_CONSTANT_PREFACTORS[forceConstantUnits]
+        except KeyError:
+            return make_response(
+                "Invalid request, invalid value for forceConstantUnits", 400
+            )
+
         # at least num_layers_bulk, but also at least 2 layers (otherwise for a single layer we only
         # see the trivial acoustic modes)
         min_num_layers = max(2, num_layers_bulk)
@@ -271,7 +288,10 @@ def get_modes():  # pylint: disable=too-many-statements
         ## replace with correct combination. E.g.:
         ## [['C111', -1]] = -C111;
         ## [['C111', -0.5], ['C112', -0.5]] = -0.5 * C111 - 0.5 * C112
-        numeric_matrices = replace_linear_combinations(numeric_matrices)
+        # Thanks to the prefactor, the `numeric_matrices is expressed in eV/ang^2`
+        numeric_matrices = replace_linear_combinations(
+            numeric_matrices, force_constant_prefactor=force_constant_prefactor
+        )
 
         ## LOGIC START ##
         plot_data_x = []

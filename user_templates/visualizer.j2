@@ -421,7 +421,7 @@
         <h3>Elastic force-constant matrices</h3>
         <p>General form of the interlayer force-constant matrices between a layer and the next one:</p>
         <div style="width: 100%; text-align: center;" v-html="getLatexHTML(latexCode)" id="test"></div>
-        <p>The superscript <em>n</em> indicates that the coupling is between the <em>n</em>-th layer in the bulk unit cell and the next one, with the form of the matrix reflecting the symmetry of the bilayer formed by these two layers.</p>
+        <p>The superscript <em>n</em> of <em>K</em> indicates that the coupling is between the <em>n</em>-th layer in the bulk unit cell and the next one, with the form of the matrix reflecting the symmetry of the bilayer formed by these two layers.</p>
 
         <h3>Force-constant parameters</h3>
         <p>Select here the values of the parameters appearing inside the elastic force-constant matrices above.</p>
@@ -440,6 +440,13 @@
                     </div> 
                 </div> 
             </template>
+            <div style="margin: auto; text-align: center;">
+            <label for="force-constant-units">Force-constant units:</label>
+            <select name="force-constant-units" id="force-constant-units" v-on:input="updateGraphDebounced" v-model="forceConstantUnits">
+                <option value="meV_over_angsquare">meV/ang^2</option>
+                <option value="eV_over_angsquare">eV/ang^2</option>
+            </select>
+            </div>
         </div>
 
         <div id='fandiagramtitle'><h2>Fan diagram</h2></div>
