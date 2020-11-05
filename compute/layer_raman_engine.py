@@ -226,24 +226,20 @@ def process_structure_core(
 
     # Either a finite ML with num_layers_bulk, or num_layers_bulk + 1 (the even between the two)
     spg_even = get_symmetry_multilayer(
-            rotated_asecell,
-            layer_indices,
-            num_layers=num_layers_bulk + num_layers_bulk % 2,
-        )
-
-    pg_even_number = pg_number_from_hm_symbol(
-        spg_even.get_point_group_symbol()
+        rotated_asecell,
+        layer_indices,
+        num_layers=num_layers_bulk + num_layers_bulk % 2,
     )
+
+    pg_even_number = pg_number_from_hm_symbol(spg_even.get_point_group_symbol())
     # Either a finite ML with num_layers_bulk, or num_layers_bulk + 1 (the odd between the two)
     spg_odd = get_symmetry_multilayer(
-            rotated_asecell,
-            layer_indices,
-            num_layers=num_layers_bulk + (num_layers_bulk + 1) % 2,
-        )
-
-    pg_odd_number = pg_number_from_hm_symbol(
-        spg_odd.get_point_group_symbol()
+        rotated_asecell,
+        layer_indices,
+        num_layers=num_layers_bulk + (num_layers_bulk + 1) % 2,
     )
+
+    pg_odd_number = pg_number_from_hm_symbol(spg_odd.get_point_group_symbol())
 
     bulk_spg = SpacegroupAnalyzer(
         AseAtomsAdaptor().get_structure(asecell), symprec=SYMPREC
@@ -372,6 +368,7 @@ def get_symmetry_multilayer(asecell, layer_indices, num_layers, symprec=SYMPREC)
 
     return spg
 
+
 def find_unique_axis_transformation(spg):
     """
     Obtain the transformation matrix that brings a unique axis
@@ -382,18 +379,19 @@ def find_unique_axis_transformation(spg):
     or already along z by construction (tetragonal, hexagonal, trigonal)
     """
     cry_sys = spg.get_crystal_system()
-    if cry_sys == 'monoclinic':
+    if cry_sys == "monoclinic":
         unique_direction = find_unique_axis_monoclinic(spg)
-    elif cry_sys == 'orthorhombic' and spg.get_point_group_symbol() == '2/m':
+    elif cry_sys == "orthorhombic" and spg.get_point_group_symbol() == "2/m":
         # the unique direction is associated with the two-fold rotation
         for symop in spg.get_point_group_operations(cartesian=True):
             # so we need to discard roto-reflections and the identity
             if np.linalg.det(symop) > 0 and np.sum(np.diag(symop)) < 2.5:
                 unique_direction = np.argwhere(np.diag(symop) > 0.0)[0][0]
     else:
-        unique_direction = 2 
+        unique_direction = 2
 
     return rotate_unique_axis(unique_direction).tolist()
+
 
 def rotate_unique_axis(unique_dir):
     """
@@ -404,12 +402,13 @@ def rotate_unique_axis(unique_dir):
     # if the unique_dir is not already 2 we need to rotate so
     # that the unique_dir becomes 2
     if unique_dir != 2:
-        transformation[2,2] = 0.0
-        transformation[unique_dir,unique_dir] = 0.0 
-        transformation[2,unique_dir] = 1.0
-        transformation[unique_dir,2] = -1.0
+        transformation[2, 2] = 0.0
+        transformation[unique_dir, unique_dir] = 0.0
+        transformation[2, unique_dir] = 1.0
+        transformation[unique_dir, 2] = -1.0
 
     return transformation
+
 
 def find_unique_axis_monoclinic(spg):
     """
@@ -439,12 +438,13 @@ def find_unique_axis_monoclinic(spg):
             "Problems identifying the unique axis in monoclinic system: "
             "invariant tensor not symmetric."
         )
-    # The unique axis direction is the one not involved in the off-diagonal matrix element 
+    # The unique axis direction is the one not involved in the off-diagonal matrix element
     direction = list(range(3))
     for i in nonzero[0]:
         direction.remove(i)
     return direction[0]
- 
+
+
 def construct_first_matrix(spg):
     """
     Construct the interlayer force constant matrix between the first and the second layer
