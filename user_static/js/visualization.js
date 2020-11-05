@@ -21,6 +21,22 @@ function toggleStrVisInteraction(enableStrInteraction, str_overlay_id){
     }
 };
 
+
+function postLoadByApplet(viewerApplet){
+    // This function should be called every time a `load` command is issued, to recreate the correct bonds
+    Jmol.script(viewerApplet, "select *; connect delete; " + jsmolBondCommand);
+    // Hide the bonds based on the state of the checkbox
+    if (viewerApplet._id.startsWith('jmolApplet')) {
+        showBonds(viewerApplet._id.substr('jmolApplet'.length));
+    }
+};
+
+function postLoadByNameSuffix(viewerNameSuffix){
+    // Utility function to call postLoadByApplet when only the suffix of the viewer name is known
+    postLoadByApplet(eval('jmolApplet' + viewerNameSuffix));
+};
+
+
 function jsmolCrystal(data, parentHtmlId, appletName, supercellOptions) {
     var parentDiv = document.getElementById(parentHtmlId);
     var the_width = parentDiv.offsetWidth - 5;
@@ -39,10 +55,12 @@ function jsmolCrystal(data, parentHtmlId, appletName, supercellOptions) {
 
     var jsmolStructureviewer = Jmol.getApplet(appletName, Info);
 
+    // I `set autobond off` so bonds are not computed; remember, after *any* load command, to re-call the postLoadByApplet function
+    // (or the wrapper function postLoadByNameSuffix)
     if (supercellOptions === undefined){
-        var loadingScript = 'color cpk; load INLINE "' + data + '"; wireframe 0.15; spacefill 23%';
+        var loadingScript = 'color cpk; set autobond off; load INLINE "' + data + '"; wireframe 0.15; spacefill 23%';
     } else {
-        var loadingScript = 'color cpk; load INLINE "' + data + '" {' + supercellOptions[0] + ' ' + supercellOptions[1] + ' ' + supercellOptions[2] + '}; wireframe 0.15; spacefill 23%';
+        var loadingScript = 'color cpk; set autobond off; load INLINE "' + data + '" {' + supercellOptions[0] + ' ' + supercellOptions[1] + ' ' + supercellOptions[2] + '}; wireframe 0.15; spacefill 23%';
     }
 
     //draw x,y,z axes instead of a,b,c vectors as default
@@ -64,6 +82,8 @@ function jsmolCrystal(data, parentHtmlId, appletName, supercellOptions) {
     loadingScript+= '; set frank off';
 
     Jmol.script(jsmolStructureviewer, loadingScript);
+
+    postLoadByApplet(jsmolStructureviewer);
 
     //parentDiv.innerHTML = Jmol.getAppletHtml(jsmolStructureviewer);
     //$("#" + parentHtmlId).html(Jmol.getAppletHtml(jsmolStructureviewer));
@@ -106,6 +126,9 @@ function showPacked(viewerNameSuffix) {
     $("#spin-input-" + viewerNameSuffix).prop("checked", false);
     $("#spheres-input-" + viewerNameSuffix).prop("checked", false);
     Jmol.script(eval('jmolApplet' + viewerNameSuffix), jmolscript);
+
+    postLoadByNameSuffix(viewerNameSuffix);
+
     return jmolscript;
 };
 
@@ -155,6 +178,8 @@ function jsmolSupercell(viewerNameSuffix) {
     $("#packed-input-" + viewerNameSuffix).prop("checked", false);
     var jmolscript = "save orientation 0; load '' {" + nx + " " + ny + " " + nz + "}; unitcell primitive; restore orientation 0" + jsmolDrawAxes(viewerNameSuffix) + cellLine + "; " + showLabels(viewerNameSuffix) + "; " + showBonds(viewerNameSuffix);
     Jmol.script(eval('jmolApplet' + viewerNameSuffix), jmolscript);
+
+    postLoadByNameSuffix(viewerNameSuffix);
 };
 
 function jsmolResetSupercell(viewerNameSuffix, nx, ny, nz) {
@@ -167,6 +192,8 @@ function jsmolResetSupercell(viewerNameSuffix, nx, ny, nz) {
     $('#nz-' + viewerNameSuffix).val(nz);
     Jmol.script(eval('jmolApplet' + viewerNameSuffix),
     "save orientation 0; load '' {" + nx + " " + ny + " " + nz + "}; unitcell primitive; restore orientation 0" + jsmolDrawAxes(viewerNameSuffix) + cellLine + "; " + showLabels(viewerNameSuffix) + "; " + showBonds(viewerNameSuffix));
+
+    postLoadByNameSuffix(viewerNameSuffix);
 };
 
 function centerXaxis(viewerNameSuffix){
@@ -180,6 +207,7 @@ function centerYaxis(viewerNameSuffix){
 function centerZaxis(viewerNameSuffix){
     Jmol.script(eval('jmolApplet' + viewerNameSuffix), "moveto 1 axis z");
 };
+
 
 $.fn.bindFirst = function(name, fn) {
     var elem, handlers, i, _len;
