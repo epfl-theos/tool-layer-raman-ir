@@ -11,6 +11,8 @@ templates:
 
 use_upload_structure_block: True
 
+upload_structure_block_order: ['cif-pymatgen', 'cif-ase', 'pdb-ase', 'xyz-ase']
+
 additional_accordion_entries:
 #  - header: "What is this?"
 #    template_page: what_is.html
