@@ -56,10 +56,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install docker-ce
 
-    - name: Build the tool image
-      run:
-        docker build -t layer-raman-tool .
-
     - name: Run tool container and test it
       run: |
         ./admin-tools/build-and-run.sh -n &&  ./.ci/wait-for-it.sh localhost:8091 -t 120 && sleep 5 && pytest --driver Chrome
