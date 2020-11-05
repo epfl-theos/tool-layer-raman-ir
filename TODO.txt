@@ -1,6 +1,5 @@
 HIGH PRIORITY/QUICK:
 - [MARCO] double check all text
-  - in particular: add comment on the meaning of the superscript in the force-constant matrices?
   - Explain the 'units' of the frequency as a function of the units of the force-constant parameters
 
 - [MARCO] Check all examples results -> The strings are in the tests!

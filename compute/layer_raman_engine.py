@@ -333,7 +333,7 @@ def get_symmetry_multilayer(asecell, layer_indices, num_layers, symprec=SYMPREC)
 
 
 def construct_all_matrices(  # pylint: disable=too-many-locals
-    spg, num_layers, transformation
+    spg, num_layers, transformation, unique_matrix_dict=False
 ):
     """
     Construct the interlayer force constant matrices given the spacegroup object of the bilayer (N=2)
@@ -414,17 +414,22 @@ def construct_all_matrices(  # pylint: disable=too-many-locals
     # is also the transformation that brings a bilayer into the next one.
     # TODO: generalize to take into account the case of transformations that flip z
     matrix_lists = []
-    matrix_dicts = [matrix_dict]
+    matrix_dicts = []
     this_transformation = np.identity(3)
-    # TODO: check - e.g. for MoS2 there are two layers but only one matrix?
     for _ in range(num_layers):
         m_dict, m_list = rotate_and_simplify_matrix(matrix_dict, this_transformation)
         matrix_lists.append(m_list)
-        for orig_dict in matrix_dicts:
-            for k, v in orig_dict.items():
-                if np.linalg.norm(np.array(m_dict[k]) - np.array(v)) > 1e-3:
-                    matrix_dicts.append(m_dict)
-                    break
+        # In the list of matrix dictionaries add either all of them or check for unicity
+        if unique_matrix_dict:
+            for orig_dict in matrix_dicts:
+                for k, v in orig_dict.items():
+                    if np.linalg.norm(np.array(m_dict[k]) - np.array(v)) > 1e-3:
+                        matrix_dicts.append(m_dict)
+                        break
+            if not matrix_dicts:
+                matrix_dicts.append(m_dict)
+        else:
+            matrix_dicts.append(m_dict)
         this_transformation = np.matmul(transformation, this_transformation)
     return matrix_dicts, matrix_lists
 
