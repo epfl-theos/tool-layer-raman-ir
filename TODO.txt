@@ -12,6 +12,4 @@ TASKS:
 
 BEFORE PUBLICATION:
 
-- [GIO] clean up code
-
 - [GIO] add git tag to release a version (20.11.0?)

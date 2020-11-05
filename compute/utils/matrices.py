@@ -115,22 +115,26 @@ def matrix_initialization(variable):
     return np.round(-1.0 + 2 * np.random.rand(), 2)
 
 
-def get_eigvals_eigvects(num_layers, numeric_matrices, use_banded_algorithm=False):
+def get_eigvals_eigvects(
+    num_layers, numeric_matrices, layer_mass_amu, use_banded_algorithm=False
+):
     """Given the number of layers and the `numeric_matrices`,
     construct internally the K matrix and diagonalize it
     to obtain phonon frequencies and modes.
 
-    I have to solve the eq. of motion: omega^2 U = K U
+    I have to solve the eq. of motion: - M_layer omega^2 U = K U
 
     :param num_layers: the number of layers in the multilayer
     :param numeric_matrices: a list of numeric matrices (i.e., with all parameters replaced with numeric
         values) with the interaction of each layer with the next one.
+    :param layer_mass_amu: mass of the layer, in atomic mass units (a.m.u.)
     :param use_banded_algorithm: if True, use a banded diagonalization algorithm, otherwise diagonalize
         the full matrix. The banded algorithm is always faster and scaled better with the number of
         layers, so there is no reason to set it to False except for debug reasons.
 
     :return: (eigvals, eigvects), where eigvals is a list of eigenvalues and eigvects a list of list of
-        eigenvectors. IMPORTANT! The first three acoustic modes are removed.
+        eigenvectors. Note: eigvals are the squared frequencies.
+        IMPORTANT! The first three acoustic modes are removed.
         Moreover, the i-th eigenvector is eigenvect.T[i] (note the transpose).
     """
     # TODO: add layer mass here should be a constant for all layers! and fix units
@@ -142,6 +146,7 @@ def get_eigvals_eigvects(num_layers, numeric_matrices, use_banded_algorithm=Fals
     else:
         K_matrix = np.zeros((num_layers * 3, num_layers * 3))
 
+    # Note: I construct -K, actually
     for block_idx in range(num_layers):
         # Interaction with upper layer
         if block_idx < num_layers - 1:  # Not in the last layer
@@ -185,6 +190,9 @@ def get_eigvals_eigvects(num_layers, numeric_matrices, use_banded_algorithm=Fals
                 factor=-1,
                 banded=use_banded_algorithm,
             )
+
+    # We want to get the eigenvalues of  omega^2 U = - 1/M_layer K U
+    K_matrix /= layer_mass_amu
 
     # Get frequencies (eigvals) and eigenvectors (for mode analysis)
     if use_banded_algorithm:

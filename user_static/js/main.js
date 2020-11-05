@@ -173,6 +173,7 @@ var app = new Vue({
                 pointgroupOdd: vueApp.appData.pointgroupOdd,
                 uniqueAxisTransformationEven: vueApp.appData.uniqueAxisTransformationEven,
                 uniqueAxisTransformationOdd: vueApp.appData.uniqueAxisTransformationOdd,
+                layerMassAmu: vueApp.appData.layerMassAmu,
                 numLayersBulk: vueApp.appData.numLayersBulk,
                 maxLayers: vueApp.maxLayers,
                 xmin: xmin,
@@ -194,7 +195,7 @@ var app = new Vue({
                 }
                 var warningMessage = 'Failed fetching the data: ' + textStatus;
                 if (errorThrown) {
-                    warningMessage += " (" + errorThrown + ")";  
+                    warningMessage += " (" + errorThrown + ": " + jqXHR.responseText + ")"; 
                 }
                 vueApp.warningMessage = warningMessage;
                 vueApp.clearData();

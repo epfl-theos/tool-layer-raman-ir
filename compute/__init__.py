@@ -247,6 +247,13 @@ def get_modes():  # pylint: disable=too-many-statements
                 "Invalid request, missing or wrong uniqueAxisTransformationOdd", 400
             )
 
+        try:
+            layerMassAmu = float(data["layerMassAmu"])
+        except (KeyError, ValueError):
+            return make_response(
+                "Invalid request, missing or invalid layerMassAmu", 400
+            )
+
         # at least num_layers_bulk, but also at least 2 layers (otherwise for a single layer we only
         # see the trivial acoustic modes)
         min_num_layers = max(2, num_layers_bulk)
@@ -278,7 +285,9 @@ def get_modes():  # pylint: disable=too-many-statements
         along_z = []
 
         for num_layers in range(min_num_layers, max_layers + 1):
-            eigvals, eigvects = get_eigvals_eigvects(num_layers, numeric_matrices)
+            eigvals, eigvects = get_eigvals_eigvects(
+                num_layers, numeric_matrices, layer_mass_amu=layerMassAmu
+            )
 
             pointgroup_number = pointgroupOdd if num_layers % 2 else pointgroupEven
             transformation = transformationOdd if num_layers % 2 else transformationEven
@@ -307,7 +316,7 @@ def get_modes():  # pylint: disable=too-many-statements
 
             # 3(N-1) modes, with x equal to the current number of layers (reminder: we are in a loop over num_layers)
             plot_data_x += [num_layers] * 3 * (num_layers - 1)
-            plot_data_y += eigvals.tolist()
+            plot_data_y += np.sqrt(eigvals).tolist()
 
         return_data = {
             "x": plot_data_x,
@@ -341,4 +350,7 @@ def get_modes():  # pylint: disable=too-many-statements
     # profiler.dump_stats('profile.dump')
     return_data = _get_modes_internal()
 
+    if isinstance(return_data, flask.Response):
+        # It's already a response
+        return return_data
     return flask.jsonify(return_data)
