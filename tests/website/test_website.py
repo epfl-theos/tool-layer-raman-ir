@@ -131,7 +131,6 @@ def submit_structure(
 
             else:
                 selenium.find_element(By.NAME, extra_name).send_keys(str(extra_value))
-        selenium.save_screenshot("screenshot.png")
 
     # Submit form
     # selenium.find_element_by_xpath("//input[@value='Calculate my structure']").click()
