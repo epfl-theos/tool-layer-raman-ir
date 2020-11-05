@@ -1,6 +1,8 @@
 # Layer-Raman online tool
 A tool to compute and visualize Raman-active and Infrared-active modes in layered materials
 
+[![Actions Status](https://github.com/epfl-theos/tool-layer-raman/workflows/Continuous%20integration/badge.svg)](https://github.com/epfl-theos/tool-layer-raman/actions)
+
 ## About the tool
 
 This tool allows users to upload the bulk crystal structure of a layered material in a number of common formats
