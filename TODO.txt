@@ -20,9 +20,7 @@ MID PRIORITY/PRE-PUBLICATION:
 
 BEFORE PUBLICATION:
 
-- [GIO] clean up code, add README.md
-
-- [GIO] make github repo public
+- [GIO] clean up code
 
 - [GIO] add git tag to release a version (20.11.0?)
 
