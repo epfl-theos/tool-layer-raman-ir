@@ -38,7 +38,7 @@ def assign_representation(
     :param pg: the point group (an instance of utils.Pointgroup)
     :param transformation: a 3x3 matrix that transforms the axes by swapping them
     """
-    tol = 1e-3 #2 * n.finfo(n.float).eps
+    tol = 5e-3
     idir = n.argwhere(transformation[2, :] == 1)[0, 0]
     activity = {RAMAN: False, INFRARED: False, BACKSCATTERING: False}
     found = False
