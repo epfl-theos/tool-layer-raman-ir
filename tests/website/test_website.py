@@ -158,7 +158,9 @@ def test_send_structure(request, selenium, parser_name, file_relpath, expected_s
         assert "Input crystal structure" in selenium.page_source
 
         for expected_string in expected_strings:
-            assert expected_string in selenium.page_source
+            assert (
+                expected_string in selenium.page_source
+            ), f"String '{expected_string}' not found in the page source"
     except Exception:
         # Create a screenshot and raise
         selenium.save_screenshot(f"{request.node.name}.png")
