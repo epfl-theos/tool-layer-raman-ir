@@ -354,8 +354,9 @@ def find_common_transformation(
     # I now use op01 to check if, with op01, I can bring each layer onto the next,
     # and layer num_layers onto num_layers+1, i.e. the first one + the third lattice vector
     for il in range(1, num_layers):
-        layer0 = layers[il]
-        layer1 = layers[(il + 1) % num_layers]
+        # We need to copy the layers as we'll change them in place
+        layer0 = layers[il].copy()
+        layer1 = layers[(il + 1) % num_layers].copy()
         # translate back the two layers by il * cell[2]/num_layers
         # if layer1 is the layer num_layer + 1 we need to translate it
         # by a full lattice vector
