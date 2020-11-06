@@ -35,7 +35,7 @@ var app = new Vue({
         modesFilterZ: true,
         forceConstantVariables: [],
         seriesWithData: {},
-        forceConstantUnits: "meV_over_angsquare",
+        forceConstantUnits: "1e19_N_over_m3",
         frequencyUnits: "cm_minus_one",
 
         seriesMetadata: Object.freeze([ // Initial series definition
@@ -194,6 +194,7 @@ var app = new Vue({
                 uniqueAxisTransformationEven: vueApp.appData.uniqueAxisTransformationEven,
                 uniqueAxisTransformationOdd: vueApp.appData.uniqueAxisTransformationOdd,
                 layerMassAmu: vueApp.appData.layerMassAmu,
+                layerSurfaceAng2: vueApp.appData.layerSurfaceAng2,
                 numLayersBulk: vueApp.appData.numLayersBulk,
                 maxLayers: vueApp.maxLayers
             };

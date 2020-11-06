@@ -215,6 +215,8 @@ def process_structure_core(
     )
 
     layer_mass_amu = sum(atom.mass for atom in rotated_asecell[layer_indices[0]])
+    # Layer unit-cell surface is the determinant of the 2x2 unit cell
+    layer_surface_ang2 = abs(cell2d[0][0] * cell2d[1][1] - cell2d[0][1] * cell2d[1][0])
 
     # This list contains either -1 or 1; if there is at least one -1, it means that the layer is non-polar
     # (e.g. has inversion symetry or a mirror orthogonal to the stacking axis)
@@ -256,6 +258,7 @@ def process_structure_core(
     return_data["pointgroup_bulk"] = prepare_pointgroup(pg_bulk_number)
     return_data["spacegroup_bulk"] = prepare_spacegroup(bulk_spg)
     return_data["layer_mass_amu"] = float(layer_mass_amu)
+    return_data["layer_surface_ang2"] = float(layer_surface_ang2)
 
     app_data = {
         "structure": structure,
@@ -263,6 +266,7 @@ def process_structure_core(
         "pointgroupOdd": pg_odd_number,
         "uniqueAxisTransformationEven": find_unique_axis_transformation(spg_even),
         "uniqueAxisTransformationOdd": find_unique_axis_transformation(spg_odd),
+        "layerSurfaceAng2": float(layer_surface_ang2),
         "layerMassAmu": float(layer_mass_amu),
         # This will be used to decide the mimimum number of layers to show - we don't want to ge below this,
         # as the symmetries might be more.

@@ -36,14 +36,38 @@ VALID_EXAMPLES = {
 }
 
 # The key should be a valid value of the various options of the "force-constant-units" <select> dropdown menu.
-# The value should be the conversion factor to be *multiplied to the values* to get values in eV/Ang^2
+# The value should be a tuple of length 2; the first one is the conversion factor to be
+# *multiplied to the values* to get values in eV/Ang^2; the second one is a boolean that indicates
+# whether one also needs to multiply by the 2D unit cell surface expressed in angstrom^2.
+#
 FORCE_CONSTANT_PREFACTORS = {
-    "eV_over_angsquare": 1.0,
-    "meV_over_angsquare": 0.001,
+    "eV_over_angsquare": (1.0, False),  # it's the same units => 1.
+    "meV_over_angsquare": (0.001, False),  # meV/eV = 0.001
+    "1e19_N_over_m3": (0.00624150913, True),  # (1e19 N/m^3) / (eV/ang^2) * ang^2
 }
 
 logger = logging.getLogger("layer-raman-tool-app")
 blueprint = flask.Blueprint("compute", __name__, url_prefix="/compute")
+
+
+def compute_force_constant_prefactor(force_constant_units, layer_surface_ang2):
+    """
+    Compute the prefactor to multiply to the values provided in input, in order to convert them to eV_over_angsquare
+    (per unit cell).
+    In some cases the layer_surface_ang2 might be ignored, if also the force_constant_units is expressed per unit cell.
+
+    :param force_constant_units: a string defining the input force constant units (must be a valid key of the
+        FORCE_CONSTANT_PREFACTORS dictionary)
+    :param layer_surface_ang2: the surface of the layer unit cell, in angstrom^2
+    :return: the prefactor to multiply by, to obtain eV/ang^2/unitcell units.
+    :raise KeyError: if the force_constant_units are not recognized
+    """
+    factor, should_multiply_by_surface = FORCE_CONSTANT_PREFACTORS[force_constant_units]
+    if should_multiply_by_surface:
+        print("Multiplying by {}".format(layer_surface_ang2))
+        factor *= layer_surface_ang2
+    print(f"Final factor {force_constant_units}: {factor}")
+    return factor
 
 
 @blueprint.route("/process_structure/", methods=["GET", "POST"])
@@ -261,11 +285,21 @@ def get_modes():  # pylint: disable=too-many-statements
             )
 
         try:
+            layerSurfaceAng2 = float(data["layerSurfaceAng2"])
+        except (KeyError, ValueError):
+            return make_response(
+                "Invalid request, missing or invalid layerSufaceAng2", 400
+            )
+
+        try:
             forceConstantUnits = data["forceConstantUnits"]
         except KeyError:
             return make_response("Invalid request, missing forceConstantUnits", 400)
         try:
-            force_constant_prefactor = FORCE_CONSTANT_PREFACTORS[forceConstantUnits]
+            force_constant_prefactor = compute_force_constant_prefactor(
+                force_constant_units=forceConstantUnits,
+                layer_surface_ang2=layerSurfaceAng2,
+            )
         except KeyError:
             return make_response(
                 "Invalid request, invalid value for forceConstantUnits", 400

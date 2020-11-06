@@ -377,11 +377,16 @@
         <div id='layerstitle'><h2>Common-layer search</h2></div>
         <div>
         {% if common_layers_search['rot_latex'] is not none %}
+            <p>
             A common coincidence operation brings each layer onto the next.<br>
             One possible coincidence operation is:
             <div id="coincidence-R"></div>
             <div id="coincidence-t"></div>
-            The layer mass is {{ layer_mass_amu }} atomic mass units.
+            </p>
+            <p>
+                The layer mass (per unit cell) is {{ "%.2f"|format(layer_mass_amu) }} atomic mass units.<br>
+                The unit cell layer surface is {{ "%.2f"|format(layer_surface_ang2) }} Å².
+            </p>
         {% else %}
             The structure is layered, but does not seem to be a MDO polytype (i.e., composed of repetitions of the same layer, with the same coincidence operation bringing each layer onto the next one):
             {{ common_layers_search['message'] }}.
@@ -443,8 +448,9 @@
             <div style="margin: auto; text-align: center;">
             <label for="force-constant-units">Force-constant units:</label>
             <select name="force-constant-units" id="force-constant-units" v-on:input="updateGraphDebounced" v-model="forceConstantUnits">
-                <option value="meV_over_angsquare">meV/Å²</option>
-                <option value="eV_over_angsquare">eV/Å²</option>
+                <option value="1e19_N_over_m3">10¹⁹ N/m³</option>
+                <option value="meV_over_angsquare">meV/Å² (per unit cell)</option>
+                <option value="eV_over_angsquare">eV/Å² (per unit cell)</option>
             </select>
             </div>
         </div>
@@ -454,7 +460,8 @@
         <h3>Instructions</h3>
             <div>
                 <ul>
-                    <li>Adapt the values of the force-constant parameters above. Those are chosen randomly, trying to reproduce their typical relative magnitude.</li>
+                    <li>Adapt the values of the force-constant parameters above. Those are chosen randomly, trying to reproduce their typical relative magnitude. You can find some values for some common layered materials for instance in this review:
+                    <a href="https://doi.org/10.1021/acsnano.7b06551" target="_blank">L. Liang et al., ACS Nano 11, 11777 (2017)</a></li>
                     <li>Hover on a data point to highlight only the corresponding data series, and to visualize a tooltip with useful information (including the irreducible-representation name).</li>
                     <li>Click on the legend at the bottom to hide/show specific data series.</li>
                     <li>Use the slider to select the maximum number of layers to show in the plot (the minimum value is at least two and is set to the number of layers in the bulk cell).</li>

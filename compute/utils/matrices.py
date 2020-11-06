@@ -111,17 +111,17 @@ def matrix_initialization(variable):
     a random number between 1 and 4 for the 11 and 22 components,
     and a random number between -1 and 1 for the off-diagonal components.
 
-    # Note: these values are expressed in the default GUI units that are meV/ang^2
+    # Note: these values are expressed in the default GUI units that are 10^19 N/m^3
     """
     # Range of value for 11 and 22
-    min_11 = 100.0
-    max_11 = 300.0
+    min_11 = 2.0
+    max_11 = 4.5
     # Range of random values for 33
-    min_33 = 350.0
-    max_33 = 600.0
+    min_33 = 8.0
+    max_33 = 13.0
     # range of values for off-diagonal
-    min_offdiag = -80.0
-    max_offdiag = 80.0
+    min_offdiag = -0.8
+    max_offdiag = 0.8
 
     if variable[-2:] == "33":
         return np.round(min_33 + (max_33 - min_33) * np.random.rand(), 1)
