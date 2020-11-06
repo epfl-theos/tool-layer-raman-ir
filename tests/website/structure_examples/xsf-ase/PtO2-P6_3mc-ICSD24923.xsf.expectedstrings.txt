@@ -1,0 +1,9 @@
+2 layers found
+A common coincidence operation
+Monolayer point group: D<sub>3d</sub>
+The monolayer is non-polar
+Bilayer point group: C<sub>3v</sub>
+for <emph>even N</emph> ≥ 2: C<sub>3v</sub>
+for <emph>odd N</emph> ≥ 2: C<sub>3v</sub>
+Bulk point group: C<sub>6v</sub>
+Bulk space group: P6<sub>3</sub>mc

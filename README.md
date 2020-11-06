@@ -33,6 +33,14 @@ If you use this tool, please cite the following work:
 
 You might also want to cite the spglib, ASE and pymatgen libraries that are used internally by the tool.
 
+## How to deploy on your computer
+1. Install [Docker](https://www.docker.com)
+2. Clone this repository
+3. Run `./admin-tools/build-and-run.sh`. This will build the Docker image, start the docker container, and open a browser to the correct URL.
+   If the browser does not open automatically, connect to http://localhost:8091
+
+If you want to check the Apache logs, you can run `./admin-tools/get-apache-logs.sh --reload` to see the logs of the tool in real time while you use it.
+
 ## Acknowledgements
 This tool uses the ASE and pymatgen libraries for structure manipulation, and spglib for symmetry detection.
 The tool is based upon the [tools-barebone framework](https://github.com/materialscloud-org/tools-barebone) developed by the Materials Cloud team.
