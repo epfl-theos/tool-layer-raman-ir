@@ -86,8 +86,8 @@ def assign_representation(
             # check that the projection is 1, within a threshold
             if abs(proj - 1) > tol:
                 print("!!!! Not one or zero, {}, {}, {}".format(proj, irrep, pg.symbol))
-            # To avoid issues in case of accidental degeneracies 
-            if proj>0.5:
+            # To avoid issues in case of accidental degeneracies
+            if proj > 0.5:
                 this_irrep = irrep
                 if do_print:
                     print("      {} irrep,".format(irrep), end="")
