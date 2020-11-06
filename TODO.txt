@@ -1,8 +1,7 @@
 TASKS:
-- [GIO] Understand what happens for category III. Also, add example for category III (E.g. Bi2TeI, but will probably need to change the interlayer-distance to make it category III; or create one artificially, e.g. take BiTeCl and flip it).
+- [GIO] Understand what happens for category III. Also, add example for category III (at least in the tests).
 
 - [MARCO+GIO] General TODO CHECK: check *all* TODOs in the code
-
 
 BEFORE PUBLICATION:
 

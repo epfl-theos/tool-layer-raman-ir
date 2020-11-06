@@ -173,7 +173,7 @@ def process_structure_core(
     # This is returned both in the return_data, for the HTML view, and in the app data,
     # to be set as a minimum for the REST API requests
     num_layers_bulk = len(layer_indices)
-    return_data["num_layers_lulk"] = num_layers_bulk
+    return_data["num_layers_bulk"] = num_layers_bulk
 
     cell2d = rotated_asecell.cell[:2, :2].tolist()
     return_data["rotated_cell"] = {
@@ -236,21 +236,28 @@ def process_structure_core(
     )
 
     # Either a finite ML with num_layers_bulk, or num_layers_bulk + 1 (the even between the two)
+    num_layers_even = num_layers_bulk + num_layers_bulk % 2
     spg_even = get_symmetry_multilayer(
-        rotated_asecell,
-        layer_indices,
-        num_layers=num_layers_bulk + num_layers_bulk % 2,
+        rotated_asecell, layer_indices, num_layers=num_layers_even,
     )
-
     pg_even_number = pg_number_from_hm_symbol(spg_even.get_point_group_symbol())
+
     # Either a finite ML with num_layers_bulk, or num_layers_bulk + 1 (the odd between the two)
     spg_odd = get_symmetry_multilayer(
         rotated_asecell,
         layer_indices,
         num_layers=num_layers_bulk + (num_layers_bulk + 1) % 2,
     )
-
     pg_odd_number = pg_number_from_hm_symbol(spg_odd.get_point_group_symbol())
+
+    # This is possibly different than spg_even for category III - for generality, though,
+    # I always compute it
+    spg_even_plus_two = get_symmetry_multilayer(
+        rotated_asecell, layer_indices, num_layers=num_layers_even + 2
+    )
+    pg_even_plus_two_number = pg_number_from_hm_symbol(
+        spg_even_plus_two.get_point_group_symbol()
+    )
 
     bulk_spg = SpacegroupAnalyzer(
         AseAtomsAdaptor().get_structure(asecell), symprec=SYMPREC
@@ -259,6 +266,11 @@ def process_structure_core(
 
     return_data["pointgroup_even"] = prepare_pointgroup(pg_even_number)
     return_data["pointgroup_odd"] = prepare_pointgroup(pg_odd_number)
+    return_data["pointgroup_even_plus_two"] = prepare_pointgroup(
+        pg_even_plus_two_number
+    )
+    # This information is needed, for category III, to decide what to show
+    return_data["pointgroup_even_is_multiple_four"] = not (num_layers_even % 4)
     return_data["pointgroup_monolayer"] = prepare_pointgroup(pg_monolayer_number)
     return_data["monolayer_has_z_inversion"] = monolayer_has_z_inversion
     return_data["pointgroup_bilayer"] = prepare_pointgroup(pg_bilayer_number)
