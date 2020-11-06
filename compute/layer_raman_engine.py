@@ -256,7 +256,6 @@ def process_structure_core(
     return_data["pointgroup_bulk"] = prepare_pointgroup(pg_bulk_number)
     return_data["spacegroup_bulk"] = prepare_spacegroup(bulk_spg)
     return_data["layer_mass_amu"] = float(layer_mass_amu)
-    print(return_data)
 
     app_data = {
         "structure": structure,
