@@ -4,6 +4,23 @@
 // Also, prevent these properties to be changed 
 // Object.freeze(appData); 
 
+// Mapping of accepted energy units.
+// Note: `from_meV_factor` is the factor to multiply to a meV value to obtain the required unit
+var energyUnitsMapping = {
+    meV: {
+        label: "meV",
+        from_meV_factor: 1.,
+    },
+    THz: {
+        label: "THz",
+        from_meV_factor: 0.241798926,
+    },
+    cm_minus_one: {
+        label: "cm⁻¹",
+        from_meV_factor: 8.06554399711,
+    }
+}
+
 var app = new Vue({
     el: '#app',
     data: {
@@ -19,6 +36,7 @@ var app = new Vue({
         forceConstantVariables: [],
         seriesWithData: {},
         forceConstantUnits: "meV_over_angsquare",
+        frequencyUnits: "cm_minus_one",
 
         seriesMetadata: Object.freeze([ // Initial series definition
             {
@@ -208,10 +226,11 @@ var app = new Vue({
 
             var vueApp = this;
 
-            var yPrecision = 4;  // Precision for y-value (the value itself, but mostly for the tooltip)
+            // NOTE! Data arrives in meV from the backend and is internally stored in meV in seriesWithData
+            // Units conversion is done only while plotting (for the frequency units)
             vueApp.seriesWithData = _.chain([
                 data.x,
-                _.map(data.y, function (yval) {return Math.round(yval * Math.pow(10, yPrecision)) / Math.pow(10, yPrecision);}),
+                data.y_meV,
                 data.isBackScattering,
                 data.isRamanActive,
                 data.isInfraredActive,
@@ -263,6 +282,13 @@ var app = new Vue({
             // ignore other cases - it should not happen
             vueApp.redrawData();
         },
+        onChangeUnits: function(event) {
+            var vueApp = this;
+            if (event.target.id == "frequency-units") {
+                vueApp.frequencyUnits = event.target.value;
+            }
+            vueApp.redrawData();
+        },
         filterData: function(data, filterX, filterY, filterZ) {
             // I am getting both the data and the modesFilter (the latter would also be in `this`,
             // but I defined this function as a "class method" instead)
@@ -282,15 +308,40 @@ var app = new Vue({
             // This is useful because it also keeps the order of the series
             var seriesNames = _.pluck(vueApp.seriesMetadata, 'internalName');
 
+            var unitsInfo = energyUnitsMapping[vueApp.frequencyUnits];
+            if (typeof(unitsInfo) == 'undefined') {
+                unitsInfo = {
+                    label: 'a.u.',
+                    from_meV_factor: 1.,
+                }
+            }
+
             // clean-up all series
             while(vueApp.chart.series.length > 0) {
                 vueApp.chart.series[0].remove();
             }
             
+            var yPrecision = 4;  // Precision for y-value (the value itself, but mostly for the tooltip)
+
+            var seriesWithDataNewUnits = _.mapObject(
+                vueApp.seriesWithData, function(series, seriesName) {
+                    // return the new value, for the same seriesName
+                    return _.map(series, function(dataPoint) {
+                        var newDataPoint = {};
+                        Object.assign(newDataPoint, dataPoint);
+                        // the original data point is assumed to be always returned in meV by the API
+                        newDataPoint.y = newDataPoint.y * unitsInfo.from_meV_factor;
+                        // Round the y value
+                        newDataPoint.y = Math.round(newDataPoint.y * Math.pow(10, yPrecision)) / Math.pow(10, yPrecision);
+                        return newDataPoint;
+                    });
+                }
+            );
+
             // Fix the max of the y axis independent of the filter
             var maxY = _.max( // get the maxY from the maxYPerEachSeries
                 _.map(
-                    _.values(vueApp.seriesWithData), // for each series...
+                    _.values(seriesWithDataNewUnits), // for each series...
                     function(series) {
                         //  ...get the max Y for this series
                         return _.max(series, function(dataPoint) {return dataPoint.y;}).y;
@@ -302,7 +353,7 @@ var app = new Vue({
             _.each(
                 seriesNames, function(name, seriesIdx) {
                     // Hide first, if it's going to be invisible anyway
-                    if (_.has(vueApp.seriesWithData, name)) {
+                    if (_.has(seriesWithDataNewUnits, name)) {
                         var metaSeriesIndex = _.findIndex(vueApp.seriesMetadata, function(series){ return series.internalName == name; });
 
                         if (metaSeriesIndex == -1) {
@@ -313,7 +364,7 @@ var app = new Vue({
                                 _.extend(
                                     vueApp.seriesMetadata[metaSeriesIndex], 
                                     {
-                                        data: vueApp.filterData(vueApp.seriesWithData[name], vueApp.modesFilterX, vueApp.modesFilterY, vueApp.modesFilterZ),
+                                        data: vueApp.filterData(seriesWithDataNewUnits[name], vueApp.modesFilterX, vueApp.modesFilterY, vueApp.modesFilterZ),
                                         showInLegend: true
                                     }
                                 )
@@ -325,6 +376,7 @@ var app = new Vue({
 
             // Fix the y range so it does not depend on the filtering
             vueApp.chart.yAxis[0].update({min: 0, max: maxY}); // The min is always zero
+            vueApp.chart.yAxis[0].setTitle({text: "Frequency ω [" + unitsInfo.label + "]"});
         },
         clearData: function() {
             while(this.chart.series.length > 0) {
@@ -368,7 +420,7 @@ var app = new Vue({
                 },
                 yAxis: {
                     title: {
-                        text: 'Frequency ω [a.u.]'
+                        text: 'Frequency ω'
                     }
                 },
                 tooltip: {

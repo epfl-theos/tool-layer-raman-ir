@@ -1,8 +1,6 @@
 TASKS:
 - [GIO] Check all examples results
 
-- [GIO] Add units dropdown for force-constants and frequency, and explain the 'units' of the frequency as a function of the units of the force-constant parameters
-
 - [GIO] Understand what happens for category III. Also, add example for category III (E.g. Bi2TeI, but will probably need to change the interlayer-distance to make it category III; or create one artificially, e.g. take BiTeCl and flip it).
 
 - [MARCO+GIO] General TODO CHECK: check *all* TODOs in the code

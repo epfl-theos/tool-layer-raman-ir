@@ -279,19 +279,26 @@ def get_modes():  # pylint: disable=too-many-statements
         # if 'C111' not in force_constant_params or force_constant_params['C111'] < 0:
         #    return make_response("missing or invalid C111", 400)
 
-        numeric_matrices = replace_symbols_with_values(
-            list_of_lists=symbolic_matrices, replacements=force_constant_params
-        )
-        ## This still contains information on linear combinations of coefficients.
-        ## Now, we assume it's a list of 3x3 matrices, and if an element
-        ## is not a numeric value but a list of lists, it means a linear combination:
-        ## replace with correct combination. E.g.:
-        ## [['C111', -1]] = -C111;
-        ## [['C111', -0.5], ['C112', -0.5]] = -0.5 * C111 - 0.5 * C112
-        # Thanks to the prefactor, the `numeric_matrices is expressed in eV/ang^2`
-        numeric_matrices = replace_linear_combinations(
-            numeric_matrices, force_constant_prefactor=force_constant_prefactor
-        )
+        try:
+            numeric_matrices = replace_symbols_with_values(
+                list_of_lists=symbolic_matrices, replacements=force_constant_params
+            )
+            ## This still contains information on linear combinations of coefficients.
+            ## Now, we assume it's a list of 3x3 matrices, and if an element
+            ## is not a numeric value but a list of lists, it means a linear combination:
+            ## replace with correct combination. E.g.:
+            ## [['C111', -1]] = -C111;
+            ## [['C111', -0.5], ['C112', -0.5]] = -0.5 * C111 - 0.5 * C112
+            # Thanks to the prefactor, the `numeric_matrices` is expressed in eV/ang^2
+            numeric_matrices = replace_linear_combinations(
+                numeric_matrices, force_constant_prefactor=force_constant_prefactor
+            )
+        except Exception:
+            traceback.print_exc()
+            return make_response(
+                "Invalid request, most probably you specified invalid values for the force-constant parameters",
+                400,
+            )
 
         ## LOGIC START ##
         plot_data_x = []
@@ -305,8 +312,13 @@ def get_modes():  # pylint: disable=too-many-statements
         along_z = []
 
         for num_layers in range(min_num_layers, max_layers + 1):
+            # This function takes in numeric_matrices in eV/ang^2, the layerMass in AMU,
+            # and returns `eigvals` in units of meV^2, so we send back the energy in meV
+            # (after taking the square root)
             eigvals, eigvects = get_eigvals_eigvects(
-                num_layers, numeric_matrices, layer_mass_amu=layerMassAmu
+                num_layers,
+                numeric_matrices_eV_over_angsquared=numeric_matrices,
+                layer_mass_amu=layerMassAmu,
             )
 
             pointgroup_number = pointgroupOdd if num_layers % 2 else pointgroupEven
@@ -340,7 +352,7 @@ def get_modes():  # pylint: disable=too-many-statements
 
         return_data = {
             "x": plot_data_x,
-            "y": plot_data_y,
+            "y_meV": plot_data_y,
             "isBackScattering": is_back_scattering,
             "isRamanActive": is_raman,
             "isInfraredActive": is_infrared,

@@ -443,8 +443,8 @@
             <div style="margin: auto; text-align: center;">
             <label for="force-constant-units">Force-constant units:</label>
             <select name="force-constant-units" id="force-constant-units" v-on:input="updateGraphDebounced" v-model="forceConstantUnits">
-                <option value="meV_over_angsquare">meV/ang^2</option>
-                <option value="eV_over_angsquare">eV/ang^2</option>
+                <option value="meV_over_angsquare">meV/Å²</option>
+                <option value="eV_over_angsquare">eV/Å²</option>
             </select>
             </div>
         </div>
@@ -504,11 +504,31 @@
                         <input type="checkbox" id="modes-filter-z" value="yes" checked v-on:input="onChangeFilter">
                         <label for="modes-filter-z">z (layer-breathing)</label>
                     </div>
+                    <div style="margin: auto; text-align: center;">
+                        <label for="frequency-units">Frequency units:</label>
+                        <select name="frequency-units" id="frequency-units" v-on:input="onChangeUnits">
+                        {# If you change values here, remember to also update the mapping in main.js called energyUnitsMapping #}
+                            <option value="cm_minus_one">cm⁻¹</option>
+                            <option value="meV">meV</option>
+                            <option value="THz">THz</option>
+                        </select>
+                    </div>                    
                 </div>
             </div>
         </div>        
 
         <div id="plotContainer" style="min-width: 310px; max-width: 1600px; height: 600px; margin: 0 auto"></div>
+
+        <div class="alert alert-warning" style="margin-left: 100px; margin-right: 100px;">
+            <strong>WARNING!</strong> The frequency values depend on the force-constant parameters,
+            whose values are however set by the tool by random values in a reasonable range
+            (every time you refresh you will get different values).
+            <br>
+            Therefore, trust the absolute energies in the plot <strong>only</strong> if you set yourself the correct force constants
+            (e.g., obtained from first principles); or, otherwise, you can use the tool to fit experimental frequencies
+            and deduce the corresponding force constants.
+        </div>
+
 
     </div>
     {% endif %}

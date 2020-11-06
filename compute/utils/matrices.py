@@ -108,18 +108,33 @@ def matrix_initialization(variable):
     the directions (1,2 or 3).
 
     Return a random number between 5 and 10 for the ab=33 component,
-    a random number between 1 and 4 for the 11 and 12 components,
-    and a random number between -1 and 1 for the off-diagonal components.s
+    a random number between 1 and 4 for the 11 and 22 components,
+    and a random number between -1 and 1 for the off-diagonal components.
+
+    # Note: these values are expressed in the default GUI units that are meV/ang^2
     """
+    # Range of value for 11 and 22
+    min_11 = 100.0
+    max_11 = 300.0
+    # Range of random values for 33
+    min_33 = 350.0
+    max_33 = 600.0
+    # range of values for off-diagonal
+    min_offdiag = -80.0
+    max_offdiag = 80.0
+
     if variable[-2:] == "33":
-        return np.round(5.0 * (1.0 + np.random.rand()), 2)
+        return np.round(min_33 + (max_33 - min_33) * np.random.rand(), 1)
     if variable[-1] == variable[-2]:
-        return np.round(1.0 + 4.0 * np.random.rand(), 2)
-    return np.round(-1.0 + 2 * np.random.rand(), 2)
+        return np.round(min_11 + (max_11 - min_11) * np.random.rand(), 1)
+    return np.round(min_offdiag + (max_offdiag - min_offdiag) * np.random.rand(), 1)
 
 
 def get_eigvals_eigvects(
-    num_layers, numeric_matrices, layer_mass_amu, use_banded_algorithm=False
+    num_layers,
+    numeric_matrices_eV_over_angsquared,
+    layer_mass_amu,
+    use_banded_algorithm=False,
 ):
     """Given the number of layers and the `numeric_matrices`,
     construct internally the K matrix and diagonalize it
@@ -128,19 +143,33 @@ def get_eigvals_eigvects(
     I have to solve the eq. of motion: - M_layer omega^2 U = K U
 
     :param num_layers: the number of layers in the multilayer
-    :param numeric_matrices: a list of numeric matrices (i.e., with all parameters replaced with numeric
+    :param numeric_matrices_eV_over_angsquared:
+        a list of numeric matrices (i.e., with all parameters replaced with numeric
         values) with the interaction of each layer with the next one.
+        They should be passed in in units of eV/angstrom^2.
     :param layer_mass_amu: mass of the layer, in atomic mass units (a.m.u.)
     :param use_banded_algorithm: if True, use a banded diagonalization algorithm, otherwise diagonalize
         the full matrix. The banded algorithm is always faster and scaled better with the number of
         layers, so there is no reason to set it to False except for debug reasons.
 
     :return: (eigvals, eigvects), where eigvals is a list of eigenvalues and eigvects a list of list of
-        eigenvectors. Note: eigvals are the squared frequencies.
+        eigenvectors. **Note**: eigvals are the squared frequencies, in units of *meV^2*.
         IMPORTANT! The first three acoustic modes are removed.
         Moreover, the i-th eigenvector is eigenvect.T[i] (note the transpose).
     """
-    # TODO: add layer mass here should be a constant for all layers! and fix units
+    # Based on the units in input, and indicating with:
+    # - [hbar omega] the numeric value for the frequency in meV => hbar omega = [hbar omega] * meV
+    # - [K] the numeric value of K in eV/ang^2
+    # - [m] the layer mass in amu
+    # we have (we omit the sign, and for units considerations we 'drop' U):
+    #   omega^2 = K / m =>
+    #   (hbar omega)^2 = hbar^2 * K / m =>
+    #   [hbar omega]^2 * meV^2 = hbar^2 * [K] / [m] * eV/ang^2 / amu = [K] / [m] * hbar^2 * eV/ang^2 / amu =>
+    #   [hbar omega]^2 = = [K] / [m] * ( hbar^2 * eV/ang^2 / amu / meV^2 )
+    # so that the conversion factor is the last bracketed term:
+    # conversion_factor = hbar^2 * eV / (angstrom^2 * amu * meV^2)
+    conversion_factor = 4180.15925
+    # NOTE: for simplicity, the conversion is applied at the very end
 
     if use_banded_algorithm:
         # 3 blocks (below, same layer, and above) of size 3 => total width of 9
@@ -154,7 +183,9 @@ def get_eigvals_eigvects(
         # Interaction with upper layer
         if block_idx < num_layers - 1:  # Not in the last layer
             current_block = np.array(
-                numeric_matrices[block_idx % len(numeric_matrices)]
+                numeric_matrices_eV_over_angsquared[
+                    block_idx % len(numeric_matrices_eV_over_angsquared)
+                ]
             )
             add_block(
                 matrix=K_matrix,
@@ -175,7 +206,9 @@ def get_eigvals_eigvects(
         # Interaction with lower layer
         if block_idx > 0:  # Not in the first layer
             previous_block = np.array(
-                numeric_matrices[(block_idx - 1) % len(numeric_matrices)]
+                numeric_matrices_eV_over_angsquared[
+                    (block_idx - 1) % len(numeric_matrices_eV_over_angsquared)
+                ]
             )
             add_block(
                 matrix=K_matrix,
@@ -203,8 +236,11 @@ def get_eigvals_eigvects(
     else:
         eigvals, eigvects = np.linalg.eigh(K_matrix)
 
-    # The first three should be acoustic i.e. almost zero; the rest should be positive
-    assert np.sum(np.abs(eigvals[:3])) < 1.0e-8
+    eigvals *= conversion_factor
+
+    ## The first three should be acoustic i.e. almost zero; the rest should be positive
+    ## I don't check as depending on the units it's hard to define a correct absolute energy
+    # assert np.sum(np.abs(eigvals[:3])) < 1.0e-8
 
     # Remove the first three acoustic modes
     return eigvals[3:], eigvects[:, 3:]
