@@ -5,8 +5,6 @@ TASKS:
 
 - [MARCO+GIO] General TODO CHECK: check *all* TODOs in the code
 
-- [MARCO] check all warnings printed for some pointgroups on the logs - are they bugs?
-
 
 BEFORE PUBLICATION:
 

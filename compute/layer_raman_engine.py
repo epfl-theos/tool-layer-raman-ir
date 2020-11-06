@@ -290,7 +290,7 @@ def construct_force_constant_dict(  # pylint: disable=too-many-locals,too-many-n
     fc_dict.update({"variables": []})
     var_mapping = {}
     for i, v in enumerate(
-        sorted({k for m_dict in matrix_dicts for k in m_dict.keys()})
+        sorted(set({k for m_dict in matrix_dicts for k in m_dict.keys()}))
     ):
         fc_dict["variables"].append(
             {

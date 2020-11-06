@@ -38,7 +38,7 @@ def assign_representation(
     :param pg: the point group (an instance of utils.Pointgroup)
     :param transformation: a 3x3 matrix that transforms the axes by swapping them
     """
-    tol = 5e-3
+    tol = 1e-5
     idir = n.argwhere(transformation[2, :] == 1)[0, 0]
     activity = {RAMAN: False, INFRARED: False, BACKSCATTERING: False}
     found = False
@@ -86,19 +86,21 @@ def assign_representation(
             # check that the projection is 1, within a threshold
             if abs(proj - 1) > tol:
                 print("!!!! Not one or zero, {}, {}, {}".format(proj, irrep, pg.symbol))
-            this_irrep = irrep
-            if do_print:
-                print("      {} irrep,".format(irrep), end="")
-            if irrep in pg.raman:
-                activity[RAMAN] = True
+            # To avoid issues in case of accidental degeneracies
+            if proj > 0.5:
+                this_irrep = irrep
                 if do_print:
-                    print(" Raman+IR active", end="")
-                if irrep in pg.backscattering[idir]:
-                    activity[BACKSCATTERING] = True
-            if irrep in pg.infrared:
-                activity[INFRARED] = True
+                    print("      {} irrep,".format(irrep), end="")
+                if irrep in pg.raman:
+                    activity[RAMAN] = True
+                    if do_print:
+                        print(" Raman+IR active", end="")
+                    if irrep in pg.backscattering[idir]:
+                        activity[BACKSCATTERING] = True
+                if irrep in pg.infrared:
+                    activity[INFRARED] = True
+                    if do_print:
+                        print(" IR active", end="")
                 if do_print:
-                    print(" IR active", end="")
-            if do_print:
-                print("")
+                    print("")
     return this_irrep, activity
