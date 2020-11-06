@@ -64,9 +64,7 @@ def compute_force_constant_prefactor(force_constant_units, layer_surface_ang2):
     """
     factor, should_multiply_by_surface = FORCE_CONSTANT_PREFACTORS[force_constant_units]
     if should_multiply_by_surface:
-        print("Multiplying by {}".format(layer_surface_ang2))
         factor *= layer_surface_ang2
-    print(f"Final factor {force_constant_units}: {factor}")
     return factor
 
 

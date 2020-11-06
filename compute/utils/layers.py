@@ -309,10 +309,8 @@ def find_common_transformation(
     # The values of this array might not be all identical.
     # E.g. if atoms of the same layer are not closeby unless one considers PBC.
 
-    cell_z_dir = common_lattice.matrix[2, 2]
-    required_scaled_z_shift_per_atom = required_z_shift_per_atom / cell_z_dir
-
-    print(required_scaled_z_shift_per_atom)
+    # cell_z_dir = common_lattice.matrix[2, 2]
+    # required_scaled_z_shift_per_atom = required_z_shift_per_atom / cell_z_dir
 
     z_shift = required_z_shift_per_atom[0]
     for atom_idx in range(1, len(required_z_shift_per_atom)):
