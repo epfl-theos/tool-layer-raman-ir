@@ -1,0 +1,11 @@
+4 layers found
+A common coincidence operation
+Monolayer point group: C<sub>3v</sub>
+The monolayer is polar
+Bilayer point group: D<sub>3d</sub>
+for <emph>even N</emph> ≥ 4 (when <emph>N</emph> is multiple of four): D<sub>3d</sub>
+for <emph>even N</emph> ≥ 4 (when <emph>N</emph> is not a multiple of four): D<sub>3d</sub>
+for <emph>odd N</emph> ≥ 4: C<sub>3v</sub>
+Bulk point group: D<sub>3d</sub>
+Bulk space group: P<span style="text-decoration:overline;">3</span>m1
+category III system

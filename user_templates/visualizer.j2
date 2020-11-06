@@ -409,19 +409,19 @@
             <li>Multilayer point group:
                 <ul>       
                     {% if is_category_III %}
-                        <li>for <emph>even N</emph> ≥ {{ num_layers_bulk }} (when <emph>N</emph> is multiple of four): 
-                            {% if pointgroup_even_is_multiple_four %}
+                        <li>for <emph>even N</emph> ≥ {{ num_layers_bulk }} (when <emph>N</emph> is multiple of four):{{ ' ' }} 
+                            {%- if pointgroup_even_is_multiple_four -%}
                                 {{ pointgroup_even.schoenflies_name | safe }} ({{ pointgroup_even.hm_name | safe }}).
-                            {% else %}
+                            {%- else -%}
                                 {{ pointgroup_even_plus_two.schoenflies_name | safe }} ({{ pointgroup_even_plus_two.hm_name | safe }}).
-                            {% endif %}
+                            {%- endif -%}
                         </li>
-                        <li>for <emph>even N</emph> ≥ {{ num_layers_bulk }} (when <emph>N</emph> is not a multiple of four):
-                            {% if pointgroup_even_is_multiple_four %}
+                        <li>for <emph>even N</emph> ≥ {{ num_layers_bulk }} (when <emph>N</emph> is not a multiple of four):{{ ' ' }}
+                            {%- if pointgroup_even_is_multiple_four -%}
                                 {{ pointgroup_even_plus_two.schoenflies_name | safe }} ({{ pointgroup_even_plus_two.hm_name | safe }}).
-                            {% else %}
+                            {%- else -%}
                                 {{ pointgroup_even.schoenflies_name | safe }} ({{ pointgroup_even.hm_name | safe }}).
-                            {% endif %}
+                            {%- endif -%}
                         </li>
                     {% else %}
                         <li>for <emph>even N</emph> ≥ {{ num_layers_bulk }}: {{ pointgroup_even.schoenflies_name | safe }} ({{ pointgroup_even.hm_name | safe }}).</li>

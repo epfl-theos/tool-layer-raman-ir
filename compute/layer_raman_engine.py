@@ -208,7 +208,10 @@ def process_structure_core(
     ## COMPUTE HERE VARIOUS POINTGROUP/SPACEGROUP INFORMATION FOR BULK AND VARIOUS MLs
     spg_bilayer = get_symmetry_multilayer(rotated_asecell, layer_indices, num_layers=2)
     all_dicts, all_matrices = construct_all_matrices(
-        spg_bilayer, num_layers_bulk, transformation=rot
+        spg_bilayer,
+        num_layers_bulk,
+        transformation=rot,
+        is_category_III=return_data["is_category_III"],
     )
     fc_dict = construct_force_constant_dict(all_dicts, all_matrices)
 
@@ -479,8 +482,6 @@ def construct_first_matrix(spg):
 
     Note: in reality only the pointgroup is needed, but for simplicity we pass the whole spacegroup object
     """
-    # TODO: for now it works only when the transformation matrix has no inversion along z
-    # (category III, where it is not possible to find one operation without flip along z)
     cry_sys = spg.get_crystal_system()
     if cry_sys in [
         "tetragonal",
@@ -532,23 +533,44 @@ def construct_first_matrix(spg):
 
 
 def construct_all_matrices(  # pylint: disable=too-many-locals
-    spg, num_layers, transformation, unique_matrix_dict=False
+    spg, num_layers, transformation, is_category_III, unique_matrix_dict=False
 ):
     """
     Construct the interlayer force constant matrices given the spacegroup object of the bilayer (N=2)
     and the trasformation matrix that brings EACH layer into the next one.
 
     Note: in reality only the pointgroup is needed, but for simplicity we pass the whole spacegroup object
+    
+    :param is_category_III: if True, alternates the matrices at every other layer
+       by appending a letter 'a' or 'b' to every constant
+    :param unique_matrix_dict: if True, remove duplicates. By default we keep it False, so it's
+        easier to explain that the superscript is the layer index the matrix refers to.
     """
     matrix_dict = construct_first_matrix(spg)
     # Under the assumption that this transformation does not flip the z-axis, this
     # is also the transformation that brings a bilayer into the next one.
-    # TODO: generalize to take into account the case of transformations that flip z
     matrix_lists = []
     matrix_dicts = []
     this_transformation = np.identity(3)
-    for _ in range(num_layers):
-        m_dict, m_list = rotate_and_simplify_matrix(matrix_dict, this_transformation)
+    for layer_idx in range(num_layers):
+        # Alternate matrices for category III
+        if is_category_III:
+            if layer_idx % 2:
+                # 1. we need to use a prefix, since later we check the last characters of the variable
+                #    to set some initial random values, and a suffix would break the logic
+                # 2. It is good that the string "even" is before "odd" alphabetically, so the symbols
+                #    a, b, c, ... remain properly sorted.
+                prefix = "odd-"
+            else:
+                prefix = "even-"
+        else:
+            prefix = ""
+        this_matrix_dict = {
+            f"{prefix}{key}": value for key, value in matrix_dict.items()
+        }
+        m_dict, m_list = rotate_and_simplify_matrix(
+            this_matrix_dict, this_transformation
+        )
         matrix_lists.append(m_list)
         # In the list of matrix dictionaries add either all of them or check for unicity
         if unique_matrix_dict:
@@ -568,8 +590,8 @@ def construct_all_matrices(  # pylint: disable=too-many-locals
 def rotate_and_simplify_matrix(matrix_dict, transformation):
     """
     This function 'rotates' a matrix written with the internal notation
-    matrix_dict:: dictionary whose keys are the free parameters of the interlayer
-                  force constant matrix, and the value is a matrix that moltiplies the
+    matrix_dict: dictionary whose keys are the free parameters of the interlayer
+                  force constant matrix, and the value is a matrix that multiplies the
                   parameter to obtain the corresponding contribution
     transformation:: 3x3 array that contains the transformation matrix that needs to be applied to 
                      the force constant matrix

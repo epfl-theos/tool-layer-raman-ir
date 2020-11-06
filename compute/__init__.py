@@ -382,7 +382,10 @@ def get_modes():  # pylint: disable=too-many-statements
 
             # 3(N-1) modes, with x equal to the current number of layers (reminder: we are in a loop over num_layers)
             plot_data_x += [num_layers] * 3 * (num_layers - 1)
-            plot_data_y += np.sqrt(eigvals).tolist()
+            # Rather than having NaN when there are some negative eigenvalues, that would then
+            # be serialized in JSON by python, but then cannot be deserialized by JS, I do the SQRT
+            # of the absolute value, and multiply back by the sign (like what is done for phonons)
+            plot_data_y += (np.sqrt(np.abs(eigvals)) * np.sign(eigvals)).tolist()
 
         return_data = {
             "x": plot_data_x,
