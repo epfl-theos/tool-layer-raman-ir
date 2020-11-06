@@ -7,3 +7,4 @@ for <emph>even N</emph> ≥ 2: D<sub>2h</sub>
 for <emph>odd N</emph> ≥ 2: D<sub>2d</sub>
 Bulk point group: D<sub>4h</sub>
 Bulk space group: P4<sub>2</sub>/nmc
+category I system

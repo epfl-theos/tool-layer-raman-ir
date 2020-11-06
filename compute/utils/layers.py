@@ -21,7 +21,9 @@ def find_layers(  # pylint: disable=too-many-locals,too-many-statements,too-many
     :param asecell: the bulk unit cell (in ase.Atoms format)
     :param factor: the skin factor
     :return: a tuple with a boolean indicating if the material is layered, a list of layers in the structure (ase format),
-        a list of indices of the atoms in each layer, and a rotated bulk ASE cell (with stacking axis along z)
+        a list of indices of the atoms in each layer, and a rotated bulk ASE cell (with stacking axis along z).
+        MOREOVER, it 1) returns layers ordered by stacking index and 2) makes sure the layer is connected when 
+        removing the PBC along the third (stacking) axis.
     """
     tol = 1.0e-6
     nl = NeighborList(
@@ -98,8 +100,6 @@ def find_layers(  # pylint: disable=too-many-locals,too-many-statements,too-many
                 is_layered = False
     if is_layered:
         newcell = [vector1, vector2, vector3]
-        # print ("BULK")
-        # print asecell.cell
         if abs(np.linalg.det(newcell) / np.linalg.det(cell) - 1.0) > 1e-3:
             raise ValueError(
                 "An error occurred. The new cell after rotation has a different volume than the original cell"
@@ -242,6 +242,11 @@ def find_common_transformation(
     if there exists a common transformation that brings one
     layer to the next.
 
+    :note: it MUST receive the layers already rearranged so that they are ordered
+        along the stacking axis, and with all atoms nearby (i.e., when removing the PBC
+        along the third axis, I should still see the layer and not it broken in two or more parts).
+        This is performed by the function `find_layers`.
+
     :param asecell: ASE structure of the bulk, where the first two 
               lattice vectors have been re-oriented to lie 
               in the plane of the layers
@@ -252,6 +257,9 @@ def find_common_transformation(
     :param angle_tol: tolerance on cell angles
     :return: a tuple of length three: either (rot, transl, None) if there is a common transformation,
         or (None, None, message) if a common transformation could not be found.
+        IMPORTANT: the code will try to find a transformation matrix so that rot[2,2] > 0, if it exists.
+        If it does not find it, and it returns rot[2,2] < 0, it means it's a category III material (see
+        definition in the text). Otherwise, it's either category I or II depending on the monolayer symmetry).
     """
     # instance of the adaptor to convert ASE structures to pymatgen format
     adaptor = AseAtomsAdaptor()
@@ -309,36 +317,18 @@ def find_common_transformation(
     # The values of this array might not be all identical.
     # E.g. if atoms of the same layer are not closeby unless one considers PBC.
 
-    # cell_z_dir = common_lattice.matrix[2, 2]
-    # required_scaled_z_shift_per_atom = required_z_shift_per_atom / cell_z_dir
-
     z_shift = required_z_shift_per_atom[0]
     for atom_idx in range(1, len(required_z_shift_per_atom)):
-        # TODO: Use a proper combination of stol instead! Note however that the ?tol are
-        # in fractional coordinates
-        # NOTE: This test is not going to work in some cases, see below!
+        # NOTE: This test is going to work because the function called before this
+        # already reorganised layers to have all atoms close to each other
         assert np.abs(z_shift - required_z_shift_per_atom[atom_idx]) < 1.0e-4
 
-    # Fix the translation vector to properly include.
-    # TODO: CHECK IF THIS IS THE CORRECT THING TO DO; ALSO, BELOW,
-    # ONE SHOULD CHECK IF THE SAME TRANSFORMATION BRINGS A LAYER INTO THE *NEXT* ONE
-    # by shifting down, applying, and shifting up again.
-    # tr01[2] += z_shift
-
-    ### print("~", tr01)
-
-    # TODO: check if they are all the same, if not FIX them (either here or before
-    # by making sure that layers are properly defined even without using PBC along z
-    # NOTE: it's not enough to do required_scaled_z_shift_per_atom % 1. !!
-    # In particular for LOC operations (R[2,2] == -1) this is not equivalent)
-
-    # TODO: TO COMPLETE HERE
-
-    # if the transformation involves a flip in the z-direction
-    # we need to check if by combining it with a bulk symmetry
-    # that leaves the first layer at the origin invariant
+    # If the transformation involves a flip in the z-direction
+    # we check if, by combining it with a bulk symmetry
+    # that leaves the first layer at the origin invariant,
     # we get a transformation that does NOT flip z
-    # TODO: can we use instead the symmetry operations of the monolayer?
+    # As soon as I find one, I replace tr01, rot01 and op01 (the combination of tr01 and rot01)
+    # with those we found, so that the axis is not flipped and transformation01[0][2, 2] > 0
     if transformation01[0][2, 2] < 0:
         # Get the spacegroup of the bulk
         bulk = adaptor.get_structure(asecell)
@@ -353,9 +343,16 @@ def find_common_transformation(
                 tr01 = affine_prod[0:3][:, 3]
                 rot01 = affine_prod[0:3][:, 0:3]
                 op01 = SymmOp.from_rotation_and_translation(rot01, tr01)
-                ### print(rot01, tr01)
                 break
 
+    # Here, there are now two options:
+    # - I couldn't find any operation: then I still have transformation01[0][2, 2] < 0
+    #   and I will categorize it as category III
+    # - I could find it, then transformation01[0][2, 2] > 0 and it's either category I or II
+    #   (depending on the monolayer symmetry)
+
+    # I now use op01 to check if, with op01, I can bring each layer onto the next,
+    # and layer num_layers onto num_layers+1, i.e. the first one + the third lattice vector
     for il in range(1, num_layers):
         layer0 = layers[il]
         layer1 = layers[(il + 1) % num_layers]

@@ -416,6 +416,17 @@
                 <ul>
                     <li>Bulk point group: {{ pointgroup_bulk.schoenflies_name | safe }} ({{ pointgroup_bulk.hm_name | safe }}).</li>
                     <li>Bulk space group: {{ spacegroup_bulk.hm_name | safe }} (international number: {{ spacegroup_bulk.international_number }}).</li>
+                    <li>{% if is_category_III %}
+                            This is a category III system, meaning that it is not possible to find any coincidence operation that does not flip <em>z</em>.
+                            As a consequence, consecutive pairs of layers have different interlayer force constants
+                        {% else %}
+                            {% if monolayer_has_z_inversion %}
+                                This is a category I system, meaning all layer pairs are identical, and the monolayer is non-polar
+                            {% else %}
+                                This is a category II system, meaning all layer pairs are identical, and the monolayer is polar
+                            {% endif%}
+                        {% endif %} (see manuscript for more information on the categories).
+                    </li>
                 </ul>
             </li>
         </ul>

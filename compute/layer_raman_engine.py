@@ -198,6 +198,13 @@ def process_structure_core(
 
     return_data["has_common_layers"] = True
 
+    # As explained also in its docstring, `find_common_transformation` will return a rotation matrix that does NOT
+    # flip the z axis, if at least one exists. This is the case for category II (layers are polar, no flip operation)
+    # and for category I (layer is non-polar, to it is always possible to combine a coincidence operation with flip
+    # together with a bulk operation that also flips z - layers remain invariant and we get rot[2, 2] > 0).
+    # If it remains negative, it means it's a category III.
+    return_data["is_category_III"] = bool(rot[2, 2] < 0)
+
     ## COMPUTE HERE VARIOUS POINTGROUP/SPACEGROUP INFORMATION FOR BULK AND VARIOUS MLs
     spg_bilayer = get_symmetry_multilayer(rotated_asecell, layer_indices, num_layers=2)
     all_dicts, all_matrices = construct_all_matrices(

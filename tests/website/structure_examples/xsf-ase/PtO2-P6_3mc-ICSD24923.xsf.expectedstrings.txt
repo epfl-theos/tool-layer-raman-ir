@@ -7,3 +7,4 @@ for <emph>even N</emph> ≥ 2: C<sub>3v</sub>
 for <emph>odd N</emph> ≥ 2: C<sub>3v</sub>
 Bulk point group: C<sub>6v</sub>
 Bulk space group: P6<sub>3</sub>mc
+category I system

@@ -7,3 +7,4 @@ for <emph>even N</emph> ≥ 2: C<sub>s</sub>
 for <emph>odd N</emph> ≥ 2: C<sub>s</sub>
 Bulk point group: C<sub>2v</sub>
 Bulk space group: Pmn2<sub>1</sub>
+category I system

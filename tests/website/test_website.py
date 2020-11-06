@@ -65,13 +65,16 @@ def get_file_examples():
                 os.path.dirname(file_abspath),
                 "{}.expectedstrings.txt".format(os.path.basename(file_abspath)),
             )
-            assert os.path.isfile(
-                expected_strings_file
-            ), "You need to define a file {} with a list of strings to check".format(
-                expected_strings_file
-            )
-            with open(expected_strings_file) as fhandle:
-                expected_strings = [line.strip() for line in fhandle.readlines()]
+            try:
+                with open(expected_strings_file) as fhandle:
+                    expected_strings = [line.strip() for line in fhandle.readlines()]
+            except IOError:
+                # The file does not exist: I put in a string that does not exist, and
+                # explains what is going on. In this way I don't stop all tests, but only
+                # the tests with missing expectedstrings file will fail.
+                expected_strings = [
+                    f"YOU NEED TO ADD A FILE '{os.path.basename(expected_strings_file)}' WITH THE LIST OF EXPECTED STRINGS!"
+                ]
             # remove empty strings
             expected_strings = [line for line in expected_strings if line]
             retval.append((parser_name, filename, expected_strings))
