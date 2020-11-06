@@ -101,7 +101,7 @@ def add_block(
 
 def matrix_initialization(variable):
     """
-    Initialize the value of a varible inside a 
+    Initialize the value of a variable inside a 
     force constant matrix, assuming the variable name
     has the form 'Cnab' where n is an integer identifying
     a set of independent variables and a and b identify 
