@@ -305,6 +305,8 @@ def get_modes():  # pylint: disable=too-many-statements
                 "Invalid request, invalid value for forceConstantUnits", 400
             )
 
+        print(f"Valid request started.")
+
         # at least num_layers_bulk, but also at least 2 layers (otherwise for a single layer we only
         # see the trivial acoustic modes)
         min_num_layers = max(2, num_layers_bulk)
@@ -404,7 +406,7 @@ def get_modes():  # pylint: disable=too-many-statements
 
         ## LOGIC END ##
 
-        print(f"Valid request processed in {total_time} s.")
+        print(f"Complete request for an MDO processed in {total_time} s.")
 
         return return_data
 
