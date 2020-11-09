@@ -343,6 +343,10 @@ def construct_force_constant_dict(  # pylint: disable=too-many-locals,too-many-n
                 "value": matrix_initialization(v),
             }
         )
+        # If this happens, we'll probably need to slightly extend the logic
+        # to e.g. start using aa, ab, ... but this really only happens for many
+        # layers!!
+        assert i < 26, "Too many variables!"
         var_mapping.update({v: string.ascii_lowercase[i]})
     description_list = []
     for ifc, matrix_dict in enumerate(matrix_dicts):
@@ -508,20 +512,20 @@ def construct_first_matrix(spg):
         "trigonal",
     ]:
         matrix_dict = {
-            "C111": [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 0.0]],
-            "C133": [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]],
+            "C11": [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 0.0]],
+            "C33": [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]],
         }
     elif cry_sys == "orthorhombic":
         matrix_dict = {
-            "C111": [[1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
-            "C122": [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 0.0]],
-            "C133": [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]],
+            "C11": [[1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
+            "C22": [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 0.0]],
+            "C33": [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]],
         }
     elif cry_sys == "monoclinic":
         matrix_dict = {
-            "C111": [[1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
-            "C122": [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 0.0]],
-            "C133": [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]],
+            "C11": [[1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
+            "C22": [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 0.0]],
+            "C33": [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]],
         }
         # Now add the off-diagonal element according to the unique-axis
         # direction in the specific setting
@@ -532,15 +536,15 @@ def construct_first_matrix(spg):
         matrix = np.zeros((3, 3))
         # and set to one the correct off-diagonal elements
         matrix[[nonzero], [nonzero[::-1]]] = 1.0
-        matrix_dict.update({"C1{}{}".format(*(_ + 1 for _ in nonzero)): matrix})
+        matrix_dict.update({"C{}{}".format(*(_ + 1 for _ in nonzero)): matrix})
     elif cry_sys == "triclinic":
         matrix_dict = {
-            "C111": [[1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
-            "C112": [[0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
-            "C113": [[0.0, 0.0, 1.0], [0.0, 0.0, 0.0], [1.0, 0.0, 0.0]],
-            "C122": [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 0.0]],
-            "C123": [[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 0.0]],
-            "C133": [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]],
+            "C11": [[1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
+            "C12": [[0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
+            "C13": [[0.0, 0.0, 1.0], [0.0, 0.0, 0.0], [1.0, 0.0, 0.0]],
+            "C22": [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 0.0]],
+            "C23": [[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 0.0]],
+            "C33": [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]],
         }
     elif cry_sys == "cubic":
         raise ValueError(
