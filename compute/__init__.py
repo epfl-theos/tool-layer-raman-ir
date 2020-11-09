@@ -312,8 +312,8 @@ def get_modes():  # pylint: disable=too-many-statements
         min_num_layers = max(2, num_layers_bulk)
 
         ## an example of validation - to decide if we want to do it!
-        # if 'C111' not in force_constant_params or force_constant_params['C111'] < 0:
-        #    return make_response("missing or invalid C111", 400)
+        # if 'C11' not in force_constant_params or force_constant_params['C11'] < 0:
+        #    return make_response("missing or invalid C11", 400)
 
         try:
             numeric_matrices = replace_symbols_with_values(
@@ -323,8 +323,8 @@ def get_modes():  # pylint: disable=too-many-statements
             ## Now, we assume it's a list of 3x3 matrices, and if an element
             ## is not a numeric value but a list of lists, it means a linear combination:
             ## replace with correct combination. E.g.:
-            ## [['C111', -1]] = -C111;
-            ## [['C111', -0.5], ['C112', -0.5]] = -0.5 * C111 - 0.5 * C112
+            ## [['C11', -1]] = -C11;
+            ## [['C11', -0.5], ['C12', -0.5]] = -0.5 * C11 - 0.5 * C12
             # Thanks to the prefactor, the `numeric_matrices` is expressed in eV/ang^2
             numeric_matrices = replace_linear_combinations(
                 numeric_matrices, force_constant_prefactor=force_constant_prefactor
