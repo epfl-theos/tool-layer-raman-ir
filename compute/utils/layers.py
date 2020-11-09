@@ -323,18 +323,18 @@ def find_common_transformation(
         # already reorganised layers to have all atoms close to each other
         assert np.abs(z_shift - required_z_shift_per_atom[atom_idx]) < 1.0e-4
 
+    # Construct the monolayer as the first layer with a large orthonal third lattice vector
+    mono = layer0.copy()
+    mono.cell[2, :2] = 0.0
+    mono.cell[2, 2] *= 10.0
+    # Get the spacegroup of the monolayer (useful below)
+    spg0 = SpacegroupAnalyzer(adaptor.get_structure(mono), symprec=SYMPREC)
     # If the transformation involves a flip in the z-direction
     # we check if, by combining it with a symmetry of the monolayer
     # we get a transformation that does NOT flip z
     # As soon as I find one, I replace tr01, rot01 and op01 (the combination of tr01 and rot01)
     # with those we found, so that the axis is not flipped and transformation01[0][2, 2] > 0
     if transformation01[0][2, 2] < 0:
-        # construct the monolayer as the first layer with a large orthonal third lattice vector
-        mono = layer0.copy()
-        mono.cell[2, :2] = 0.0
-        mono.cell[2, 2] *= 10.0
-        # Get the spacegroup of the monolayer
-        spg0 = SpacegroupAnalyzer(adaptor.get_structure(mono), symprec=SYMPREC)
         for op in spg0.get_symmetry_operations(cartesian=True):
             affine_prod = np.dot(op01.affine_matrix, op.affine_matrix)
             if affine_prod[2, 2] > 0:
@@ -410,7 +410,7 @@ def find_common_transformation(
                 # if the distance for any of the atoms of the given species
                 # is larger than the threshold the transformation is not the same
                 # between all consecutive layers
-                found_common *= distance.max() > stol
+                found_common *= distance.max() < stol
                 # if this transformation does not work it is useless con continue with
                 # subsequent layers
                 if not found_common:
