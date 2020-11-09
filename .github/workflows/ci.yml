@@ -62,7 +62,7 @@ jobs:
 
     - name: Archive screenshots (in case of problems) as artifacts
       uses: actions/upload-artifact@v2
-      if: ${{ always() }}
+      if: ${{ failure() }}
       with:
         name: Screenshots of test failures
         path: "*.png"
