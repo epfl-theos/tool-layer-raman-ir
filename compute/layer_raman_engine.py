@@ -79,8 +79,24 @@ def process_structure_core(
     }
 
     asecell = ase_from_tuple(structure)
+
+    # Get the primitive cell from the ase cell obtained from the user
+    # NOTE! Beside getting the primitive cell, this function will also refine its symmetry.
+    primitive_tuple = spglib.find_primitive(
+        (
+            asecell.get_cell(),
+            asecell.get_scaled_positions(),
+            asecell.get_atomic_numbers(),
+        ),
+        symprec=SYMPREC,
+    )
+    primitive_asecell = ase_from_tuple(primitive_tuple)
+    # From now on, I will work with the primitive cell rather than the one specified by the user
+    # This is important because we sometimes (in the output) make assumptions that the number of layers found
+    # is the number of layers in the primitive cell (e.g. when we say "Multilayer spacegroup
+    # for N >= {num_layers_primitive}").
     is_layered, layer_structures, layer_indices, rotated_asecell = find_layers(
-        asecell, factor=skin_factor
+        primitive_asecell, factor=skin_factor
     )
 
     scaled_radii_per_site = skin_factor * get_covalent_radii_array(asecell)

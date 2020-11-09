@@ -219,6 +219,13 @@
             <h1>Fan diagrams and optically-active modes of layered materials</h1>
         </div>
 
+        <div class='structureouter'>
+        <div id='structuretitle'><h2>Input crystal structure</h2>
+        <p><em>Drag to rotate, scroll to zoom, double-click to enable/disable interaction</em></p>
+        <p><em>Note: bonds drawn by the visualizer are those used internally to find layers</em></p>
+        </div>
+        {{ render_jsmol_visualizer(suffix='bulk', nx=2, ny=2, nz=2) }}
+
         <div id="topinfo">
             <div id="accordion-initialcoords">
             <h2>Show parsed input coordinates (please double-check here if the parser worked properly)</h2>
@@ -286,26 +293,21 @@
             </div>
         </div>
 
-        <div class='structureouter'>
-        <div id='structuretitle'><h2>Input crystal structure</h2>
-        <p><em>Drag to rotate, scroll to zoom, double-click to enable/disable interaction</em></p>
-        <p><em>Note: bonds drawn by the visualizer are those used internally to find layers</em></p>
-        </div>
-        {{ render_jsmol_visualizer(suffix='bulk', nx=2, ny=2, nz=2) }}
-
         <div id='layerstitle'><h2>Layer search</h2></div>
         <div>
             {% if layers %}
 
             <h3>Layers identification</h3>
 
-            {{ layers|length }} layer{% if layers|length != 1 %}s{% endif %} found for this structure using a skin factor of {{ skin_factor }}. <br>
+            <p>{{ layers|length }} layer{% if layers|length != 1 %}s{% endif %} found (in the primitive structure) using a skin factor of {{ skin_factor }}.</p>
 
             <div id="accordion-cell-after-rotation">
-            <h2>Unit cell after rotation (with stacking axis along <em>z</em>)</h2>
+            <h2>Layers unit cell and coordinates (after rotation with stacking axis along <em>z</em>)</h2>
             <div>
-            <p>We report here the rotated unit cell after rotation, so as to have the stacking axis along <em>z)</em>
-            and orthogonal to the layer planes.</p>
+            <p>We report here the 2D unit cell common to all layers
+            (after rotation, so as to have the stacking axis along <em>z</em>)
+            and the corresponding atomic coordinates.</p>
+            <p>Layers have been sorted by their stacking index, and the first layer is centered (roughly) around <em>z</em>=0.</p>
 
             <h3>In-plane cell vectors (&#8491;)</h3>
                 <table class="center">
@@ -350,7 +352,7 @@
             </div>
             </div>
 
-            <h3>Layer visualization</h3>
+            <h3>Layers visualization</h3>
 
             {% for layer_xsf, this_layer_indices in layers %}
                 <div id="accordion-layer{{loop.index}}">
@@ -496,7 +498,7 @@
                     <li>Hover on a data point to highlight only the corresponding data series, and to visualize a tooltip with useful information (including the irreducible-representation name).</li>
                     <li>Click on the legend at the bottom to hide/show specific data series.</li>
                     <li>Use the slider to select the maximum number of layers to show in the plot (the minimum value is at least two and is set to the number of layers in the bulk cell).</li>
-                    <li>Use the dropdown menu to filter only modes that have non-zero oscillations along a given axis (where z is the stacking axis). Note! if a mode has, e.g., non-zero z component, it means it has a layer-breathing (LB) character, but depending on the symmetry it might not be a pure LB mode, also have shear character. The same concept holds for shear (C) modes.</li>
+                    <li>Use the dropdown menu to filter only modes that have non-zero oscillations along a given axis (where <em>z</em> is the stacking axis). Note! if a mode has, e.g., non-zero <em>z</em> component, it means it has a layer-breathing (LB) character, but depending on the symmetry it might not be a pure LB mode, also have shear character. The same concept holds for shear (C) modes.</li>
                 </ul>
             </div>
         </div>
@@ -536,11 +538,11 @@
                     <div class="form-check form-check-inline">
                         Show modes that have a non-zero oscillation along:
                         <input type="checkbox" id="modes-filter-x" value="yes" checked v-on:input="onChangeFilter">
-                        <label for="modes-filter-x">x (shear)</label>
+                        <label for="modes-filter-x"><em>x</em> (shear)</label>
                         <input type="checkbox" id="modes-filter-y" value="yes" checked v-on:input="onChangeFilter">
-                        <label for="modes-filter-y">y (shear)</label>
+                        <label for="modes-filter-y"><em>y</em> (shear)</label>
                         <input type="checkbox" id="modes-filter-z" value="yes" checked v-on:input="onChangeFilter">
-                        <label for="modes-filter-z">z (layer-breathing)</label>
+                        <label for="modes-filter-z"><em>z</em> (layer-breathing)</label>
                     </div>
                     <div style="margin: auto; text-align: center;">
                         <label for="frequency-units">Frequency units:</label>
@@ -557,7 +559,7 @@
 
         <div id="plotContainer" style="min-width: 310px; max-width: 1600px; height: 600px; margin: 0 auto"></div>
 
-        <div class="alert alert-warning" style="margin-left: 100px; margin-right: 100px;">
+        <div class="alert alert-warning">
             <strong>WARNING!</strong> The frequency values depend on the force-constant parameters,
             whose values are however set by the tool by random values in a reasonable range
             (every time you refresh you will get different values).
@@ -584,9 +586,9 @@
         <p><span style="font-weight: bold;">
             Technical info</span>:
             Time spent to compute quantities: {{ '%.3f' % compute_time }} s.
-            <a href="https://wiki.fysik.dtu.dk/ase/index.html">ASE</a> version: {{ ase_version }}.
-            <a href="https://spglib.github.io/spglib/">spglib</a> version: {{ spglib_version }}.
-            <a href="https://github.com/materialscloud-org/tools-barebone">tools-barebone</a> version: {{tools_barebone_version}}.
+            <a href="https://wiki.fysik.dtu.dk/ase/index.html" target="_blank">ASE</a> version: {{ ase_version }}.
+            <a href="https://spglib.github.io/spglib/" target="_blank">spglib</a> version: {{ spglib_version }}.
+            <a href="https://github.com/materialscloud-org/tools-barebone" target="_blank">tools-barebone</a> version: {{tools_barebone_version}}.
             This tool version: {{this_tool_version}}.
     </div>
     

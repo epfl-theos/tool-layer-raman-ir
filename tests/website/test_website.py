@@ -50,6 +50,8 @@ def get_file_examples():
     retval = []
     top_dir = STRUCTURE_EXAMPLES_PATH
     for parser_name in os.listdir(top_dir):
+        if parser_name.startswith("."):
+            continue
         parser_dir = os.path.join(top_dir, parser_name)
         if not os.path.isdir(parser_dir):
             continue
@@ -59,6 +61,7 @@ def get_file_examples():
                 filename.endswith("~")
                 or filename.startswith(".")
                 or filename.endswith(".expectedstrings.txt")
+                or not os.path.isfile(file_abspath)
             ):
                 continue
             expected_strings_file = os.path.join(
