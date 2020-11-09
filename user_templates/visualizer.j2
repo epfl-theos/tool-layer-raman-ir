@@ -130,11 +130,6 @@
                     throwOnError: false,
                     displayMode: true
                 });
-            window.katex.render(
-                {{rotated_cell['cell2d']|tojson|safe}}, $("#rotatedCell2D")[0], {
-                    throwOnError: false,
-                    displayMode: true
-                });
         });
         </script>
     {% endif %}
@@ -304,10 +299,14 @@
             <div id="accordion-cell-after-rotation">
             <h2>Layers unit cell and coordinates (after cell rotation)</h2>
             <div>
-            <p>We report here the 2D unit cell common to all layers
-            (after rotation, so as to have the layers on <em>xy</em> planes)
+            <p>We report here the unit cell common to all layers
             and the corresponding atomic coordinates.</p>
+            <p>The unit cell shown is still the one of the input bulk system, obtained after finding the primitive cell,
+            refining the cell to enforce the symmetries that were found, and finally rotating the system so
+            that layers are on <em>xy</em> planes.</p>
             <p>Layers have been sorted by their stacking index, and the first layer is centered (roughly) around <em>z</em>=0.</p>
+            
+
 
             <h3>In-plane cell vectors (&#8491;)</h3>
                 <table class="center">
@@ -317,11 +316,12 @@
                     <th style="text-align: center">y</th>
                 </thead>
                 <tbody>
-                    {% for v in rotated_cell['cell2d'] %}
+                    {% for v in rotated_cell['layer_cell'] %}
                     <tr>
                     <td style="padding-right: 15px; text-align: center">v<sub>{{ loop.index }}</sub></td>
                     <td style="text-align: right"><code>{{ "%.10f" % v[0]|float }}</code></td>
                     <td style="text-align: right"><code>{{ "%.10f" % v[1]|float }}</code></td>
+                    <td style="text-align: right"><code>{{ "%.10f" % v[2]|float }}</code></td>
                     </tr>
                     {% endfor %}
                 </tbody>

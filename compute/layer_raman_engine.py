@@ -191,9 +191,8 @@ def process_structure_core(
     num_layers_bulk = len(layer_indices)
     return_data["num_layers_bulk"] = num_layers_bulk
 
-    cell2d = rotated_asecell.cell[:2, :2].tolist()
     return_data["rotated_cell"] = {
-        "cell2d": cell2d,
+        "layer_cell": rotated_asecell.cell.tolist(),
         "layer_atoms": [
             list(
                 zip(
@@ -242,6 +241,7 @@ def process_structure_core(
 
     layer_mass_amu = sum(atom.mass for atom in rotated_asecell[layer_indices[0]])
     # Layer unit-cell surface is the determinant of the 2x2 unit cell
+    cell2d = rotated_asecell.cell[:2, :2].tolist()
     layer_surface_ang2 = abs(cell2d[0][0] * cell2d[1][1] - cell2d[0][1] * cell2d[1][0])
 
     # This list contains either -1 or 1; if there is at least one -1, it means that the layer is non-polar
