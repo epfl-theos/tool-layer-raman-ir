@@ -324,20 +324,18 @@ def find_common_transformation(
         assert np.abs(z_shift - required_z_shift_per_atom[atom_idx]) < 1.0e-4
 
     # If the transformation involves a flip in the z-direction
-    # we check if, by combining it with a bulk symmetry
-    # that leaves the first layer at the origin invariant,
+    # we check if, by combining it with a symmetry of the monolayer
     # we get a transformation that does NOT flip z
     # As soon as I find one, I replace tr01, rot01 and op01 (the combination of tr01 and rot01)
     # with those we found, so that the axis is not flipped and transformation01[0][2, 2] > 0
     if transformation01[0][2, 2] < 0:
-        # Get the spacegroup of the bulk
-        bulk = adaptor.get_structure(asecell)
-        spg0 = SpacegroupAnalyzer(bulk, symprec=SYMPREC)
+        # construct the monolayer as the first layer with a large orthonal third lattice vector
+        mono = layer0.copy()
+        mono.cell[2, :2] = 0.0
+        mono.cell[2, 2] *= 10.0
+        # Get the spacegroup of the monolayer
+        spg0 = SpacegroupAnalyzer(adaptor.get_structure(mono), symprec=SYMPREC)
         for op in spg0.get_symmetry_operations(cartesian=True):
-            # as the first layer is at the origin we are interested
-            # only in fractional translations along z that are zero
-            if np.abs(op.translation_vector[2]) > 1e-3:
-                continue
             affine_prod = np.dot(op01.affine_matrix, op.affine_matrix)
             if affine_prod[2, 2] > 0:
                 tr01 = affine_prod[0:3][:, 3]
@@ -353,54 +351,77 @@ def find_common_transformation(
 
     # I now use op01 to check if, with op01, I can bring each layer onto the next,
     # and layer num_layers onto num_layers+1, i.e. the first one + the third lattice vector
-    for il in range(1, num_layers):
-        # We need to copy the layers as we'll change them in place
-        layer0 = layers[il].copy()
-        layer1 = layers[(il + 1) % num_layers].copy()
-        # translate back the two layers by il * cell[2]/num_layers
-        # if layer1 is the layer num_layer + 1 we need to translate it
-        # by a full lattice vector
-        layer0.translate(-il * asecell.cell[2] / num_layers)
-        layer1.translate(
-            (
-                -il * asecell.cell[2] / num_layers
-                + np.floor((il + 1.0) / num_layers) * asecell.cell[2]
-            )
-        )
-        # the transformed positions of the atoms in the first layer
-        pos0 = op01.operate_multi(layer0.positions)
-        # that should be identical to the ones of the second layer
-        pos1 = layer1.positions
-        # we already know from above that the species in each layer are identical
-        # so we take the set of the ones in the first layer
-        for an in set(layer0.get_chemical_symbols()):
-            # check, species by species, that the atomic positions are identical
-            # up to a threshold
-            # The second variable would be the mapping, but I'm not using it
-            distance, _ = are_same_except_order(
-                np.array(
-                    [
-                        _[0]
-                        for _ in zip(pos0, layer0.get_chemical_symbols())
-                        if _[1] == an
-                    ]
-                ),
-                np.array(
-                    [
-                        _[0]
-                        for _ in zip(pos1, layer1.get_chemical_symbols())
-                        if _[1] == an
-                    ]
-                ),
-                common_lattice.matrix,
-            )
-            # if the distance for any of the atoms of the given species
-            # is larger than the threshold the transformation is not the same
-            # between all consecutive layers
-            if distance.max() > stol:
-                return (
-                    None,
-                    None,
-                    "The transformation between consecutive layers is not always the same",
+    # If op01 does not work we might need to combine it with symmetry operations of the monolayer
+    # before concluding that the system is not a MDO polytype
+    for symop in spg0.get_point_group_operations(cartesian=True):
+        # symmetry operations of the monolayer that flip z are possible
+        # only in category I, but would result in a coincidence operation
+        # that flip z, which is not necessary in this case, so we skip these operations.
+        if symop.affine_matrix[2, 2] < 0:
+            continue
+        # combine the coincidence operation with the
+        affine_prod = np.dot(op01.affine_matrix, symop.affine_matrix)
+        this_rot = affine_prod[0:3][:, 0:3]
+        this_tr = affine_prod[0:3][:, 3]
+        this_op = SymmOp.from_rotation_and_translation(this_rot, this_tr)
+
+        found_common = True
+        for il in range(1, num_layers):
+            # We need to copy the layers as we'll change them in place
+            layer0 = layers[il].copy()
+            layer1 = layers[(il + 1) % num_layers].copy()
+            # translate back the two layers by il * cell[2]/num_layers
+            # if layer1 is the layer num_layer + 1 we need to translate it
+            # by a full lattice vector
+            layer0.translate(-il * asecell.cell[2] / num_layers)
+            layer1.translate(
+                (
+                    -il * asecell.cell[2] / num_layers
+                    + np.floor((il + 1.0) / num_layers) * asecell.cell[2]
                 )
-    return rot01, tr01, None
+            )
+            # the transformed positions of the atoms in the first layer
+            pos0 = this_op.operate_multi(layer0.positions)
+            # that should be identical to the ones of the second layer
+            pos1 = layer1.positions
+            # we already know from above that the species in each layer are identical
+            # so we take the set of the ones in the first layer
+            for an in set(layer0.get_chemical_symbols()):
+                # check, species by species, that the atomic positions are identical
+                # up to a threshold
+                # The second variable would be the mapping, but I'm not using it
+                distance, _ = are_same_except_order(
+                    np.array(
+                        [
+                            _[0]
+                            for _ in zip(pos0, layer0.get_chemical_symbols())
+                            if _[1] == an
+                        ]
+                    ),
+                    np.array(
+                        [
+                            _[0]
+                            for _ in zip(pos1, layer1.get_chemical_symbols())
+                            if _[1] == an
+                        ]
+                    ),
+                    common_lattice.matrix,
+                )
+                # if the distance for any of the atoms of the given species
+                # is larger than the threshold the transformation is not the same
+                # between all consecutive layers
+                found_common *= distance.max() > stol
+                # if this transformation does not work it is useless con continue with
+                # subsequent layers
+                if not found_common:
+                    break
+            # if the transformation works, no need to test additional transformations
+            if found_common:
+                break
+    if not found_common:
+        return (
+            None,
+            None,
+            "The transformation between consecutive layers is not always the same",
+        )
+    return this_rot, this_tr, None
