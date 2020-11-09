@@ -1,8 +1,0 @@
-TASKS:
-- Count number of layers in the conventional and primitive cell rather than those in the input cell?
-  - This should be used e.g. when we say >= ... and as the minimum of the plot below.
-  - probably just check the volume change? might not be enough though as it could be a supercell in-plane.
-
-BEFORE PUBLICATION:
-
-- [GIO] add git tag to release a version (20.11.0?)
