@@ -60,6 +60,9 @@ jobs:
       run: |
         ./admin-tools/build-and-run.sh -n &&  ./.ci/wait-for-it.sh localhost:8091 -t 120 && sleep 5 && pytest --driver Chrome || (docker exec -it layer-raman-tool-instance cat /var/log/apache2/error.log ; exit 1)
 
+    - name: List content of current directory
+      run: ls -l
+
     - name: Archive screenshots (in case of problems) as artifacts
       uses: actions/upload-artifact@v2
       with:
