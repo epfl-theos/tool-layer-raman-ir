@@ -3,8 +3,8 @@ A common coincidence operation
 Monolayer point group: D<sub>2h</sub>
 The monolayer is non-polar
 Bilayer point group: D<sub>2h</sub>
-for <emph>even N</emph> ≥ 1: D<sub>2h</sub>
-for <emph>odd N</emph> ≥ 1: D<sub>2h</sub>
+for <em>even N</em> ≥ 2: D<sub>2h</sub>
+for <em>odd N</em> ≥ 2: D<sub>2h</sub>
 Bulk point group: D<sub>2h</sub>
 Bulk space group: Cmce
 category I system

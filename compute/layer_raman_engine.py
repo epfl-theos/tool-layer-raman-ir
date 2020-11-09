@@ -262,10 +262,13 @@ def process_structure_core(
     pg_even_number = pg_number_from_hm_symbol(spg_even.get_point_group_symbol())
 
     # Either a finite ML with num_layers_bulk, or num_layers_bulk + 1 (the odd between the two)
+    num_layers_odd = num_layers_bulk + (num_layers_bulk + 1) % 2
+    # I need at least two layers to define a multilayer with modes!
+    # So for num_primitive == 1, I need to consider 3 as the smallest ML with odd n_primitive
+    if num_layers_odd == 1:
+        num_layers_odd = 3
     spg_odd = get_symmetry_multilayer(
-        rotated_asecell,
-        layer_indices,
-        num_layers=num_layers_bulk + (num_layers_bulk + 1) % 2,
+        rotated_asecell, layer_indices, num_layers=num_layers_odd,
     )
     pg_odd_number = pg_number_from_hm_symbol(spg_odd.get_point_group_symbol())
 

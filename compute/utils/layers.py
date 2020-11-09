@@ -70,7 +70,6 @@ def find_layers(  # pylint: disable=too-many-locals,too-many-statements,too-many
             if dim == 2:
                 cell = asecell.cell
                 vectors = list(np.dot(neigh_vec, cell))
-                # print vectors
                 iv = shortest_vector_index(vectors)
                 vector1 = vectors.pop(iv)
                 iv = shortest_vector_index(vectors)
@@ -235,7 +234,7 @@ def _update_and_rotate_cell(asecell, newcell, layer_indices):
 
 def find_common_transformation(
     asecell, layer_indices, ltol=0.05, stol=0.05, angle_tol=2.0
-):  # pylint: disable=too-many-arguments,too-many-locals
+):  # pylint: disable=too-many-arguments,too-many-locals,too-many-branches
     """
     Given an input structure, in ASE format, and the list with 
     the indices of atoms belonging to each layer, determine
@@ -277,7 +276,7 @@ def find_common_transformation(
     # If we are here, there are at least two layers
     # First check that all layers are identical
     layers = [asecell[layer] for layer in layer_indices]
-    if not layers_match(layers):
+    if not layers_match(layers, stol=stol):
         return None, None, "Layers are not identical"
 
     # Layers are already ordered according to their
@@ -291,6 +290,15 @@ def find_common_transformation(
     # it is a tuple with a supercell matrix, a translation vector, and the indices
     # of how atoms are rearranged
     transformation01 = sm.get_transformation(str1, str0)
+
+    # There are still cases that, even if layers_match was OK, here we get `None` for transformation.
+    # Probably the difference with the code above is in the thresholds and/or in the way the pymatgen
+    # code internally implements it. Note: probably we could skip the call to `layers_match` above
+    # and just keep the logic below!
+    # To avoid crashes, we cope with this here
+    if transformation01 is None:
+        return None, None, "Layers are not identical"
+
     # define the common lattice of both layers (which is the one of the bulk)
     # we use twice the same "common lattice" because they are identical in our case
     # in general we should have str0.lattice and str1.lattice (not necessarily in this order)
@@ -323,19 +331,19 @@ def find_common_transformation(
         # already reorganised layers to have all atoms close to each other
         assert np.abs(z_shift - required_z_shift_per_atom[atom_idx]) < 1.0e-4
 
-    # Construct the monolayer as the first layer with a large orthonal third lattice vector
-    mono = layer0.copy()
-    mono.cell[2, :2] = 0.0
-    mono.cell[2, 2] *= 10.0
-    # Get the spacegroup of the monolayer (useful below)
-    spg0 = SpacegroupAnalyzer(adaptor.get_structure(mono), symprec=SYMPREC)
+    # Get the spacegroup of the bulk (useful below)
+    spg_bulk = SpacegroupAnalyzer(adaptor.get_structure(asecell), symprec=SYMPREC)
     # If the transformation involves a flip in the z-direction
-    # we check if, by combining it with a symmetry of the monolayer
+    # we check if, by combining it with a symmetry of the bulk,
     # we get a transformation that does NOT flip z
     # As soon as I find one, I replace tr01, rot01 and op01 (the combination of tr01 and rot01)
     # with those we found, so that the axis is not flipped and transformation01[0][2, 2] > 0
     if transformation01[0][2, 2] < 0:
-        for op in spg0.get_symmetry_operations(cartesian=True):
+        for op in spg_bulk.get_symmetry_operations(cartesian=True):
+            # as the first layer is at the origin we are interested
+            # only in fractional translations along z that are zero
+            if np.abs(op.translation_vector[2]) > 1e-3:
+                continue
             affine_prod = np.dot(op01.affine_matrix, op.affine_matrix)
             if affine_prod[2, 2] > 0:
                 tr01 = affine_prod[0:3][:, 3]
@@ -351,12 +359,16 @@ def find_common_transformation(
 
     # I now use op01 to check if, with op01, I can bring each layer onto the next,
     # and layer num_layers onto num_layers+1, i.e. the first one + the third lattice vector
-    # If op01 does not work we might need to combine it with symmetry operations of the monolayer
+    # If op01 does not work we might need to combine it with symmetry operations of the bulk
     # before concluding that the system is not a MDO polytype
-    for symop in spg0.get_point_group_operations(cartesian=True):
+
+    for symop in spg_bulk.get_symmetry_operations(cartesian=True):
         # symmetry operations of the monolayer that flip z are possible
         # only in category I, but would result in a coincidence operation
-        # that flip z, which is not necessary in this case, so we skip these operations.
+        # that flip z, which is not necessary in this case (category I), as in this case
+        # we'll find another one that does the same job without flipping, so we skip these operations.
+        # (also because we want to give the guarantee that, if symop.affine_matrix[2, 2] < 0, then we are
+        # in category III)
         if symop.affine_matrix[2, 2] < 0:
             continue
         # combine the coincidence operation with the
@@ -366,7 +378,10 @@ def find_common_transformation(
         this_op = SymmOp.from_rotation_and_translation(this_rot, this_tr)
 
         found_common = True
-        for il in range(1, num_layers):
+        # NOTE: here we start from layer ZERO! The reason is that now, having applied a bulk operation,
+        # we might end up in some operation that does not send anymore layer 1 in layer 2.
+        # So we want to chack that case as well.
+        for il in range(0, num_layers):
             # We need to copy the layers as we'll change them in place
             layer0 = layers[il].copy()
             layer1 = layers[(il + 1) % num_layers].copy()
@@ -410,14 +425,18 @@ def find_common_transformation(
                 # if the distance for any of the atoms of the given species
                 # is larger than the threshold the transformation is not the same
                 # between all consecutive layers
-                found_common *= distance.max() < stol
+                found_common = found_common and distance.max() < stol
                 # if this transformation does not work it is useless con continue with
-                # subsequent layers
+                # other species of this layer
                 if not found_common:
                     break
-            # if the transformation works, no need to test additional transformations
-            if found_common:
+            # if this transformation does not work it is useless con continue with
+            # subsequent layers
+            if not found_common:
                 break
+        # if the transformation works, no need to test additional transformations
+        if found_common:
+            break
     if not found_common:
         return (
             None,

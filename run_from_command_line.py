@@ -22,8 +22,9 @@ def run_from_command_line(filename, skin_factor=1.1):
     return_data = process_structure_core(
         structure, logger, flask_request=None, skin_factor=skin_factor
     )
-    print("RETURN DATA:")
-    print(return_data)
+    print("SUBSET OF RETURN DATA:")
+    print("LAYERS:", return_data["layers"])
+    print("HAS COMMON LAYERS:", return_data["has_common_layers"])
 
 
 if __name__ == "__main__":

@@ -3,9 +3,9 @@ A common coincidence operation
 Monolayer point group: C<sub>3v</sub>
 The monolayer is polar
 Bilayer point group: D<sub>3d</sub>
-for <emph>even N</emph> ≥ 2 (when <emph>N</emph> is multiple of four): D<sub>3d</sub>
-for <emph>even N</emph> ≥ 2 (when <emph>N</emph> is not a multiple of four): D<sub>3d</sub>
-for <emph>odd N</emph> ≥ 2: C<sub>3v</sub>
+for <em>even N</em> ≥ 2 (when <em>N</em> is multiple of four): D<sub>3d</sub>
+for <em>even N</em> ≥ 2 (when <em>N</em> is not a multiple of four): D<sub>3d</sub>
+for <em>odd N</em> ≥ 2: C<sub>3v</sub>
 Bulk point group: D<sub>3d</sub>
 Bulk space group: P<span style="text-decoration:overline;">3</span>m1
 category III system
