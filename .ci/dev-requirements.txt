@@ -3,7 +3,7 @@ black==19.10b0
 prospector==1.2.0
 pylint==2.4.4
 
-tools-barebone==1.0.0
+tools-barebone==1.1.0
 
 pytest==6.1.2
 pytest-selenium==2.0.1
