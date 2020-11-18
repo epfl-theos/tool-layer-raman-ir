@@ -75,7 +75,7 @@ def process_structure():
     if flask.request.method == "POST":
         # check if the post request has the file part
         if "structurefile" not in flask.request.files:
-            return flask.redirect(flask.url_for("input_structure"))
+            return flask.redirect(flask.url_for("input_data"))
         structurefile = flask.request.files["structurefile"]
         fileformat = flask.request.form.get("fileformat", "unknown")
         filecontent = structurefile.read().decode("utf-8")
