@@ -58,7 +58,7 @@ jobs:
 
     - name: Run tool container and test it
       run: |
-        ./admin-tools/build-and-run.sh -n &&  ./.ci/wait-for-it.sh localhost:8091 -t 120 && sleep 5 && pytest --driver Chrome || (docker exec -it layer-raman-tool-instance cat /var/log/apache2/error.log ; exit 1)
+        ./admin-tools/build-and-run.sh -n &&  ./.ci/wait-for-it.sh localhost:8091 -t 120 && sleep 5 && pytest --driver Chrome || (docker exec -it layer-raman-ir-tool-instance cat /var/log/apache2/error.log ; exit 1)
 
     - name: Archive screenshots (in case of problems) as artifacts
       uses: actions/upload-artifact@v2

@@ -362,6 +362,8 @@ def find_common_transformation(
     # If op01 does not work we might need to combine it with symmetry operations of the bulk
     # before concluding that the system is not a MDO polytype
 
+    print(op01)
+
     for symop in spg_bulk.get_symmetry_operations(cartesian=True):
         # symmetry operations of the monolayer that flip z are possible
         # only in category I, but would result in a coincidence operation

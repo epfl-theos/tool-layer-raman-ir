@@ -1,7 +1,7 @@
-# Layer-Raman online tool
+# Layer-Raman-IR online tool
 A tool to compute and visualize Raman-active and Infrared-active modes in layered materials
 
-[![Actions Status](https://github.com/epfl-theos/tool-layer-raman/workflows/Continuous%20integration/badge.svg)](https://github.com/epfl-theos/tool-layer-raman/actions)
+[![Actions Status](https://github.com/epfl-theos/tool-layer-raman-ir/workflows/Continuous%20integration/badge.svg)](https://github.com/epfl-theos/tool-layer-raman-ir/actions)
 
 ## About the tool
 
@@ -24,12 +24,12 @@ If any of the conditions is not satisfied, the tool will display a message infor
 and so the symmetry analysis cannot be applied.
 
 ## Online version
-This tool is deployed on the Materials Cloud "Tools" section [here](https://layer-raman.materialscloud.io), so you can use it without need of installation.
+This tool is deployed on the Materials Cloud "Tools" section [here](https://materialscloud.org/work/tools/layer-raman-ir), so you can use it without need of installation.
 
 ## How to cite
 If you use this tool, please cite the following work:
 
-* G. Pizzi, S. Milana, A. C. Ferrari, N. Marzari, M. Gibertini, *Shear and breathing modes of all layered materials*, to be submitted (2020).
+* G. Pizzi, S. Milana, A. C. Ferrari, N. Marzari, M. Gibertini, *Shear and breathing modes of layered materials*, to be submitted (2020).
 
 You might also want to cite the spglib, ASE and pymatgen libraries that are used internally by the tool.
 
