@@ -30,7 +30,7 @@ from .utils.pointgroup import (
 )
 
 # Version of this tool
-__version__ = "20.11.0"
+__version__ = "20.11.1"
 
 
 def process_structure_core(

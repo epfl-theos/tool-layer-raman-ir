@@ -6,16 +6,16 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 # This could fail if the image is not there, so I temporarily set +e
 set +e
-OLDIMAGE=`docker images | awk '{print $1, $2, $3}' | grep '^layer-raman-tool\ latest\ ' | awk '{print $3}'`
+OLDIMAGE=`docker images | awk '{print $1, $2, $3}' | grep '^layer-raman-ir-tool\ latest\ ' | awk '{print $3}'`
 set -e
 
 # To build container
-docker build -t layer-raman-tool "$DIR/.."
+docker build -t layer-raman-ir-tool "$DIR/.."
 
 # Check the new image name
-NEWIMAGE=`docker images | awk '{print $1, $2, $3}' | grep '^layer-raman-tool\ latest\ ' | awk '{print $3}'`
+NEWIMAGE=`docker images | awk '{print $1, $2, $3}' | grep '^layer-raman-ir-tool\ latest\ ' | awk '{print $3}'`
 
-LAYER_CONTAINER=`docker ps --filter="name=layer-raman-tool-instance" -q`
+LAYER_CONTAINER=`docker ps --filter="name=layer-raman-ir-tool-instance" -q`
 if [ "$LAYER_CONTAINER" != "" ]
 then
     docker kill "$LAYER_CONTAINER"
@@ -31,7 +31,7 @@ then
 fi
 
 # To launch container
-docker run -d -p 8091:80 --rm --name=layer-raman-tool-instance layer-raman-tool
+docker run -d -p 8091:80 --rm --name=layer-raman-ir-tool-instance layer-raman-ir-tool
 
 # Pass '-n' to avoid opening a new browser window
 if [ "$1" != "-n" ]
@@ -48,4 +48,4 @@ fi
 
 echo ""
 echo "You can kill the service with:"
-echo "docker kill layer-raman-tool-instance"
+echo "docker kill layer-raman-ir-tool-instance"

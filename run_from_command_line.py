@@ -10,7 +10,7 @@ from compute.utils.structures import tuple_from_ase
 
 
 def run_from_command_line(filename, skin_factor=1.1):
-    logger = logging.getLogger("layer-raman-tool-app")
+    logger = logging.getLogger("layer-raman-ir-tool-app")
 
     # Print to stderr, also DEBUG messages
     # logger.setLevel(logging.DEBUG)

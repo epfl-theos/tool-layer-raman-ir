@@ -48,7 +48,7 @@ FORCE_CONSTANT_PREFACTORS = {
     "1e19_N_over_m3": (0.00624150913, True),  # (1e19 N/m^3) / (eV/ang^2) * ang^2
 }
 
-logger = logging.getLogger("layer-raman-tool-app")
+logger = logging.getLogger("layer-raman-ir-tool-app")
 blueprint = flask.Blueprint("compute", __name__, url_prefix="/compute")
 
 
@@ -412,7 +412,7 @@ def get_modes():  # pylint: disable=too-many-statements
 
     ## Uncomment the next four lines (and comment the fifth one) to get also profiling information
     ## This can then be obtained with:
-    ## docker cp layer-raman-tool-instance:/home/app/profile.dump .
+    ## docker cp layer-raman-ir-tool-instance:/home/app/profile.dump .
     ## and then visualized with:
     ## snakeviz profile.dump
     # import cProfile
