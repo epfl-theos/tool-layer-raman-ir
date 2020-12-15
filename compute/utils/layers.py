@@ -112,32 +112,40 @@ def find_layers(  # pylint: disable=too-many-locals,too-many-statements,too-many
         )
         z_ind = np.argwhere(abs(spgcell[:, 2]) > 0).flatten()
         # The standardized cell might have more than one vector with a component along z
-        # in centered systems
-        if len(z_ind) == 2:
-            # we can set the first of the two lattice vectors back to the horizontal direction
-            # by combining it with +/- the other vector
-            if abs(spgcell[z_ind[0]] + spgcell[z_ind[1]])[2] < 1e-3:
-                spgcell[z_ind[0]] += spgcell[z_ind[1]]
-            if abs(spgcell[z_ind[0]] - spgcell[z_ind[1]])[2] < 1e-3:
-                spgcell[z_ind[0]] -= spgcell[z_ind[1]]
-            # the second vector with non-zero vertical component
-            # is either z_ind[1] == 1 or z_ind[1] == 2.
-            # In the former case we need to exchange it with the
-            # last vector (which has no component along z),
-            # in the latter we have nothing to do
-            if z_ind[1] == 1:
-                z_vec = 1.0 * spgcell[z_ind[1]]
-                # the minus sign is needed to keep the correct orientation (positive volume)
-                spgcell[1] = -1.0 * spgcell[2]
-                spgcell[2] = z_vec
-        if len(z_ind) > 2:
-            raise ValueError(
-                "An error occurred. The standardized cell has too many components along the z-direction"
-            )
-        # if the projection along the z-direction of the third lattice vector is negative,
+        # in centered systems. We thus need to set back to the horizontal direction
+        # the lattice vectors that have aquired a non-zero vertical component by
+        # combining them with the +/- the third lattice vector
+        for iz in range(len(z_ind) - 1):
+            # check if the right combination is with + or - sign
+            if abs(spgcell[z_ind[iz]] + spgcell[z_ind[-1]])[2] < 1e-3:
+                spgcell[z_ind[iz]] += spgcell[z_ind[-1]]
+            if abs(spgcell[z_ind[iz]] - spgcell[z_ind[-1]])[2] < 1e-3:
+                spgcell[z_ind[iz]] -= spgcell[z_ind[-1]]
+        # if the last vector with non-zero vertical component
+        # is NOT with index z_ind[-1] == 2, we need to exchange the lattice vectors
+        if z_ind[-1] == 0:
+            z_vec = 1.0 * spgcell[0]
+            spgcell[:2] = spgcell[1:]
+            spgcell[2] = z_vec
+        if z_ind[-1] == 1:
+            z_vec = 1.0 * spgcell[1]
+            # the minus sign is needed to keep the correct orientation (positive volume)
+            spgcell[1] = -1.0 * spgcell[2]
+            spgcell[2] = z_vec
+        # We want to set as first lattice vector the one with largest projection along x
+        if abs(spgcell[1, 0]) > abs(spgcell[0, 0]):
+            vec = -1.0 * spgcell[0]
+            spgcell[0] = 1.0 * spgcell[1]
+            spgcell[1] = vec
+        # and if this projection is negative, change the sign of the first two vectors
+        # (in order to preserve right-handedness)
+        if spgcell[0, 0] < 0:
+            spgcell[:2] *= -1.0
+        # Finally if the projection along the z-direction of the third lattice vector is negative,
         # change sign to the two last vectors (in order to keep the right-handedness)
         if spgcell[2, 2] < 0:
             spgcell[1:] *= -1.0
+        print(spgcell)
         rotated_asecell.set_cell(spgcell)
         # fix also the inplane component of the positions
         rotated_asecell.pbc = [True, True, False]
