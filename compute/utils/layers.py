@@ -1,4 +1,5 @@
 import numpy as np
+import spglib
 from ase.neighborlist import NeighborList
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
@@ -104,6 +105,44 @@ def find_layers(  # pylint: disable=too-many-locals,too-many-statements,too-many
                 "An error occurred. The new cell after rotation has a different volume than the original cell"
             )
         rotated_asecell = _update_and_rotate_cell(asecell, newcell, layer_indices)
+        # standardize the cell but keeping the primitive nature and without idealization (in particular
+        # no rotations that would change the stacking direction)
+        spgcell, _, _ = spglib.standardize_cell(
+            rotated_asecell, to_primitive=True, no_idealize=True, symprec=SYMPREC
+        )
+        z_ind = np.argwhere(abs(spgcell[:, 2]) > 0).flatten()
+        # The standardized cell might have more than one vector with a component along z
+        # in centered systems
+        if len(z_ind) == 2:
+            # we can set the first of the two lattice vectors back to the horizontal direction
+            # by combining it with +/- the other vector
+            if abs(spgcell[z_ind[0]] + spgcell[z_ind[1]])[2] < 1e-3:
+                spgcell[z_ind[0]] += spgcell[z_ind[1]]
+            if abs(spgcell[z_ind[0]] - spgcell[z_ind[1]])[2] < 1e-3:
+                spgcell[z_ind[0]] -= spgcell[z_ind[1]]
+            # the second vector with non-zero vertical component
+            # is either z_ind[1] == 1 or z_ind[1] == 2.
+            # In the former case we need to exchange it with the
+            # last vector (which has no component along z),
+            # in the latter we have nothing to do
+            if z_ind[1] == 1:
+                z_vec = 1.0 * spgcell[z_ind[1]]
+                # the minus sign is needed to keep the correct orientation (positive volume)
+                spgcell[1] = -1.0 * spgcell[2]
+                spgcell[2] = z_vec
+        if len(z_ind) > 2:
+            raise ValueError(
+                "An error occurred. The standardized cell has too many components along the z-direction"
+            )
+        # if the projection along the z-direction of the third lattice vector is negative,
+        # change sign to the two last vectors (in order to keep the right-handedness)
+        if spgcell[2, 2] < 0:
+            spgcell[1:] *= -1.0
+        rotated_asecell.set_cell(spgcell)
+        # fix also the inplane component of the positions
+        rotated_asecell.pbc = [True, True, False]
+        rotated_asecell.positions = asecell.get_positions(wrap=True)
+        rotated_asecell.pbc = [True, True, True]
         # Re-order layers according to their projection
         # on the stacking direction
         vert_direction = np.cross(rotated_asecell.cell[0], rotated_asecell.cell[1])
@@ -200,17 +239,6 @@ def _update_and_rotate_cell(asecell, newcell, layer_indices):
     # it needs to be done twice because of possible bugs in ASE
     normal_vec = np.cross(asecell.cell[0], asecell.cell[1])
     asecell.rotate(v=normal_vec, a=[0, 0, 1], center=(0, 0, 0), rotate_cell=True)
-    cell = asecell.cell
-    # if the first two lattice vectors have equal magnitude and form
-    # a 60deg angle, change the second so that the angle becomes 120
-    if (abs(np.linalg.norm(cell[0]) - np.linalg.norm(cell[1])) < 1e-6) and (
-        abs(np.dot(cell[0], cell[1]) / np.dot(cell[0], cell[0]) - 0.5) < 1e-3
-    ):
-        cell[1] -= cell[0]
-    asecell.set_cell(cell)
-    # finally rotate the first cell vector along x
-    angle = np.arctan2(cell[0, 1], cell[0, 0]) * 180 / np.pi
-    asecell.rotate(-angle, v=[0, 0, 1], center=(0, 0, 0), rotate_cell=True)
     # Wrap back in the unit cell each layer separately
     for layer in layer_indices:
         # projection of the atomic positions of the layer along the third axis
