@@ -260,7 +260,7 @@ pointgroup_dict = {
         "raman": ["A", "B", "1E", "2E"],
         "infrared": ["A", "1E", "2E"],
         "HM_symbol": "4",
-        "backscattering": [["A", "1E", "2E"], ["A", "1E", "2E"], ["A", "B"]],
+        "backscattering": [["A", "1E", "2E", "B"], ["A", "1E", "2E", "B"], ["A", "B"]],
     },
     "S4": {
         "classes": {
@@ -278,7 +278,7 @@ pointgroup_dict = {
         "raman": ["A", "B", "1E", "2E"],
         "infrared": ["B", "1E", "2E"],
         "HM_symbol": "-4",
-        "backscattering": [["A", "1E", "2E"], ["A", "1E", "2E"], ["A", "B"]],
+        "backscattering": [["A", "1E", "2E", "B"], ["A", "1E", "2E", "B"], ["A", "B"]],
     },
     "C4h": {
         "classes": {
@@ -304,7 +304,11 @@ pointgroup_dict = {
         "raman": ["Ag", "Bg", "1Eg", "2Eg"],
         "infrared": ["Au", "1Eu", "2Eu"],
         "HM_symbol": "4/m",
-        "backscattering": [["Ag", "1Eg", "2Eg"], ["Ag", "1Eg", "2Eg"], ["Ag", "Bg"]],
+        "backscattering": [
+            ["Ag", "1Eg", "2Eg", "Bg"],
+            ["Ag", "1Eg", "2Eg", "Bg"],
+            ["Ag", "Bg"],
+        ],
     },
     "D4": {
         "classes": {
@@ -327,7 +331,7 @@ pointgroup_dict = {
         "raman": ["A1", "B1", "B2", "E"],
         "infrared": ["A2", "E"],
         "HM_symbol": "422",
-        "backscattering": [["A1", "E"], ["A1", "E"], ["A1", "B1", "B2"]],
+        "backscattering": [["A1", "E", "B1"], ["A1", "E", "B1"], ["A1", "B1", "B2"]],
     },
     "C4v": {
         "classes": {
@@ -356,7 +360,7 @@ pointgroup_dict = {
         "raman": ["A1", "B1", "B2", "E"],
         "infrared": ["A1", "E"],
         "HM_symbol": "4mm",
-        "backscattering": [["A1", "E"], ["A1", "E"], ["A1", "B1", "B2"]],
+        "backscattering": [["A1", "E", "B1"], ["A1", "E", "B1"], ["A1", "B1", "B2"]],
     },
     "D2d": {
         "classes": {
@@ -382,7 +386,7 @@ pointgroup_dict = {
         "raman": ["A1", "B1", "B2", "E"],
         "infrared": ["B2", "E"],
         "HM_symbol": "-42m",
-        "backscattering": [["A1", "E"], ["A1", "E"], ["A1", "B1", "B2"]],
+        "backscattering": [["A1", "E", "B1"], ["A1", "E", "B1"], ["A1", "B1", "B2"]],
     },
     "D4h": {
         "classes": {
@@ -424,7 +428,11 @@ pointgroup_dict = {
         "raman": ["A1g", "B1g", "B2g", "Eg"],
         "infrared": ["A2u", "Eu"],
         "HM_symbol": "4/mmm",
-        "backscattering": [["A1g", "Eg"], ["A1g", "Eg"], ["A1g", "B1g", "B2g"]],
+        "backscattering": [
+            ["A1g", "Eg", "B1g"],
+            ["A1g", "Eg", "B1g"],
+            ["A1g", "B1g", "B2g"],
+        ],
     },
     # TRIGONAL
     "C3": {
@@ -561,8 +569,8 @@ pointgroup_dict = {
         "infrared": ["A", "1E1", "2E1"],
         "HM_symbol": "6",
         "backscattering": [
-            ["A", "1E1", "2E1"],
-            ["A", "1E1", "2E1"],
+            ["A", "1E1", "2E1", "1E2", "2E2"],
+            ["A", "1E1", "2E1", "1E2", "2E2"],
             ["A", "1E2", "2E2"],
         ],
     },
@@ -587,8 +595,8 @@ pointgroup_dict = {
         "infrared": ["A''", "1E'", "2E'"],
         "HM_symbol": "-6",
         "backscattering": [
-            ["A'", "1E''", "2E''"],
-            ["A'", "1E''", "2E''"],
+            ["A'", "1E''", "2E''", "1E'", "2E'"],
+            ["A'", "1E''", "2E''", "1E'", "2E'"],
             ["A'", "1E'", "2E'"],
         ],
     },
@@ -625,8 +633,8 @@ pointgroup_dict = {
         "infrared": ["Au", "1E1u", "2E1u"],
         "HM_symbol": "6/m",
         "backscattering": [
-            ["Ag", "1E1g", "2E1g"],
-            ["Ag", "1E1g", "2E1g"],
+            ["Ag", "1E1g", "2E1g", "1E2g", "2E2g"],
+            ["Ag", "1E1g", "2E1g", "1E2g", "2E2g"],
             ["Ag", "1E2g", "2E2g"],
         ],
     },
@@ -664,7 +672,7 @@ pointgroup_dict = {
         "raman": ["A1", "E1", "E2"],
         "infrared": ["A2", "E1"],
         "HM_symbol": "622",
-        "backscattering": [["A1", "E1"], ["A1", "E1"], ["A1", "E2"]],
+        "backscattering": [["A1", "E1", "E2"], ["A1", "E1", "E2"], ["A1", "E2"]],
     },
     "C6v": {
         "classes": {
@@ -700,7 +708,7 @@ pointgroup_dict = {
         "raman": ["A1", "E1", "E2"],
         "infrared": ["A1", "E1"],
         "HM_symbol": "6mmm",
-        "backscattering": [["A1", "E1"], ["A1", "E1"], ["A1", "E2"]],
+        "backscattering": [["A1", "E1", "E2"], ["A1", "E1", "E2"], ["A1", "E2"]],
     },
     "D3h": {
         "classes": {
@@ -736,7 +744,7 @@ pointgroup_dict = {
         "raman": ["A1'", "E'", "E''"],
         "infrared": ["A2''", "E'"],
         "HM_symbol": "-6m2",
-        "backscattering": [["A1'", "E''"], ["A1'", "E''"], ["A1'", "E'"]],
+        "backscattering": [["A1'", "E'", "E''"], ["A1'", "E'", "E''"], ["A1'", "E'"]],
     },
     "D6h": {
         "classes": {
@@ -798,7 +806,11 @@ pointgroup_dict = {
         "raman": ["A1g", "E1g", "E2g"],
         "infrared": ["A2u", "E1u"],
         "HM_symbol": "6/mmm",
-        "backscattering": [["A1g", "E1g"], ["A1g", "E1g"], ["A1g", "E2g"]],
+        "backscattering": [
+            ["A1g", "E1g", "E2g"],
+            ["A1g", "E1g", "E2g"],
+            ["A1g", "E2g"],
+        ],
     },
 }
 
