@@ -294,14 +294,14 @@
 
             <h3>Layers identification</h3>
 
-            <p>{{ layers|length }} layer{% if layers|length != 1 %}s{% endif %} found (in the primitive structure) using a skin factor of {{ skin_factor }}.</p>
+            <p>{{ layers|length }} layer{% if layers|length != 1 %}s{% endif %} found (in the conventional cell) using a skin factor of {{ skin_factor }}.</p>
 
             <div id="accordion-cell-after-rotation">
             <h2>Layers unit cell and coordinates (after cell rotation)</h2>
             <div>
             <p>We report here the unit cell common to all layers
             and the corresponding atomic coordinates.</p>
-            <p>The unit cell shown is still the one of the input bulk system, obtained after finding the primitive cell,
+            <p>The unit cell shown is still the one of the input bulk system, obtained after finding the conventional cell,
             refining the cell to enforce the symmetries that were found, and finally rotating the system so
             that layers are on <em>xy</em> planes.</p>
             <p>Layers have been sorted by their stacking index, and the first layer is centered (roughly) around <em>z</em>=0.</p>
@@ -444,7 +444,7 @@
             <li>Bulk symmetry:
                 <ul>
                     <li>Bulk point group: {{ pointgroup_bulk.schoenflies_name | safe }} ({{ pointgroup_bulk.hm_name | safe }}).</li>
-                    <li>Bulk space group: {{ spacegroup_bulk.hm_name | safe }} (international number: {{ spacegroup_bulk.international_number }}).</li>
+                    <li>Bulk space group: {{ spacegroup_bulk.hm_name | safe }} (international number: {{ spacegroup_bulk.international_number }}{% if hall_number is not none %}; Hall number: {{ hall_number }}{% endif %}).</li>
                     <li>{% if is_category_III %}
                             This is a category III system, meaning that it is not possible to find any coincidence operation that does not flip <em>z</em>.
                             As a consequence, consecutive pairs of layers have different interlayer force constants

@@ -12,6 +12,7 @@ from collections.abc import Iterable
 
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+from spglib.spglib import get_symmetry_dataset
 
 from .utils.structures import (
     ase_from_tuple,
@@ -20,6 +21,7 @@ from .utils.structures import (
     get_covalent_radii_array,
 )
 from tools_barebone import get_tools_barebone_version
+from .utils.hall import hall_numbers_of_spacegroup
 from .utils.layers import find_layers, find_common_transformation
 from .utils.matrices import matrix_initialization, replace_symbols_with_values
 from .utils.pointgroup import (
@@ -90,15 +92,46 @@ def process_structure_core(
         ),
         symprec=SYMPREC,
     )
-    primitive_asecell = ase_from_tuple(primitive_tuple)
-    # From now on, I will work with the primitive cell rather than the one specified by the user
+    # Get now the conventional cell (it re-does a symmetry analysis)
+    dataset = spglib.get_symmetry_dataset(primitive_tuple)
+    conventional_tuple = (
+        dataset["std_lattice"],
+        dataset["std_positions"],
+        dataset["std_types"],
+    )
+    conventional_asecell = ase_from_tuple(conventional_tuple)
+
+    # NOTE: there are cases in which it might not be detected - we'll deal with how to display those in the UI
+
+    # From now on, I will work with the conventional cell rather than the one specified by the user
     # This is important because we sometimes (in the output) make assumptions that the number of layers found
-    # is the number of layers in the primitive cell (e.g. when we say "Multilayer spacegroup
-    # for N >= {num_layers_primitive}").
+    # is the number of layers in the conventional cell (e.g. when we say "Multilayer spacegroup
+    # for N >= {num_layers_conventional}").
     is_layered, layer_structures, layer_indices, rotated_asecell = find_layers(
-        primitive_asecell, factor=skin_factor
+        conventional_asecell, factor=skin_factor
     )
 
+    detected_hall_number = None
+    if rotated_asecell is not None:
+        # Detect Hall setting
+        for hall_number in hall_numbers_of_spacegroup[dataset["number"]]:
+            hall_dataset = get_symmetry_dataset(
+                tuple_from_ase(rotated_asecell), hall_number=hall_number
+            )
+            # print(hall_number, hall_dataset['transformation_matrix'], hall_dataset['origin_shift'])
+
+            # If it's Identity, we've identified the correct Hall setting (or at least one among
+            # the possible origin choices). We stop at the first one that satisfied this.
+            if (
+                np.sum(
+                    (np.eye(3) - np.array(hall_dataset["transformation_matrix"])) ** 2
+                )
+                < 1.0e-6
+            ):
+                detected_hall_number = hall_number
+                break
+
+    # Get the scaled radii for the bonds detection
     scaled_radii_per_site = skin_factor * get_covalent_radii_array(asecell)
     # This is a dict of the form {"Na": 1.3, "C": 1.5}, ..
     scaled_radii_per_kind = {
@@ -264,7 +297,7 @@ def process_structure_core(
     # Either a finite ML with num_layers_bulk, or num_layers_bulk + 1 (the odd between the two)
     num_layers_odd = num_layers_bulk + (num_layers_bulk + 1) % 2
     # I need at least two layers to define a multilayer with modes!
-    # So for num_primitive == 1, I need to consider 3 as the smallest ML with odd n_primitive
+    # So if I only have 1, I need to consider 3 as the smallest ML with odd n_primitive
     if num_layers_odd == 1:
         num_layers_odd = 3
     spg_odd = get_symmetry_multilayer(
@@ -300,6 +333,7 @@ def process_structure_core(
     return_data["spacegroup_bulk"] = prepare_spacegroup(bulk_spg)
     return_data["layer_mass_amu"] = float(layer_mass_amu)
     return_data["layer_surface_ang2"] = float(layer_surface_ang2)
+    return_data["hall_number"] = detected_hall_number
 
     app_data = {
         "structure": structure,

@@ -7,4 +7,5 @@ for <em>even N</em> ≥ 2: C<sub>3v</sub>
 for <em>odd N</em> ≥ 2: C<sub>3v</sub>
 Bulk point group: C<sub>6v</sub>
 Bulk space group: P6<sub>3</sub>mc
+Hall number: 480
 category I system
