@@ -1,4 +1,5 @@
 import json
+import math
 import time
 import string
 
@@ -33,6 +34,36 @@ from .utils.pointgroup import (
 
 # Version of this tool
 __version__ = "20.11.1"
+
+
+def nice_print_rot(value, threshold=1.0e-4):
+    """
+    Converts a float number to a LaTeX string, possibly converting "common" values (integers, and simple square roots)
+    to nicer form.
+
+    :param value: a float value
+    :param threshold: a numerical threshold to decide if a number is an integer, a square root, ...
+    :return: a (LaTeX) string
+    """
+    int_value = int(round(value))
+
+    if abs(int_value - value) < threshold:
+        return f"{int_value:d}"
+    if abs(value - 0.5) < threshold:
+        return r"\frac{1}{2}"
+    if abs(value - (-0.5)) < threshold:
+        return r"-\frac{1}{2}"
+    if abs(value - math.sqrt(2) / 2) < threshold:
+        return r"\frac{\sqrt{2}}{2}"
+    if abs(value - (-math.sqrt(2) / 2)) < threshold:
+        return r"-\frac{\sqrt{2}}{2}"
+    if abs(value - math.sqrt(3) / 2) < threshold:
+        return r"\frac{\sqrt{3}}{2}"
+    if abs(value - (-math.sqrt(3) / 2)) < threshold:
+        return r"-\frac{\sqrt{3}}{2}"
+
+    # As a fallback, return the float representation
+    return f"{value:10.5f}"
 
 
 def process_structure_core(
@@ -192,17 +223,17 @@ def process_structure_core(
     else:
         rot_latex = (
             "R = "
-            "\\left(\\begin{array}{ccc}%+10.5f & %+10.5f & %+10.5f \\\\ %+10.5f & %+10.5f & %+10.5f \\\\ %+10.5f & %+10.5f & %+10.5f \\end{array}\\right)"
+            "\\left(\\begin{array}{ccc}%s & %s & %s \\\\ %s & %s & %s \\\\ %s & %s & %s \\end{array}\\right)"
             % (
-                rot[0, 0],
-                rot[0, 1],
-                rot[0, 2],
-                rot[1, 0],
-                rot[1, 1],
-                rot[1, 2],
-                rot[2, 0],
-                rot[2, 1],
-                rot[2, 2],
+                nice_print_rot(rot[0, 0]),
+                nice_print_rot(rot[0, 1]),
+                nice_print_rot(rot[0, 2]),
+                nice_print_rot(rot[1, 0]),
+                nice_print_rot(rot[1, 1]),
+                nice_print_rot(rot[1, 2]),
+                nice_print_rot(rot[2, 0]),
+                nice_print_rot(rot[2, 1]),
+                nice_print_rot(rot[2, 2]),
             )
         )
 
