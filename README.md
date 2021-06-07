@@ -29,7 +29,7 @@ This tool is deployed on the Materials Cloud "Tools" section [here](https://mate
 ## How to cite
 If you use this tool, please cite the following work:
 
-* G. Pizzi, S. Milana, A. C. Ferrari, N. Marzari, M. Gibertini, *Shear and breathing modes of layered materials*, to be submitted (2020).
+* G. Pizzi, S. Milana, A. C. Ferrari, N. Marzari, M. Gibertini, *Shear and breathing modes of layered materials*, [arXiv:2011.14681 (2020)](https://arxiv.org/abs/2011.14681).
 
 You might also want to cite the spglib, ASE and pymatgen libraries that are used internally by the tool.
 
