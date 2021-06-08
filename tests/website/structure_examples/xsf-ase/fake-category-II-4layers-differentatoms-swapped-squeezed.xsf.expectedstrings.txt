@@ -1,3 +1,6 @@
 4 layers found
 The structure is layered, but does not seem to be
 Layers are not identical
+Bulk point group: C<sub>2v</sub>
+Bulk space group: Imm2
+Hall number: 215

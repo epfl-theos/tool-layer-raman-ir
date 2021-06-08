@@ -395,6 +395,16 @@
         {% else %}
             The structure is layered, but does not seem to be a MDO polytype (i.e., composed of repetitions of the same layer, with the same coincidence operation bringing each layer onto the next one):
             {{ common_layers_search['message'] }}.
+
+            {# Since it might not print the rest, I print here at least the bulk symmetry #}
+            
+            <h2>Bulk symmetry</h2>
+            <p>
+                <ul>
+                    <li>Bulk point group: {{ pointgroup_bulk.schoenflies_name | safe }} ({{ pointgroup_bulk.hm_name | safe }}).</li>
+                    <li>Bulk space group: {{ spacegroup_bulk.hm_name | safe }} (international number: {{ spacegroup_bulk.international_number }}{% if hall_number is not none %}; Hall number: {{ hall_number }}{% endif %}).</li>
+                </ul>
+            </p>
         {% endif %}
         </div>
     {% endif %}

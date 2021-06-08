@@ -1,3 +1,6 @@
 2 layers found
 The structure is layered, but does not seem to be
 Layers are not identical
+Bulk point group: D<sub>3h</sub>
+Bulk space group: P<span style="text-decoration:overline;">6</span>m2
+Hall number: 481

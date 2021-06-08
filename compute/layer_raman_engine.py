@@ -132,6 +132,13 @@ def process_structure_core(
     )
     conventional_asecell = ase_from_tuple(conventional_tuple)
 
+    bulk_spg = SpacegroupAnalyzer(
+        AseAtomsAdaptor().get_structure(conventional_asecell), symprec=SYMPREC
+    )
+    pg_bulk_number = pg_number_from_hm_symbol(bulk_spg.get_point_group_symbol())
+    return_data["pointgroup_bulk"] = prepare_pointgroup(pg_bulk_number)
+    return_data["spacegroup_bulk"] = prepare_spacegroup(bulk_spg)
+
     # NOTE: there are cases in which it might not be detected - we'll deal with how to display those in the UI
 
     # From now on, I will work with the conventional cell rather than the one specified by the user
@@ -161,6 +168,8 @@ def process_structure_core(
             ):
                 detected_hall_number = hall_number
                 break
+
+    return_data["hall_number"] = detected_hall_number
 
     # Get the scaled radii for the bonds detection
     scaled_radii_per_site = skin_factor * get_covalent_radii_array(asecell)
@@ -303,7 +312,6 @@ def process_structure_core(
         spg_monolayer.get_point_group_symbol()
     )
 
-    layer_mass_amu = sum(atom.mass for atom in rotated_asecell[layer_indices[0]])
     # Layer unit-cell surface is the determinant of the 2x2 unit cell
     cell2d = rotated_asecell.cell[:2, :2].tolist()
     layer_surface_ang2 = abs(cell2d[0][0] * cell2d[1][1] - cell2d[0][1] * cell2d[1][0])
@@ -345,10 +353,7 @@ def process_structure_core(
         spg_even_plus_two.get_point_group_symbol()
     )
 
-    bulk_spg = SpacegroupAnalyzer(
-        AseAtomsAdaptor().get_structure(asecell), symprec=SYMPREC
-    )
-    pg_bulk_number = pg_number_from_hm_symbol(bulk_spg.get_point_group_symbol())
+    layer_mass_amu = sum(atom.mass for atom in rotated_asecell[layer_indices[0]])
 
     return_data["pointgroup_even"] = prepare_pointgroup(pg_even_number)
     return_data["pointgroup_odd"] = prepare_pointgroup(pg_odd_number)
@@ -360,11 +365,8 @@ def process_structure_core(
     return_data["pointgroup_monolayer"] = prepare_pointgroup(pg_monolayer_number)
     return_data["monolayer_has_z_inversion"] = monolayer_has_z_inversion
     return_data["pointgroup_bilayer"] = prepare_pointgroup(pg_bilayer_number)
-    return_data["pointgroup_bulk"] = prepare_pointgroup(pg_bulk_number)
-    return_data["spacegroup_bulk"] = prepare_spacegroup(bulk_spg)
-    return_data["layer_mass_amu"] = float(layer_mass_amu)
     return_data["layer_surface_ang2"] = float(layer_surface_ang2)
-    return_data["hall_number"] = detected_hall_number
+    return_data["layer_mass_amu"] = float(layer_mass_amu)
 
     app_data = {
         "structure": structure,
