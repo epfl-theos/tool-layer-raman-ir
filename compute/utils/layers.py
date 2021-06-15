@@ -234,7 +234,7 @@ def _update_and_rotate_cell(asecell, newcell, layer_indices):
 
 def find_common_transformation(
     asecell, layer_indices, ltol=0.05, stol=0.05, angle_tol=2.0
-):  # pylint: disable=too-many-arguments,too-many-locals,too-many-branches
+):  # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
     """
     Given an input structure, in ASE format, and the list with 
     the indices of atoms belonging to each layer, determine
@@ -284,6 +284,17 @@ def find_common_transformation(
     # we start by comparing the first and second layer
     layer0 = layers[0]
     layer1 = layers[1]
+    # Compute the thickness of a pair of layers. This will be used only for category III
+    # later on
+    if len(layers) >= 3:
+        layer2 = layers[2]
+    else:
+        layer2 = layers[0].copy()
+        layer2.positions += asecell.cell[2]
+    double_layer_thickness = (
+        layer2.positions[:, 2].mean() - layer0.positions[:, 2].mean()
+    )
+
     str0 = adaptor.get_structure(layer0)
     str1 = adaptor.get_structure(layer1)
     # This is the transformation that brings layer0 onto layer1
@@ -395,6 +406,19 @@ def find_common_transformation(
             layer1.translate((+np.floor((il + 1.0) / num_layers) * asecell.cell[2]))
             # the transformed positions of the atoms in the first layer
             pos0 = this_op.operate_multi(layer0.positions)
+
+            if op01.affine_matrix[2, 2] < 0:
+                # For category III, the operation that sends 0 -> 1 will then flip 1
+                # back to zero (up to a translation).
+                # Therefore, to go from 1 to 2, one has to add a translation of 2
+                # layers (and for category III, a bilayer thickness is well defined,
+                # while for a single layer is not).
+                # Similarly, the same operation will send 2 to the bottom (to position "-1"),
+                # and this time we will need a shift of (2 * the double layer thickness)
+                # to translate it back from -1 to 3. And so on: we need
+                # double_layer_thickness * il (where il = layer_index)
+                if il % 2 == 1:
+                    pos0[:, 2] += double_layer_thickness * il
             # that should be identical to the ones of the second layer
             pos1 = layer1.positions
             # we already know from above that the species in each layer are identical
