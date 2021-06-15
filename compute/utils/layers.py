@@ -333,6 +333,9 @@ def find_common_transformation(
 
     # Get the spacegroup of the bulk (useful below)
     spg_bulk = SpacegroupAnalyzer(adaptor.get_structure(asecell), symprec=SYMPREC)
+    spg_monolayer = SpacegroupAnalyzer(
+        adaptor.get_structure(layers[0]), symprec=SYMPREC
+    )
     # If the transformation involves a flip in the z-direction
     # we check if, by combining it with a symmetry of the bulk,
     # we get a transformation that does NOT flip z
@@ -364,7 +367,7 @@ def find_common_transformation(
 
     print(op01)
 
-    for symop in spg_bulk.get_symmetry_operations(cartesian=True):
+    for symop in spg_monolayer.get_symmetry_operations(cartesian=True):
         # symmetry operations of the monolayer that flip z are possible
         # only in category I, but would result in a coincidence operation
         # that flip z, which is not necessary in this case (category I), as in this case
@@ -387,16 +390,9 @@ def find_common_transformation(
             # We need to copy the layers as we'll change them in place
             layer0 = layers[il].copy()
             layer1 = layers[(il + 1) % num_layers].copy()
-            # translate back the two layers by il * cell[2]/num_layers
             # if layer1 is the layer num_layer + 1 we need to translate it
             # by a full lattice vector
-            layer0.translate(-il * asecell.cell[2] / num_layers)
-            layer1.translate(
-                (
-                    -il * asecell.cell[2] / num_layers
-                    + np.floor((il + 1.0) / num_layers) * asecell.cell[2]
-                )
-            )
+            layer1.translate((+np.floor((il + 1.0) / num_layers) * asecell.cell[2]))
             # the transformed positions of the atoms in the first layer
             pos0 = this_op.operate_multi(layer0.positions)
             # that should be identical to the ones of the second layer

@@ -1,6 +1,0 @@
-2 layers found
-The structure is layered, but does not seem to be
-transformation between consecutive layers is not always the same
-Bulk point group: C<sub>2h</sub>
-Bulk space group: P2<sub>1</sub>/m
-Hall number: 61
