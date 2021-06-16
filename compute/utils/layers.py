@@ -331,19 +331,15 @@ def find_common_transformation(
         # already reorganised layers to have all atoms close to each other
         assert np.abs(z_shift - required_z_shift_per_atom[atom_idx]) < 1.0e-4
 
-    # Get the spacegroup of the bulk (useful below)
-    spg_bulk = SpacegroupAnalyzer(adaptor.get_structure(asecell), symprec=SYMPREC)
+    # Get the spacegroup of the monolayer (useful below)
+    spg_mono = SpacegroupAnalyzer(adaptor.get_structure(layer0), symprec=SYMPREC)
     # If the transformation involves a flip in the z-direction
-    # we check if, by combining it with a symmetry of the bulk,
+    # we check if, by combining it with a symmetry of the monolayer,
     # we get a transformation that does NOT flip z
     # As soon as I find one, I replace tr01, rot01 and op01 (the combination of tr01 and rot01)
     # with those we found, so that the axis is not flipped and transformation01[0][2, 2] > 0
     if transformation01[0][2, 2] < 0:
-        for op in spg_bulk.get_symmetry_operations(cartesian=True):
-            # as the first layer is at the origin we are interested
-            # only in fractional translations along z that are zero
-            if np.abs(op.translation_vector[2]) > 1e-3:
-                continue
+        for op in spg_mono.get_symmetry_operations(cartesian=True):
             affine_prod = np.dot(op01.affine_matrix, op.affine_matrix)
             if affine_prod[2, 2] > 0:
                 tr01 = affine_prod[0:3][:, 3]
@@ -356,15 +352,17 @@ def find_common_transformation(
     #   and I will categorize it as category III
     # - I could find it, then transformation01[0][2, 2] > 0 and it's either category I or II
     #   (depending on the monolayer symmetry)
+    #   It could also be category III in weird cases like identical layers that invariant
+    #   under z -> -z but with two alternating interlayer distances, i.e. "dimerized"
 
     # I now use op01 to check if, with op01, I can bring each layer onto the next,
     # and layer num_layers onto num_layers+1, i.e. the first one + the third lattice vector
-    # If op01 does not work we might need to combine it with symmetry operations of the bulk
+    # If op01 does not work we might need to combine it with symmetry operations of the monolayer
     # before concluding that the system is not a MDO polytype
 
     print(op01)
 
-    for symop in spg_bulk.get_symmetry_operations(cartesian=True):
+    for symop in spg_mono.get_symmetry_operations(cartesian=True):
         # symmetry operations of the monolayer that flip z are possible
         # only in category I, but would result in a coincidence operation
         # that flip z, which is not necessary in this case (category I), as in this case
