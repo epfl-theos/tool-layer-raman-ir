@@ -329,7 +329,7 @@ def find_common_transformation(
     for atom_idx in range(1, len(required_z_shift_per_atom)):
         # NOTE: This test is going to work because the function called before this
         # already reorganised layers to have all atoms close to each other
-        assert np.abs(z_shift - required_z_shift_per_atom[atom_idx]) < 1.0e-4
+        assert np.abs(z_shift - required_z_shift_per_atom[atom_idx]) < 5.0e-3
 
     # Get the spacegroup of the monolayer (useful below)
     spg_mono = SpacegroupAnalyzer(adaptor.get_structure(layer0), symprec=SYMPREC)
