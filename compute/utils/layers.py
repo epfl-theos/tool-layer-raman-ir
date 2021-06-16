@@ -375,23 +375,52 @@ def find_common_transformation(
         affine_prod = np.dot(op01.affine_matrix, symop.affine_matrix)
         this_rot = affine_prod[0:3][:, 0:3]
         this_tr = affine_prod[0:3][:, 3]
+        # To be compatible with the bulk periodicity in the third vertical direction
+        # the fractional translation should be such that, multiplied by the number of layers,
+        # it gives a Bravais lattice vector
+        # If this is not the case it means that the fractional translation has a contribution
+        # arising from the fact that the operation has to carried out around a point which is not the
+        # origin
+        # Let's save in vec the remainder of num_layers * this_tr modulo a Bravais lattice vector,
+        # then divided by the number of layers
+        vec = (
+            np.dot(
+                (np.dot(num_layers * this_tr + 1e-12, np.linalg.inv(asecell.cell))) % 1,
+                asecell.cell,
+            )
+            / num_layers
+        )
+        # If we subtract vec from this_tr, then num_layers * this_tr is a Bravais lattice vector
+        this_tr -= vec
+        # If vec is non zero it means that the coincidence operation needs to be carried out around a point
+        # with coordinates this_tr0 which is not the origin. In particular, the relationship between the two is
+        # vec = this_tr0 - this_rot * this_tr0
+        # that we need to invert using a pseudoinverse to get this_tr0
+        if np.linalg.norm(vec) > 1e-4:
+            this_tr0 = np.dot(np.linalg.pinv(np.identity(3) - this_rot), vec)
+        else:
+            this_tr0 = np.array([0, 0, 0])
+        # The coincidence operation is then defined in terms of this_tr only
         this_op = SymmOp.from_rotation_and_translation(this_rot, this_tr)
 
         found_common = True
-        # NOTE: here we start from layer ZERO! The reason is that now, having applied a bulk operation,
-        # we might end up in some operation that does not send anymore layer 1 in layer 2.
-        # So we want to chack that case as well.
+        # NOTE: here we start from layer ZERO! The reason is that we want to
+        # double check that now that we made a combination with a symmetry operation,
+        # we still send layer 1 into layer 2.
+        # So we want to check that case as well.
         for il in range(0, num_layers):
             # We need to copy the layers as we'll change them in place
             layer0 = layers[il].copy()
             layer1 = layers[(il + 1) % num_layers].copy()
-            # translate back the two layers by il * cell[2]/num_layers
+            # translate back the two layers to put at the origin the
+            # center around which we want to perform the coincidence operation
             # if layer1 is the layer num_layer + 1 we need to translate it
             # by a full lattice vector
-            layer0.translate(-il * asecell.cell[2] / num_layers)
+            layer0.translate(-il * this_tr - this_tr0)
             layer1.translate(
                 (
-                    -il * asecell.cell[2] / num_layers
+                    -il * this_tr
+                    - this_tr0
                     + np.floor((il + 1.0) / num_layers) * asecell.cell[2]
                 )
             )
