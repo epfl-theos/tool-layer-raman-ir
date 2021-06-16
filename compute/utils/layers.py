@@ -284,17 +284,6 @@ def find_common_transformation(
     # we start by comparing the first and second layer
     layer0 = layers[0]
     layer1 = layers[1]
-    # Compute the thickness of a pair of layers. This will be used only for category III
-    # later on
-    if len(layers) >= 3:
-        layer2 = layers[2]
-    else:
-        layer2 = layers[0].copy()
-        layer2.positions += asecell.cell[2]
-    double_layer_thickness = (
-        layer2.positions[:, 2].mean() - layer0.positions[:, 2].mean()
-    )
-
     str0 = adaptor.get_structure(layer0)
     str1 = adaptor.get_structure(layer1)
     # This is the transformation that brings layer0 onto layer1
@@ -375,8 +364,7 @@ def find_common_transformation(
     # and layer num_layers onto num_layers+1, i.e. the first one + the third lattice vector
     # If op01 does not work we might need to combine it with symmetry operations of the bulk
     # before concluding that the system is not a MDO polytype
-
-    print(op01)
+    # print(op01)
 
     for symop in spg_monolayer.get_symmetry_operations(cartesian=True):
         # symmetry operations of the monolayer that flip z are possible
@@ -408,14 +396,18 @@ def find_common_transformation(
             pos0 = this_op.operate_multi(layer0.positions)
 
             if op01.affine_matrix[2, 2] < 0:
+                # We are in category III
+                # I first compute the thickness of a pair of layers
+                double_layer_thickness = asecell.cell[2, 2] * 2 / num_layers
                 # For category III, the operation that sends 0 -> 1 will then flip 1
                 # back to zero (up to a translation).
-                # Therefore, to go from 1 to 2, one has to add a translation of 2
-                # layers (and for category III, a bilayer thickness is well defined,
-                # while for a single layer is not).
-                # Similarly, the same operation will send 2 to the bottom (to position "-1"),
-                # and this time we will need a shift of (2 * the double layer thickness)
-                # to translate it back from -1 to 3. And so on: we need
+                # Therefore, to go from 1 to 2, one has to add an upward (z) translation of 2
+                # layers after applying the operation (and indeed for category III,
+                # the bilayer thickness is well defined, while for a single layer it is not).
+                # Similarly, the same operation will send layer number 2 to the bottom
+                # (to position "-1"), and this time we will need a shift of
+                # (2 * the double layer thickness) to translate it back from -1 to 3.
+                # And so on: we need in general to apply a translation of
                 # double_layer_thickness * il (where il = layer_index)
                 if il % 2 == 1:
                     pos0[:, 2] += double_layer_thickness * il
