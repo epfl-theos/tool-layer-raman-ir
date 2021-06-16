@@ -409,8 +409,7 @@ def find_common_transformation(
                 # (2 * the double layer thickness) to translate it back from -1 to 3.
                 # And so on: we need in general to apply a translation of
                 # double_layer_thickness * il (where il = layer_index)
-                if il % 2 == 1:
-                    pos0[:, 2] += double_layer_thickness * il
+                pos0[:, 2] += double_layer_thickness * il
             # that should be identical to the ones of the second layer
             pos1 = layer1.positions
             # we already know from above that the species in each layer are identical
