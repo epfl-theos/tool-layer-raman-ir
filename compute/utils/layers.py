@@ -152,10 +152,14 @@ def layers_match(layers, ltol=0.2, stol=0.3, angle_tol=5.0):
     # Create an instance of Structure Matcher with the given tolerances
     sm = StructureMatcher(ltol, stol, angle_tol)
     # Translate the refence layer (first) from ASE to pymatgen format
-    ref_layer = adaptor.get_structure(layers[0])
+    ase_reflayer = layers[0].copy()
+    ase_reflayer.cell[2] = np.array([0, 0, ase_reflayer.cell[2, 2]])
+    ref_layer = adaptor.get_structure(ase_reflayer)
     # Initialize to true the variable saying if all layers are identical
     all_match = True
-    for aselayer in layers[1:]:
+    for this_layer in layers[1:]:
+        aselayer = this_layer.copy()
+        aselayer.cell[2] = np.array([0, 0, aselayer.cell[2, 2]])
         # Translate layer from ASE to pymatgen format
         layer = adaptor.get_structure(aselayer)
         # If the layer does not match the refence one set to false all_match
@@ -276,7 +280,7 @@ def find_common_transformation(
     # If we are here, there are at least two layers
     # First check that all layers are identical
     layers = [asecell[layer] for layer in layer_indices]
-    if not layers_match(layers, stol=stol):
+    if not layers_match(layers, ltol=ltol, stol=stol, angle_tol=angle_tol):
         return None, None, "Layers are not identical"
 
     # Layers are already ordered according to their
@@ -299,7 +303,7 @@ def find_common_transformation(
     # and just keep the logic below!
     # To avoid crashes, we cope with this here
     if transformation01 is None:
-        return None, None, "Layers are not identical"
+        return None, None, "No transformation to match first and second layer"
 
     # define the common lattice of both layers (which is the one of the bulk)
     # we use twice the same "common lattice" because they are identical in our case
@@ -331,7 +335,7 @@ def find_common_transformation(
     for atom_idx in range(1, len(required_z_shift_per_atom)):
         # NOTE: This test is going to work because the function called before this
         # already reorganised layers to have all atoms close to each other
-        assert np.abs(z_shift - required_z_shift_per_atom[atom_idx]) < 5.0e-3
+        assert np.abs(z_shift - required_z_shift_per_atom[atom_idx]) < SYMPREC
 
     # Get the spacegroup of the monolayer (useful below)
     spg_mono = SpacegroupAnalyzer(adaptor.get_structure(layer0), symprec=SYMPREC)
