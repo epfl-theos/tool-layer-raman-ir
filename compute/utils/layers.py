@@ -368,15 +368,20 @@ def find_common_transformation(
 
     print(op01)
 
-    for symop in spg_mono.get_symmetry_operations(cartesian=True):
-        # symmetry operations of the monolayer that flip z are possible
+    for symop in sorted(
+        spg_mono.get_symmetry_operations(cartesian=True),
+        key=lambda op: -op.affine_matrix[2, 2],
+    ):
+        # We sort the symmetry operations of the monolayer so that the ones that
+        # do NOT flip z are considered first.
+        # Indeed in principles operations that flip z should be possible
         # only in category I, but would result in a coincidence operation
         # that flip z, which is not necessary in this case (category I), as in this case
-        # we'll find another one that does the same job without flipping, so we skip these operations.
+        # we'll find another one that does the same job without flipping, so we could even skip these operations.
         # (also because we want to give the guarantee that, if symop.affine_matrix[2, 2] < 0, then we are
         # in category III)
-        if symop.affine_matrix[2, 2] < 0:
-            continue
+        # Still, operations that flip z could be relevant in some weird cases of category III, called "dimerized" above
+        # So that in the end we will find a coincidence operation that flips z even if op01 did not
         # combine the coincidence operation with the
         affine_prod = np.dot(op01.affine_matrix, symop.affine_matrix)
         this_rot = affine_prod[0:3][:, 0:3]
