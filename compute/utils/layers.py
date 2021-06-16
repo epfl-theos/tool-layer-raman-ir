@@ -282,8 +282,10 @@ def find_common_transformation(
     # Layers are already ordered according to their
     # projection along the stacking direction
     # we start by comparing the first and second layer
-    layer0 = layers[0]
-    layer1 = layers[1]
+    layer0 = layers[0].copy()
+    layer0.cell[2] = [0, 0, asecell.cell[2, 2]]
+    layer1 = layers[1].copy()
+    layer1.cell[2] = [0, 0, asecell.cell[2, 2]]
     str0 = adaptor.get_structure(layer0)
     str1 = adaptor.get_structure(layer1)
     # This is the transformation that brings layer0 onto layer1
