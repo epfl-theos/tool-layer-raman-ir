@@ -358,7 +358,7 @@ def find_common_transformation(
     #   and I will categorize it as category III
     # - I could find it, then transformation01[0][2, 2] > 0 and it's either category I or II
     #   (depending on the monolayer symmetry)
-    #   It could also be category III in weird cases like identical layers that invariant
+    #   It could also be category III in weird cases like identical layers that are invariant
     #   under z -> -z but with two alternating interlayer distances, i.e. "dimerized"
 
     # I now use op01 to check if, with op01, I can bring each layer onto the next,
@@ -403,7 +403,7 @@ def find_common_transformation(
         )
         # If we subtract vec from this_tr, then num_layers * this_tr is a Bravais lattice vector
         this_tr -= vec
-        # If vec is non zero it means that the coincidence operation needs to be carried out around a point
+        # If vec is not zero it means that the coincidence operation needs to be carried out around a point
         # with coordinates this_tr0 which is not the origin. In particular, the relationship between the two is
         # vec = this_tr0 - this_rot * this_tr0
         # that we need to invert using a pseudoinverse to get this_tr0
