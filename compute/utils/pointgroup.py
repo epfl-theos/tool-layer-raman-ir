@@ -707,7 +707,7 @@ pointgroup_dict = {
         },
         "raman": ["A1", "E1", "E2"],
         "infrared": ["A1", "E1"],
-        "HM_symbol": "6mmm",
+        "HM_symbol": "6mm",
         "backscattering": [["A1", "E1", "E2"], ["A1", "E1", "E2"], ["A1", "E2"]],
     },
     "D3h": {
