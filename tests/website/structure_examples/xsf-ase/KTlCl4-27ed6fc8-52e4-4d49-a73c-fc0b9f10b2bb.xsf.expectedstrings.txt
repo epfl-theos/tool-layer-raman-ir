@@ -1,0 +1,11 @@
+4 layers found
+A common coincidence operation
+Monolayer point group: S<sub>4</sub>
+The monolayer is non-polar
+Bilayer point group: C<sub>2h</sub>
+for <em>even N</em> ≥ 4: C<sub>2h</sub>
+for <em>odd N</em> ≥ 4: S<sub>4</sub>
+Bulk point group: C<sub>4h</sub>
+Bulk space group: I4<sub>1</sub>/a
+Hall number: 364
+category I system

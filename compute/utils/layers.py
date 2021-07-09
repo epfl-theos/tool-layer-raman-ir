@@ -234,7 +234,7 @@ def _update_and_rotate_cell(asecell, newcell, layer_indices):
 
 def find_common_transformation(
     asecell, layer_indices, ltol=0.05, stol=0.05, angle_tol=2.0
-):  # pylint: disable=too-many-arguments,too-many-locals,too-many-branches
+):  # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
     """
     Given an input structure, in ASE format, and the list with 
     the indices of atoms belonging to each layer, determine
@@ -333,6 +333,9 @@ def find_common_transformation(
 
     # Get the spacegroup of the bulk (useful below)
     spg_bulk = SpacegroupAnalyzer(adaptor.get_structure(asecell), symprec=SYMPREC)
+    spg_monolayer = SpacegroupAnalyzer(
+        adaptor.get_structure(layers[0]), symprec=SYMPREC
+    )
     # If the transformation involves a flip in the z-direction
     # we check if, by combining it with a symmetry of the bulk,
     # we get a transformation that does NOT flip z
@@ -361,10 +364,9 @@ def find_common_transformation(
     # and layer num_layers onto num_layers+1, i.e. the first one + the third lattice vector
     # If op01 does not work we might need to combine it with symmetry operations of the bulk
     # before concluding that the system is not a MDO polytype
+    # print(op01)
 
-    print(op01)
-
-    for symop in spg_bulk.get_symmetry_operations(cartesian=True):
+    for symop in spg_monolayer.get_symmetry_operations(cartesian=True):
         # symmetry operations of the monolayer that flip z are possible
         # only in category I, but would result in a coincidence operation
         # that flip z, which is not necessary in this case (category I), as in this case
@@ -387,18 +389,27 @@ def find_common_transformation(
             # We need to copy the layers as we'll change them in place
             layer0 = layers[il].copy()
             layer1 = layers[(il + 1) % num_layers].copy()
-            # translate back the two layers by il * cell[2]/num_layers
             # if layer1 is the layer num_layer + 1 we need to translate it
             # by a full lattice vector
-            layer0.translate(-il * asecell.cell[2] / num_layers)
-            layer1.translate(
-                (
-                    -il * asecell.cell[2] / num_layers
-                    + np.floor((il + 1.0) / num_layers) * asecell.cell[2]
-                )
-            )
+            layer1.translate((+np.floor((il + 1.0) / num_layers) * asecell.cell[2]))
             # the transformed positions of the atoms in the first layer
             pos0 = this_op.operate_multi(layer0.positions)
+
+            if op01.affine_matrix[2, 2] < 0:
+                # We are in category III
+                # I first compute the thickness of a pair of layers
+                double_layer_thickness = asecell.cell[2, 2] * 2 / num_layers
+                # For category III, the operation that sends 0 -> 1 will then flip 1
+                # back to zero (up to a translation).
+                # Therefore, to go from 1 to 2, one has to add an upward (z) translation of 2
+                # layers after applying the operation (and indeed for category III,
+                # the bilayer thickness is well defined, while for a single layer it is not).
+                # Similarly, the same operation will send layer number 2 to the bottom
+                # (to position "-1"), and this time we will need a shift of
+                # (2 * the double layer thickness) to translate it back from -1 to 3.
+                # And so on: we need in general to apply a translation of
+                # double_layer_thickness * il (where il = layer_index)
+                pos0[:, 2] += double_layer_thickness * il
             # that should be identical to the ones of the second layer
             pos1 = layer1.positions
             # we already know from above that the species in each layer are identical
