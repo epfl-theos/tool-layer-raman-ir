@@ -218,12 +218,14 @@ def process_structure_core(
     # are inside the the unit cell in the layer plane
     if center is not None:
         rotated_asecell.positions -= center
-        rotated_asecell.positions[:, :2] = rotated_asecell.get_positions(wrap=True)[
-            :, :2
-        ]
+        rotated_asecell.pbc = [True, True, False]
+        rotated_asecell.positions = asecell.get_positions(wrap=True)
+        rotated_asecell.pbc = [True, True, True]
         for layer in layer_structures:
             layer.positions -= center
-            layer.positions[:, :2] = layer.get_positions(wrap=True)[:, :2]
+            layer.pbc = [True, True, False]
+            layer.positions = asecell.get_positions(wrap=True)
+            layer.pbc = [True, True, True]
 
     layer_xsfs = [
         get_xsf_structure(tuple_from_ase(layer_structure))
