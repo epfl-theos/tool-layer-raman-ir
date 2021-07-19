@@ -209,6 +209,22 @@ def process_structure_core(
         logger.debug(json.dumps(return_data, indent=2, sort_keys=True))
         return return_data
 
+    rot, transl, center, message = find_common_transformation(
+        rotated_asecell, layer_indices
+    )
+
+    # Bring back atomic positions so that the origin is the center
+    # of the coincidence operation (if found) and atomic positions
+    # are inside the the unit cell in the layer plane
+    if center is not None:
+        rotated_asecell.positions -= center
+        rotated_asecell.positions[:, :2] = rotated_asecell.get_positions(wrap=True)[
+            :, :2
+        ]
+        for layer in layer_structures:
+            layer.positions -= center
+            layer.positions[:, :2] = layer.get_positions(wrap=True)[:, :2]
+
     layer_xsfs = [
         get_xsf_structure(tuple_from_ase(layer_structure))
         for layer_structure in layer_structures
@@ -224,8 +240,6 @@ def process_structure_core(
             ],
         )
     )
-
-    rot, transl, _, message = find_common_transformation(rotated_asecell, layer_indices)
 
     if rot is None:
         rot_latex = None
