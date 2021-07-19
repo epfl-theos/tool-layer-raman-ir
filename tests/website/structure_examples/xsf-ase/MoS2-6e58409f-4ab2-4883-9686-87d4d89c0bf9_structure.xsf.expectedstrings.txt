@@ -8,4 +8,5 @@ for <em>even N</em> ≥ 2: D<sub>3d</sub>
 for <em>odd N</em> ≥ 2: D<sub>3h</sub>
 Bulk point group: D<sub>6h</sub>
 Bulk space group: P6<sub>3</sub>/mmc
+Hall number: 488
 category I system

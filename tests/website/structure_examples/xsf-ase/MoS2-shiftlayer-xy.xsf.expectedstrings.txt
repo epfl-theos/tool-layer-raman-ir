@@ -7,4 +7,5 @@ for <em>even N</em> ≥ 2: C<sub>i</sub>
 for <em>odd N</em> ≥ 2: C<sub>s</sub>
 Bulk point group: C<sub>2h</sub>
 Bulk space group: P2<sub>1</sub>/m
+Hall number: 61
 category I system

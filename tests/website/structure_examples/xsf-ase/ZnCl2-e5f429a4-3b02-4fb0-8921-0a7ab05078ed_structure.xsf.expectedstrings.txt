@@ -7,4 +7,5 @@ for <em>even N</em> ≥ 2: D<sub>2h</sub>
 for <em>odd N</em> ≥ 2: D<sub>2d</sub>
 Bulk point group: D<sub>4h</sub>
 Bulk space group: P4<sub>2</sub>/nmc
+Hall number: 420
 category I system
