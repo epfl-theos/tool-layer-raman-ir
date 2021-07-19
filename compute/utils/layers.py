@@ -502,6 +502,12 @@ def find_common_transformation(
         # The coincidence operation is then defined in terms of this_tr only
         this_op = SymmOp.from_rotation_and_translation(this_rot, this_tr)
 
+        # Bring back the inplane components of the vector this_tr0 identifying the center of
+        # the coincidence operation inside the unit cell
+        this_tr0[:2] = np.dot(
+            np.dot(this_tr0, np.linalg.inv(asecell.cell))[:2] % 1, asecell.cell[:2]
+        )[:2]
+
         # It is also useful to define a vector along the stacking direction
         vec = np.array([0.0, 0.0, asecell.cell[2, 2] / num_layers])
 
