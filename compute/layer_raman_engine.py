@@ -219,12 +219,12 @@ def process_structure_core(
     if center is not None:
         rotated_asecell.positions -= center
         rotated_asecell.pbc = [True, True, False]
-        rotated_asecell.positions = asecell.get_positions(wrap=True)
+        rotated_asecell.positions = rotated_asecell.get_positions(wrap=True)
         rotated_asecell.pbc = [True, True, True]
         for layer in layer_structures:
             layer.positions -= center
             layer.pbc = [True, True, False]
-            layer.positions = asecell.get_positions(wrap=True)
+            layer.positions = layer.get_positions(wrap=True)
             layer.pbc = [True, True, True]
 
     layer_xsfs = [
