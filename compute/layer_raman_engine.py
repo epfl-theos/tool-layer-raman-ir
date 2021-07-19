@@ -183,7 +183,7 @@ def process_structure_core(
         )
     )
 
-    rot, transl, message = find_common_transformation(rotated_asecell, layer_indices)
+    rot, transl, _, message = find_common_transformation(rotated_asecell, layer_indices)
 
     if rot is None:
         rot_latex = None
