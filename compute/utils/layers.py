@@ -324,8 +324,13 @@ def get_fractional_translation(rotation, power, spg):
     frac_tr = None
     for op in spg.get_symmetry_operations(cartesian=True):
         if np.allclose(op.affine_matrix[0:3][:, 0:3], power_mat, rtol=1e-5):
-            frac_tr = op.affine_matrix[0:3][:, 3]
-            break
+            vec = op.affine_matrix[0:3][:, 3]
+            if frac_tr is None:
+                frac_tr = vec.copy()
+            elif np.linalg.norm(frac_tr) - np.linalg.norm(vec) > 1e-3:
+                frac_tr = vec.copy()
+            else:
+                continue
     return frac_tr
 
 
