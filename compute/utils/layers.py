@@ -152,6 +152,10 @@ def layers_match(layers, ltol=0.2, stol=0.3, angle_tol=5.0):
     # Create an instance of Structure Matcher with the given tolerances
     sm = StructureMatcher(ltol, stol, angle_tol)
     # Translate the refence layer (first) from ASE to pymatgen format
+    # We enforce the third vector to be orthogonal to the planes, and we extend by
+    # a small factor the third direction length (not too much as the thresholds are
+    # in relative units) to avoid to still have some periodicity (e.g. for systems with
+    # 1 layer only)
     ase_reflayer = layers[0].copy()
     ase_reflayer.cell[2] = np.array([0, 0, 2 * ase_reflayer.cell[2, 2]])
     ref_layer = adaptor.get_structure(ase_reflayer)
@@ -267,7 +271,7 @@ def get_transformation_center(rotation, transl, asecell, num_layers):
         )
 
     # If the transformation flips z, we consider deviations of the vertical component of this_tr
-    # from simply the interlayer separation as a result of a center of the flipping trans   formation
+    # from simply the interlayer separation as a result of a center of the flipping transformation
     # which is not around the origin (important in "dimerized" cases)
     if rotation[2, 2] < 0:
         center[2] = (transl[2] - asecell.cell[2, 2] / num_layers) / 2.0
@@ -374,6 +378,8 @@ def find_common_transformation(
     # Layers are already ordered according to their
     # projection along the stacking direction
     # we start by comparing the first and second layer
+    # As we did in function `layers_match`, we put the third vector orthogonal to the plane and
+    # extend the third direction slightly
     layer0 = layers[0].copy()
     layer0.cell[2] = [0, 0, 2 * asecell.cell[2, 2]]
     layer1 = layers[1].copy()
@@ -469,7 +475,8 @@ def find_common_transformation(
         # in category III)
         # Still, operations that flip z could be relevant in some weird cases of category III, called "dimerized" above
         # So that in the end we will find a coincidence operation that flips z even if op01 did not
-        # combine the coincidence operation with the
+        #
+        # Combine the coincidence operation with the symmetry operation of the monolayer
         affine_prod = np.dot(op01.affine_matrix, symop.affine_matrix)
         this_rot = affine_prod[0:3][:, 0:3]
         this_tr = affine_prod[0:3][:, 3]
