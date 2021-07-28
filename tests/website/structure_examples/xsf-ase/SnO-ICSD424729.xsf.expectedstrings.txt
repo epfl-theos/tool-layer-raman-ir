@@ -1,0 +1,11 @@
+2 layers found
+A common coincidence operation
+Monolayer point group: C<sub>2h</sub>
+The monolayer is non-polar
+Bilayer point group: C<sub>s</sub>
+for <em>even N</em> ≥ 2: C<sub>s</sub>
+for <em>odd N</em> ≥ 2: C<sub>s</sub>
+Bulk point group: C<sub>2v</sub>
+Bulk space group: Cmc2<sub>1</sub>
+Hall number: 176
+category I system
