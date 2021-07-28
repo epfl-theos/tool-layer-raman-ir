@@ -325,6 +325,7 @@ def get_fractional_translation(rotation, power, spg):
     for op in spg.get_symmetry_operations(cartesian=True):
         if np.allclose(op.affine_matrix[0:3][:, 0:3], power_mat, rtol=1e-5):
             frac_tr = op.affine_matrix[0:3][:, 3]
+            break
     return frac_tr
 
 
