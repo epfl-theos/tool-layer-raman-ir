@@ -145,7 +145,6 @@ def find_layers(  # pylint: disable=too-many-locals,too-many-statements,too-many
         # change sign to the two last vectors (in order to keep the right-handedness)
         if spgcell[2, 2] < 0:
             spgcell[1:] *= -1.0
-        print(spgcell)
         rotated_asecell.set_cell(spgcell)
         # fix also the inplane component of the positions
         rotated_asecell.pbc = [True, True, False]
