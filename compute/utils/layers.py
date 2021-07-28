@@ -152,10 +152,18 @@ def layers_match(layers, ltol=0.2, stol=0.3, angle_tol=5.0):
     # Create an instance of Structure Matcher with the given tolerances
     sm = StructureMatcher(ltol, stol, angle_tol)
     # Translate the refence layer (first) from ASE to pymatgen format
-    ref_layer = adaptor.get_structure(layers[0])
+    # We enforce the third vector to be orthogonal to the planes, and we extend by
+    # a small factor the third direction length (not too much as the thresholds are
+    # in relative units) to avoid to still have some periodicity (e.g. for systems with
+    # 1 layer only)
+    ase_reflayer = layers[0].copy()
+    ase_reflayer.cell[2] = np.array([0, 0, 2 * ase_reflayer.cell[2, 2]])
+    ref_layer = adaptor.get_structure(ase_reflayer)
     # Initialize to true the variable saying if all layers are identical
     all_match = True
-    for aselayer in layers[1:]:
+    for this_layer in layers[1:]:
+        aselayer = this_layer.copy()
+        aselayer.cell[2] = np.array([0, 0, 2 * aselayer.cell[2, 2]])
         # Translate layer from ASE to pymatgen format
         layer = adaptor.get_structure(aselayer)
         # If the layer does not match the refence one set to false all_match
@@ -232,6 +240,94 @@ def _update_and_rotate_cell(asecell, newcell, layer_indices):
     return asecell
 
 
+def get_transformation_center(rotation, transl, asecell, num_layers):
+    """
+    Starting from the rotation matrix 'rotation', identifies the part 
+    of the corresponding fractional translation 'transl' which is associated
+    with the fact that 'rotation' should not be performed around the origin
+    but around a different position, returned in the vector 'center'
+    """
+    # First we need the rank of the xy part of 1-rotation,
+    # and we do it to avoid numerical instabilities using the eigenvalues
+    eigs = np.linalg.eigvals(np.identity(2) - rotation[:2, :2])
+    if np.all(abs(eigs) < 1e-5):
+        # if the rank is zero the transformation is simply the identity in the plane
+        # and don't need to further specify around which point the transformation is performed
+        center = np.zeros(3)
+    elif np.all(abs(eigs) > 1e-5):
+        # if the rank is 2, the transformation is associated with a rotation, so we can take the
+        # translation to be purely vertical and interpret parallel components of this_tr as
+        # identifing the center around which the rotation has to be performed
+        center = np.append(
+            np.linalg.solve(np.identity(2) - rotation[:2, :2], transl[:2]), [0.0]
+        )
+    else:
+        # if the rank is 1, we have a mirror in the plane, so if this_tr has a component orthogonal
+        # to the mirror, we can associate it with a center different from the origin,
+        # while the component parallel to the mirror is a true "glide" translation
+        center = np.append(
+            np.dot(np.linalg.pinv(np.identity(2) - rotation[:2, :2]), transl[:2]),
+            [0.0],
+        )
+
+    # If the transformation flips z, we consider deviations of the vertical component of this_tr
+    # from simply the interlayer separation as a result of a center of the flipping transformation
+    # which is not around the origin (important in "dimerized" cases)
+    if rotation[2, 2] < 0:
+        center[2] = (transl[2] - asecell.cell[2, 2] / num_layers) / 2.0
+    return center
+
+
+def check_transformation(rotation, transl, frac_tr, asecell, num_layers):
+    """
+    Check if the rotational part 'rotation' and the corresponding translation
+    'transl' satisfy a complex condition which is needed to guarantee that 
+    the coincidence operation works for all 'num_layers' layers in the cell
+    'asecell'
+    """
+    # In order to work for all layers the transformation this_rot, this_tr
+    # should satisfy a complex condition that involves the following matrix
+    matrix = np.zeros((3, 3))
+    for il in range(num_layers):
+        matrix += np.linalg.matrix_power(rotation, il)
+    # and a vector along the stacking direction
+    vec = np.array([0.0, 0.0, asecell.cell[2, 2] / num_layers])
+    # Return a boolean that says if the complex condition is satisfied
+    return np.all(
+        abs(
+            (
+                np.dot(
+                    np.dot(matrix, transl - vec)
+                    + num_layers * vec
+                    - frac_tr
+                    - asecell.cell[2],
+                    np.linalg.inv(asecell.cell),
+                )
+                + 1e-12
+            )
+            % 1
+        )
+        < 1e-5
+    )
+
+
+def get_fractional_translation(rotation, power, spg):
+    """
+    Check if the operation 'rotation' elevated to the power 'power'
+    is among the symmetry operations in the spacegroup 'spg' and 
+    return the corresponding fractional translation 'frac_tr'
+    """
+    # We compute the matrix power
+    power_mat = np.linalg.matrix_power(rotation, power)
+    # and check that it corresponds to a symmetry operation,
+    # for which we need the fractional translation
+    frac_tr = None
+    for op in spg.get_symmetry_operations(cartesian=True):
+        if np.allclose(op.affine_matrix[0:3][:, 0:3], power_mat, rtol=1e-5):
+            frac_tr = op.affine_matrix[0:3][:, 3]
+    return frac_tr
+
+
 def find_common_transformation(
     asecell, layer_indices, ltol=0.05, stol=0.05, angle_tol=2.0
 ):  # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
@@ -271,19 +367,23 @@ def find_common_transformation(
     # If there is only one layer, the transformation is
     # simply a translation along the third axis
     if num_layers == 1:
-        return np.eye(3), asecell.cell[2], None
+        return np.eye(3), asecell.cell[2], np.zeros(3), None
 
     # If we are here, there are at least two layers
     # First check that all layers are identical
     layers = [asecell[layer] for layer in layer_indices]
-    if not layers_match(layers, stol=stol):
-        return None, None, "Layers are not identical"
+    if not layers_match(layers, ltol=ltol, stol=stol, angle_tol=angle_tol):
+        return None, None, None, "Layers are not identical"
 
     # Layers are already ordered according to their
     # projection along the stacking direction
     # we start by comparing the first and second layer
-    layer0 = layers[0]
-    layer1 = layers[1]
+    # As we did in function `layers_match`, we put the third vector orthogonal to the plane and
+    # extend the third direction slightly
+    layer0 = layers[0].copy()
+    layer0.cell[2] = [0, 0, 2 * asecell.cell[2, 2]]
+    layer1 = layers[1].copy()
+    layer1.cell[2] = [0, 0, 2 * asecell.cell[2, 2]]
     str0 = adaptor.get_structure(layer0)
     str1 = adaptor.get_structure(layer1)
     # This is the transformation that brings layer0 onto layer1
@@ -297,7 +397,7 @@ def find_common_transformation(
     # and just keep the logic below!
     # To avoid crashes, we cope with this here
     if transformation01 is None:
-        return None, None, "Layers are not identical"
+        return None, None, None, "No transformation to match first and second layer"
 
     # define the common lattice of both layers (which is the one of the bulk)
     # we use twice the same "common lattice" because they are identical in our case
@@ -329,24 +429,17 @@ def find_common_transformation(
     for atom_idx in range(1, len(required_z_shift_per_atom)):
         # NOTE: This test is going to work because the function called before this
         # already reorganised layers to have all atoms close to each other
-        assert np.abs(z_shift - required_z_shift_per_atom[atom_idx]) < 1.0e-4
+        assert np.abs(z_shift - required_z_shift_per_atom[atom_idx]) < SYMPREC
 
-    # Get the spacegroup of the bulk (useful below)
-    spg_bulk = SpacegroupAnalyzer(adaptor.get_structure(asecell), symprec=SYMPREC)
-    spg_monolayer = SpacegroupAnalyzer(
-        adaptor.get_structure(layers[0]), symprec=SYMPREC
-    )
+    # Get the spacegroup of the monolayer (useful below)
+    spg_mono = SpacegroupAnalyzer(adaptor.get_structure(layer0), symprec=SYMPREC)
     # If the transformation involves a flip in the z-direction
-    # we check if, by combining it with a symmetry of the bulk,
+    # we check if, by combining it with a symmetry of the monolayer,
     # we get a transformation that does NOT flip z
     # As soon as I find one, I replace tr01, rot01 and op01 (the combination of tr01 and rot01)
     # with those we found, so that the axis is not flipped and transformation01[0][2, 2] > 0
     if transformation01[0][2, 2] < 0:
-        for op in spg_bulk.get_symmetry_operations(cartesian=True):
-            # as the first layer is at the origin we are interested
-            # only in fractional translations along z that are zero
-            if np.abs(op.translation_vector[2]) > 1e-3:
-                continue
+        for op in spg_mono.get_symmetry_operations(cartesian=True):
             affine_prod = np.dot(op01.affine_matrix, op.affine_matrix)
             if affine_prod[2, 2] > 0:
                 tr01 = affine_prod[0:3][:, 3]
@@ -359,57 +452,95 @@ def find_common_transformation(
     #   and I will categorize it as category III
     # - I could find it, then transformation01[0][2, 2] > 0 and it's either category I or II
     #   (depending on the monolayer symmetry)
+    #   It could also be category III in weird cases like identical layers that are invariant
+    #   under z -> -z but with two alternating interlayer distances, i.e. "dimerized"
 
     # I now use op01 to check if, with op01, I can bring each layer onto the next,
     # and layer num_layers onto num_layers+1, i.e. the first one + the third lattice vector
-    # If op01 does not work we might need to combine it with symmetry operations of the bulk
+    # If op01 does not work we might need to combine it with symmetry operations of the monolayer
     # before concluding that the system is not a MDO polytype
     # print(op01)
 
-    for symop in spg_monolayer.get_symmetry_operations(cartesian=True):
-        # symmetry operations of the monolayer that flip z are possible
+    for symop in sorted(
+        spg_mono.get_symmetry_operations(cartesian=True),
+        key=lambda op: -op.affine_matrix[2, 2],
+    ):
+        # We sort the symmetry operations of the monolayer so that the ones that
+        # do NOT flip z are considered first.
+        # Indeed in principles operations that flip z should be possible
         # only in category I, but would result in a coincidence operation
         # that flip z, which is not necessary in this case (category I), as in this case
-        # we'll find another one that does the same job without flipping, so we skip these operations.
+        # we'll find another one that does the same job without flipping, so we could even skip these operations.
         # (also because we want to give the guarantee that, if symop.affine_matrix[2, 2] < 0, then we are
         # in category III)
-        if symop.affine_matrix[2, 2] < 0:
-            continue
-        # combine the coincidence operation with the
+        # Still, operations that flip z could be relevant in some weird cases of category III, called "dimerized" above
+        # So that in the end we will find a coincidence operation that flips z even if op01 did not
+        #
+        # Combine the coincidence operation with the symmetry operation of the monolayer
         affine_prod = np.dot(op01.affine_matrix, symop.affine_matrix)
         this_rot = affine_prod[0:3][:, 0:3]
         this_tr = affine_prod[0:3][:, 3]
+        # The coincidence operation, elevated to the number of layers,
+        # should be a symmetry operation of the monolayer, and we need the
+        # corresponding fractional translation
+        frac_tr = get_fractional_translation(this_rot, num_layers, spg_mono)
+        if frac_tr is None:
+            found_common = False
+            continue
+
+        # Check if the coincidence operation satisfies a complex condition, implemented
+        # in 'check_transformation'. If not, there is no need to continue
+        # with this transformation
+        if not check_transformation(this_rot, this_tr, frac_tr, asecell, num_layers):
+            found_common = False
+            continue
+
+        # If the condition is instead satisfied, we can continue and decompose the translation
+        # vector this_tr, into a component which is just associated with the fact that
+        # the coincidence operation has to be performed around a point this_tr0 different from the origin
+        # and true traslation, which is either purely vertical or has a component invariant
+        # under the coincidence transormation (e.g. a component parallel to a mirror plane)
+        this_tr0 = get_transformation_center(this_rot, this_tr, asecell, num_layers)
+
+        # Once we have identified possible component associated with a non-trivial center of the
+        # coincidence operation, this_tr0, we can subtract it from this_tr to obtain the true translation
+        this_tr -= np.dot(np.identity(3) - this_rot, this_tr0)
+
+        # The coincidence operation is then defined in terms of this_tr only
         this_op = SymmOp.from_rotation_and_translation(this_rot, this_tr)
 
+        # Bring back the inplane components of the vector this_tr0 identifying the center of
+        # the coincidence operation inside the unit cell
+        this_tr0[:2] = np.dot(
+            np.dot(this_tr0, np.linalg.inv(asecell.cell))[:2] % 1, asecell.cell[:2]
+        )[:2]
+
+        # It is also useful to define a vector along the stacking direction
+        vec = np.array([0.0, 0.0, asecell.cell[2, 2] / num_layers])
+
         found_common = True
-        # NOTE: here we start from layer ZERO! The reason is that now, having applied a bulk operation,
-        # we might end up in some operation that does not send anymore layer 1 in layer 2.
-        # So we want to chack that case as well.
+        # NOTE: here we start from layer ZERO! The reason is that we want to
+        # double check that now that we made a combination with a symmetry operation,
+        # we still send layer 1 into layer 2.
+        # So we want to check that case as well.
         for il in range(0, num_layers):
             # We need to copy the layers as we'll change them in place
             layer0 = layers[il].copy()
             layer1 = layers[(il + 1) % num_layers].copy()
+            # translate back the two layers to put at the origin the
+            # center around which we want to perform the coincidence operation
             # if layer1 is the layer num_layer + 1 we need to translate it
             # by a full lattice vector
-            layer1.translate((+np.floor((il + 1.0) / num_layers) * asecell.cell[2]))
+            layer0.translate(-il * vec - this_tr0)
+            layer1.translate(
+                (
+                    -il * vec
+                    - this_tr0
+                    + np.floor((il + 1.0) / num_layers) * asecell.cell[2]
+                )
+            )
             # the transformed positions of the atoms in the first layer
             pos0 = this_op.operate_multi(layer0.positions)
-
-            if op01.affine_matrix[2, 2] < 0:
-                # We are in category III
-                # I first compute the thickness of a pair of layers
-                double_layer_thickness = asecell.cell[2, 2] * 2 / num_layers
-                # For category III, the operation that sends 0 -> 1 will then flip 1
-                # back to zero (up to a translation).
-                # Therefore, to go from 1 to 2, one has to add an upward (z) translation of 2
-                # layers after applying the operation (and indeed for category III,
-                # the bilayer thickness is well defined, while for a single layer it is not).
-                # Similarly, the same operation will send layer number 2 to the bottom
-                # (to position "-1"), and this time we will need a shift of
-                # (2 * the double layer thickness) to translate it back from -1 to 3.
-                # And so on: we need in general to apply a translation of
-                # double_layer_thickness * il (where il = layer_index)
-                pos0[:, 2] += double_layer_thickness * il
             # that should be identical to the ones of the second layer
             pos1 = layer1.positions
             # we already know from above that the species in each layer are identical
@@ -454,6 +585,7 @@ def find_common_transformation(
         return (
             None,
             None,
+            None,
             "The transformation between consecutive layers is not always the same",
         )
-    return this_rot, this_tr, None
+    return this_rot, this_tr, this_tr0, None
