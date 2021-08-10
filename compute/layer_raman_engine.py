@@ -33,7 +33,7 @@ from .utils.pointgroup import (
 )
 
 # Version of this tool
-__version__ = "21.06.0"
+__version__ = "21.08.0"
 
 
 def nice_print_rot(value, threshold=1.0e-4):
