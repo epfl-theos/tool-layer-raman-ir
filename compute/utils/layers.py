@@ -108,7 +108,7 @@ def find_layers(  # pylint: disable=too-many-locals,too-many-statements,too-many
         # standardize the cell but keeping the primitive nature and without idealization (in particular
         # no rotations that would change the stacking direction)
         spgcell, _, _ = spglib.standardize_cell(
-            rotated_asecell, to_primitive=True, no_idealize=True, symprec=SYMPREC
+            rotated_asecell, to_primitive=False, no_idealize=True, symprec=SYMPREC
         )
         z_ind = np.argwhere(abs(spgcell[:, 2]) > 0).flatten()
         # The standardized cell might have more than one vector with a component along z
