@@ -7,7 +7,6 @@ import traceback
 import flask
 import numpy as np
 
-from .header import template_vars
 from .layer_raman_engine import process_structure_core
 from .utils.structures import parse_structure
 from .utils.matrices import (
@@ -112,7 +111,7 @@ def process_structure():
                 skin_factor=skin_factor,
             )
             return flask.render_template(
-                "user_templates/visualizer.j2", **data_for_template, **template_vars
+                "user_templates/visualizer.j2", **data_for_template
             )
         except FlaskRedirectException as e:
             flask.flash(str(e))
@@ -169,7 +168,7 @@ def process_example_structure():
                 skin_factor=skin_factor,
             )
             return flask.render_template(
-                "user_templates/visualizer.j2", **data_for_template, **template_vars
+                "user_templates/visualizer.j2", **data_for_template
             )
         except FlaskRedirectException as e:
             flask.flash(str(e))
