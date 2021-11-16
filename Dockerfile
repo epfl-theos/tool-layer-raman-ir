@@ -9,6 +9,8 @@ COPY ./user_templates/ /home/app/code/webservice/templates/user_templates/
 COPY ./compute/ /home/app/code/webservice/compute/
 COPY ./user_static/ /home/app/code/webservice/user_static/
 
+RUN cp /home/app/code/webservice/header.py /home/app/code/webservice/compute/header.py
+
 # Set proper permissions on files just copied
 RUN chmod -R o+rX /home/app/code/webservice/
 RUN chown -R app:app /home/app/code/webservice/
