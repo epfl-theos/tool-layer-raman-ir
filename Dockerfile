@@ -1,4 +1,4 @@
-FROM dokku/tools-barebone
+FROM materialscloud/tools-barebone:1.3.0
 
 LABEL maintainer="Giovanni Pizzi <giovanni.pizzi@epfl.ch>"
 
