@@ -118,7 +118,7 @@ def process_structure():
                 "user_templates/visualizer_header.j2",
                 **data_for_template,
                 **config,
-                **tvars
+                **tvars,
             )
         except FlaskRedirectException as e:
             flask.flash(str(e))
@@ -180,7 +180,7 @@ def process_example_structure():
                 "user_templates/visualizer_header.j2",
                 **data_for_template,
                 **config,
-                **tvars
+                **tvars,
             )
         except FlaskRedirectException as e:
             flask.flash(str(e))
