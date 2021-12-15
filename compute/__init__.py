@@ -18,7 +18,9 @@ from .utils.optics import assign_representation, INFRARED, RAMAN, BACKSCATTERING
 from .utils.pointgroup import Pointgroup, POINTGROUP_MAPPING
 from .utils.response import make_response, FlaskRedirectException
 
-from web_module import get_config
+# Ignoring the import error because it's from tools-barebone
+# Not ideal, but works for now
+from web_module import get_config  # pylint: disable=import-error
 import header
 
 VALID_EXAMPLES = {
