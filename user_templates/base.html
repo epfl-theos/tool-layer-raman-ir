@@ -1,0 +1,483 @@
+
+    <div style="max-width: 800px; margin: auto;">
+        <div id="maintitle">
+            <h1>Fan diagrams and optically-active modes of layered materials</h1>
+        </div>
+
+        <div class='structureouter'>
+        <div id='structuretitle'><h2>Input crystal structure</h2>
+        <p><em>Drag to rotate, scroll to zoom, double-click to enable/disable interaction</em></p>
+        <p><em>Note: bonds drawn by the visualizer are those used internally to find layers</em></p>
+        </div>
+        {{ render_jsmol_visualizer(suffix='bulk', nx=2, ny=2, nz=2) }}
+
+        <div id="topinfo">
+            <div id="accordion-initialcoords">
+            <h2>Show parsed input coordinates (please double-check here if the parser worked properly)</h2>
+            <div>
+                <h3>Input cell vectors (&#8491;)</h3>
+                <table class="center">
+                <thead>
+                    <th style="padding-right: 15px; text-align: center">v</th>
+                    <th style="text-align: center">x</th>
+                    <th style="text-align: center">y</th>
+                    <th style="text-align: center">z</th>
+                </thead>
+                <tbody>
+                    {% for v in inputstructure_cell_vectors %}
+                    <tr>
+                    <td style="padding-right: 15px; text-align: center">v<sub>{{ v[0] }}</sub></td>
+                    <td style="text-align: right"><code>{{ "%.10f" % v[1]|float }}</code></td>
+                    <td style="text-align: right"><code>{{ "%.10f" % v[2]|float }}</code></td>
+                    <td style="text-align: right"><code>{{ "%.10f" % v[3]|float }}</code></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                </table>
+
+                <h3>Input atom coordinates (scaled)</h3>
+                <table class="center">
+                <thead>
+                    <th style="padding-right: 15px; text-align: center">Element</th>
+                    <th style="text-align: center">r<sub>1</sub></th>
+                    <th style="text-align: center">r<sub>2</sub></th>
+                    <th style="text-align: center">r<sub>3</sub></th>
+                </thead>
+                <tbody>
+                    {% for b in inputstructure_atoms_scaled %}
+                    <tr>
+                    <td style="padding-right: 15px; text-align: center">{{ b[0] }}</td>
+                    <td style="text-align: right"><code>{{ "%.10f" % b[1]|float }}</code></td>
+                    <td style="text-align: right"><code>{{ "%.10f" % b[2]|float }}</code></td>
+                    <td style="text-align: right"><code>{{ "%.10f" % b[3]|float }}</code></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                </table>
+
+                <h3>Input atom coordinates (Cartesian, &#8491;)</h3>
+                <table class="center">
+                <thead>
+                    <th style="padding-right: 15px; text-align: center">Element</th>
+                    <th style="text-align: center">x</th>
+                    <th style="text-align: center">y</th>
+                    <th style="text-align: center">z</th>
+                </thead>
+                <tbody>
+                    {% for b in inputstructure_atoms_cartesian %}
+                    <tr>
+                    <td style="padding-right: 15px; text-align: center">{{ b[0] }}</td>
+                    <td style="text-align: right"><code>{{ "%.10f" % b[1]|float }}</code></td>
+                    <td style="text-align: right"><code>{{ "%.10f" % b[2]|float }}</code></td>
+                    <td style="text-align: right"><code>{{ "%.10f" % b[3]|float }}</code></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                </table>
+            </div>
+            </div>
+        </div>
+
+        <div id='layerstitle'><h2>Layer search</h2></div>
+        <div>
+            {% if layers %}
+
+            <h3>Layers identification</h3>
+
+            <p>{{ layers|length }} layer{% if layers|length != 1 %}s{% endif %} found (in the conventional cell) using a skin factor of {{ skin_factor }}.</p>
+
+            <div id="accordion-cell-after-rotation">
+            <h2>Layers unit cell and coordinates (after cell rotation)</h2>
+            <div>
+            <p>We report here the unit cell common to all layers
+            and the corresponding atomic coordinates.</p>
+            <p>The unit cell shown is still the one of the input bulk system, obtained after finding the conventional cell,
+            refining the cell to enforce the symmetries that were found, and finally rotating the system so
+            that layers are on <em>xy</em> planes.</p>
+            <p>Layers have been sorted by their stacking index, and the first layer is centered (roughly) around <em>z</em>=0.</p>
+            
+
+
+            <h3>In-plane cell vectors (&#8491;)</h3>
+                <table class="center">
+                <thead>
+                    <th style="padding-right: 15px; text-align: center">v</th>
+                    <th style="text-align: center">x</th>
+                    <th style="text-align: center">y</th>
+                </thead>
+                <tbody>
+                    {% for v in rotated_cell['layer_cell'] %}
+                    <tr>
+                    <td style="padding-right: 15px; text-align: center">v<sub>{{ loop.index }}</sub></td>
+                    <td style="text-align: right"><code>{{ "%.10f" % v[0]|float }}</code></td>
+                    <td style="text-align: right"><code>{{ "%.10f" % v[1]|float }}</code></td>
+                    <td style="text-align: right"><code>{{ "%.10f" % v[2]|float }}</code></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                </table>
+
+            <h3>Atomic Cartesian coordinates (&#8491;), grouped per layer</h3>
+            {% for this_layer_atoms in rotated_cell['layer_atoms'] %}
+                <table class="center">
+                <thead>
+                    <tr><th style="padding-right: 15px; text-align: center">Layer {{ loop.index }}</th>
+                    <th style="text-align: center">x</th>
+                    <th style="text-align: center">y</th>
+                    <th style="text-align: center">z</th>
+                </tr></thead>
+                <tbody>
+                
+                {% for atom_info in this_layer_atoms %}
+                    <tr>
+                        <td style="padding-right: 15px; text-align: center">{{ atom_info[0] }}</td>
+                        <td style="text-align: right"><code>{{  "%.10f" % atom_info[1][0] | float }}</code></td>
+                        <td style="text-align: right"><code>{{ "%.10f" % atom_info[1][1] | float }}</code></td>
+                        <td style="text-align: right"><code>{{ "%.10f" % atom_info[1][2] | float }}</code></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                </table>
+            {% endfor %}
+            </div>
+            </div>
+
+            <h3>Layers visualization</h3>
+
+            {% for layer_xsf, this_layer_indices in layers %}
+                <div id="accordion-layer{{loop.index}}">
+                    <h3>Layer {{loop.index}} (including the {{ this_layer_indices|length }} atoms with indices 
+                {% for index in this_layer_indices|sort -%}
+                    {{index+1}}{% if not loop.last %}, {% endif -%}
+                {% endfor -%})</h3>
+                    <div>
+                        <div class='structureouter'>
+                            {# ~ is the jinja string-concatenation operator #}
+                            {{ render_jsmol_visualizer(suffix='layer' ~ loop.index, nx=3, ny=3, nz=1) }}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+
+            {% else %}    
+                No layers could be found for this structure and the specified skin factor of {{ skin_factor }}.
+            {% endif %}
+
+        </div>
+
+    {% if common_layers_search is not none %}
+        <div id='layerstitle'><h2>Common-layer search</h2></div>
+        <div>
+        {% if common_layers_search['rot_latex'] is not none %}
+            <p>
+            A common coincidence operation brings each layer onto the next.<br>
+            One possible coincidence operation is:
+            <div id="coincidence-R"></div>
+            <div id="coincidence-t"></div>
+            </p>
+            <p>
+            Note that the operation depends on the choice of the origin, that you can check in the previous section.
+            </p>
+            <p>
+                The layer mass (per unit cell) is {{ "%.2f"|format(layer_mass_amu) }} atomic mass units.<br>
+                The unit cell layer surface is {{ "%.2f"|format(layer_surface_ang2) }} Å².
+            </p>
+        {% else %}
+            The structure is layered, but does not seem to be a MDO polytype (i.e., composed of repetitions of the same layer, with the same coincidence operation bringing each layer onto the next one):
+            {{ common_layers_search['message'] }}.
+
+            {# Since it might not print the rest, I print here at least the bulk symmetry #}
+            
+            <h2>Bulk symmetry</h2>
+            <p>
+                <ul>
+                    <li>Bulk point group: {{ pointgroup_bulk.schoenflies_name | safe }} ({{ pointgroup_bulk.hm_name | safe }}).</li>
+                    <li>Bulk space group: {{ spacegroup_bulk.hm_name | safe }} (international number: {{ spacegroup_bulk.international_number }}{% if hall_number is not none %}; Hall number: {{ hall_number }}{% endif %}).</li>
+                </ul>
+            </p>
+        {% endif %}
+        </div>
+    {% endif %}
+
+    {# Skip completely the fan-diagram block if we didn't find layers etc. #}
+    {% if has_common_layers %}
+    <div id='symmetryinfotitle'><h2>Symmetry information</h2></div>
+
+    <div>
+        <ul>
+            <li>Monolayer point group: {{ pointgroup_monolayer.schoenflies_name | safe }} ({{ pointgroup_monolayer.hm_name | safe }}).
+                <ul>
+                    <li>The monolayer is {% if monolayer_has_z_inversion %}non-{% endif %}polar, i.e., it {% if monolayer_has_z_inversion %}has{% else %}does not have{% endif %} operations that flip the <em>z</em> axis.</li>
+                </ul>
+            </li>
+            <li>Bilayer point group: {{ pointgroup_bilayer.schoenflies_name | safe }} ({{ pointgroup_bilayer.hm_name | safe }}).</li>
+            <li>Multilayer point group:
+                <ul>       
+                    {% if is_category_III %}
+                        {#
+                            NOTE! The formula `num_layers_bulk + (num_layers_bulk == 1)|int` means that we print 
+                            num_layers_bulk, except when it's 1, and then we print 2.
+                            The reason is that the monolayer is always a special case, for which (among other things)
+                            there are no interlayer modes, since there is only one layer.
+                            See an example where this is needed in the test called 'fake-category-II-2layers.xsf'
+                        #}
+                        <li>for <em>even N</em> ≥ {{ num_layers_bulk + (num_layers_bulk == 1)|int }} (when <em>N</em> is multiple of four):{{ ' ' }} 
+                            {%- if pointgroup_even_is_multiple_four -%}
+                                {{ pointgroup_even.schoenflies_name | safe }} ({{ pointgroup_even.hm_name | safe }}).
+                            {%- else -%}
+                                {{ pointgroup_even_plus_two.schoenflies_name | safe }} ({{ pointgroup_even_plus_two.hm_name | safe }}).
+                            {%- endif -%}
+                        </li>
+                        <li>for <em>even N</em> ≥ {{ num_layers_bulk + (num_layers_bulk == 1)|int }} (when <em>N</em> is not a multiple of four):{{ ' ' }}
+                            {%- if pointgroup_even_is_multiple_four -%}
+                                {{ pointgroup_even_plus_two.schoenflies_name | safe }} ({{ pointgroup_even_plus_two.hm_name | safe }}).
+                            {%- else -%}
+                                {{ pointgroup_even.schoenflies_name | safe }} ({{ pointgroup_even.hm_name | safe }}).
+                            {%- endif -%}
+                        </li>
+                    {% else %}
+                        <li>for <em>even N</em> ≥ {{ num_layers_bulk + (num_layers_bulk == 1)|int }}: {{ pointgroup_even.schoenflies_name | safe }} ({{ pointgroup_even.hm_name | safe }}).</li>
+                    {% endif %}
+                    <li>for <em>odd N</em> ≥ {{ num_layers_bulk + (num_layers_bulk == 1)|int }}: {{ pointgroup_odd.schoenflies_name | safe }} ({{ pointgroup_odd.hm_name | safe }}).</li>
+                </ul>
+            </li>
+            <li>Bulk symmetry:
+                <ul>
+                    <li>Bulk point group: {{ pointgroup_bulk.schoenflies_name | safe }} ({{ pointgroup_bulk.hm_name | safe }}).</li>
+                    <li>Bulk space group: {{ spacegroup_bulk.hm_name | safe }} (international number: {{ spacegroup_bulk.international_number }}{% if hall_number is not none %}; Hall number: {{ hall_number }}{% endif %}).</li>
+                    <li>{% if is_category_III %}
+                            This is a category III system, meaning that it is not possible to find any coincidence operation that does not flip <em>z</em>.
+                            As a consequence, consecutive pairs of layers have different interlayer force constants
+                        {% else %}
+                            {% if monolayer_has_z_inversion %}
+                                This is a category I system, meaning all layer pairs are identical, and the monolayer is non-polar
+                            {% else %}
+                                This is a category II system, meaning all layer pairs are identical, and the monolayer is polar
+                            {% endif%}
+                        {% endif %} (see manuscript for more information on the categories).
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div id='layercouplingtitle'><h2>Layer couplings</h2></div>
+    <div id="app">  <!-- Vue.js will work in here -->
+        <h3>Elastic force-constant matrices</h3>
+        <p>General form of the interlayer force-constant matrices between a layer and the next one:</p>
+        <div style="width: 100%; text-align: center;" v-html="getLatexHTML(latexCode)" id="test"></div>
+        <p>The superscript <em>n</em> of <em>K</em> indicates that the coupling is between the <em>n</em>-th layer in the bulk unit cell and the next one, with the form of the matrix reflecting the symmetry of the bilayer formed by these two layers.</p>
+
+        <h3>Force-constant parameters</h3>
+        <p>Select here the values of the parameters appearing inside the elastic force-constant matrices above.</p>
+        <p>Important note: the starting parameters are chosen randomly, and their values are chosen so as to mimick their typical ratios.
+        Feel free to adapt their values either to fit experimental data or using values obtained from first-principles simulations.</p>
+        <div style="max-width: 400px; margin: auto;">
+            <template v-for="variable in forceConstantVariables">
+                <div class="row">
+                    <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+                        {% raw %}
+                        <label :for="variable.name">{{variable.displayName}}</label>
+                        {% endraw %}
+                    </div>
+                    <div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+                        <input type="number" step="any" class="form-control" :name="variable.name" v-model.number="variable.value" v-on:input="updateGraphDebounced">
+                    </div> 
+                </div> 
+            </template>
+            <div style="margin: auto; text-align: center;">
+            <label for="force-constant-units">Force-constant units:</label>
+            <select name="force-constant-units" id="force-constant-units" v-on:input="updateGraphDebounced" v-model="forceConstantUnits">
+                <option value="1e19_N_over_m3">10¹⁹ N/m³</option>
+                <option value="meV_over_angsquare">meV/Å² (per unit cell)</option>
+                <option value="eV_over_angsquare">eV/Å² (per unit cell)</option>
+            </select>
+            </div>
+        </div>
+
+        <div id='fandiagramtitle'><h2>Fan diagram</h2></div>
+        <div id="accordion-instructions">
+        <h3>Instructions</h3>
+            <div>
+                <ul>
+                    <li>Adapt the values of the force-constant parameters above. Those are chosen randomly, trying to reproduce their typical relative magnitude. You can find some values for some common layered materials for instance in this review:
+                    <a href="https://doi.org/10.1021/acsnano.7b06551" target="_blank">L. Liang et al., ACS Nano 11, 11777 (2017)</a></li>
+                    <li>Hover on a data point to highlight only the corresponding data series, and to visualize a tooltip with useful information (including the irreducible-representation name).</li>
+                    <li>Click on the legend at the bottom to hide/show specific data series.</li>
+                    <li>Use the slider to select the maximum number of layers to show in the plot (the minimum value is at least two and is set to the number of layers in the bulk cell).</li>
+                    <li>Use the dropdown menu to filter only modes that have non-zero oscillations along a given axis (where <em>z</em> is the stacking axis). Note! if a mode has, e.g., non-zero <em>z</em> component, it means it has a layer-breathing (LB) character, but depending on the symmetry it might not be a pure LB mode, also have shear character. The same concept holds for shear (C) modes.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="inputs">
+            <div>
+                <div style="width: 100%; text-align: center;"><span v-bind:class="{ invisible: !showSpinner }"><img src="../../user_static/img/loader-spinning.gif" height="40px"></img></span> 
+                </div>
+            </div>
+            <div>
+                {% raw %} 
+                <span class="warning-message"> {{ warningMessage }} </span> 
+                {% endraw %}
+            </div>
+            <div style="width: 100%; text-align: center;">
+                <div class="slidecontainer">
+                    {# 
+                        Another way of avoiding escaping {{}} by Jinja, if they are
+                        Vue.JS constructs, is to escape them as strings:
+                        {{ '{{' }}
+                        and 
+                        {{ '}}' }}
+                        but I think it's uglier and less readable.
+
+                        Still, I think the {% raw %} should be confined to one
+                        or a few lines to avoid that, by just looking at a piece of
+                        source code in the tempate, it's hard to understand if it's
+                        a Jinja2 or Vue.js replacement.
+                    #}
+                    {% raw %} 
+                    Maximum number of layers in the plot: {{ maxLayers }}
+                    {% endraw %}
+                    <div style="width: 200px; margin-left: auto; margin-right: auto">
+                        <input type="range" min="5" max="20" value="10" step="1" v-model="maxLayers" v-on:input="updateGraphDebounced"> 
+                    </div>
+
+                    <div class="form-check form-check-inline">
+                        Show modes that have a non-zero oscillation along:
+                        <input type="checkbox" id="modes-filter-x" value="yes" checked v-on:input="onChangeFilter">
+                        <label for="modes-filter-x"><em>x</em> (shear)</label>
+                        <input type="checkbox" id="modes-filter-y" value="yes" checked v-on:input="onChangeFilter">
+                        <label for="modes-filter-y"><em>y</em> (shear)</label>
+                        <input type="checkbox" id="modes-filter-z" value="yes" checked v-on:input="onChangeFilter">
+                        <label for="modes-filter-z"><em>z</em> (layer-breathing)</label>
+                    </div>
+                    <div style="margin: auto; text-align: center;">
+                        <label for="frequency-units">Frequency units:</label>
+                        <select name="frequency-units" id="frequency-units" v-on:input="onChangeUnits">
+                        {# If you change values here, remember to also update the mapping in main.js called energyUnitsMapping #}
+                            <option value="cm_minus_one">cm⁻¹</option>
+                            <option value="meV">meV</option>
+                            <option value="THz">THz</option>
+                        </select>
+                    </div>                    
+                </div>
+            </div>
+        </div>        
+
+        <div id="plotContainer" style="min-width: 310px; max-width: 1600px; height: 600px; margin: 0 auto"></div>
+
+        <div class="alert alert-warning">
+            <strong>WARNING!</strong> The frequency values depend on the force-constant parameters,
+            whose values are however set by the tool by random values in a reasonable range
+            (every time you refresh you will get different values).
+            <br>
+            Therefore, trust the absolute energies in the plot <strong>only</strong> if you set yourself the correct force constants
+            (e.g., obtained from first principles); or, otherwise, you can use the tool to fit experimental frequencies
+            and deduce the corresponding force constants.
+        </div>
+
+
+    </div>
+    {% endif %}
+
+    <hr style="margin-top: 40px;">
+
+    <div id='finalinfo'>
+        <div style="border: 1px solid #aaa;border-radius: 6px;margin-left: -5px;padding: 5px;margin-right: -5px;margin-bottom: 15px;padding-bottom: 0;background-color: #ededed;">
+            <p><strong>How to cite:</strong> If you use this tool, please cite:<br>
+            G. Pizzi, S. Milana, A. C. Ferrari, N. Marzari, M. Gibertini, 
+            <em>Shear and Breathing Modes of Layered Materials</em>, ACS Nano (2021),
+            <a href="https://doi.org/10.1021/acsnano.0c10672" target="_blank">doi:10.1021/acsnano.0c10672</a>.
+            </p>
+        </div>
+        <p>Found a bug or have a suggestion? Please <a href="https://github.com/epfl-theos/tool-layer-raman-ir/issues" target="_blank">check existing issues here</a> and, if needed, open a new one.</p>
+        <p><span style="font-weight: bold;">
+            Technical info</span>:
+            Time spent to compute quantities: {{ '%.3f' % compute_time }} s.
+            <a href="https://wiki.fysik.dtu.dk/ase/index.html" target="_blank">ASE</a> version: {{ ase_version }}.
+            <a href="https://spglib.github.io/spglib/" target="_blank">spglib</a> version: {{ spglib_version }}.
+            <a href="https://github.com/materialscloud-org/tools-barebone" target="_blank">tools-barebone</a> version: {{tools_barebone_version}}.
+            This tool version: {{this_tool_version}}.
+    </div>
+    
+
+</div>
+{% if has_common_layers %}
+{# Only show if the vue div has been put on the page #}
+<script src="../../user_static/js/main.js"></script>
+{% endif %}
+<script src="../../user_static/js/visualization.js"></script>
+<script>    
+    bulkstructureviewer = jsmolCrystal({{ xsfstructure|tojson|safe }}, "structure-content-bulk", "jmolAppletbulk", [2,2,2]);
+    {% for layer_xsf, this_layer_indices in layers %}
+       layerstructureviewers[{{loop.index}}] = jsmolCrystal({{ layer_xsf|tojson|safe }}, "structure-content-layer{{loop.index}}", "jmolAppletlayer{{loop.index}}", [3,3,1]);
+    {% endfor %}
+
+    $(document).ready(function(){
+          var divjsmol = document.getElementById('crystal-bulk');
+          var jsmolcontent = document.getElementById('jmolAppletbulk_appletinfotablediv');
+          divjsmol.appendChild(jsmolcontent);
+          enableDoubleTap(bulkstructureviewer['_mouseInterface'], function() {
+            toggleStrVisInteraction(false, 'str-overlay-bulk');
+          }, ignoreOnMove=true);
+
+          var stroverlay = document.getElementById('str-overlay-bulk');
+          stroverlay.onmouseenter = function()
+            {
+                this.style.backgroundColor = "rgba(230,230,230,0.5)";
+                document.getElementById('str-overlay-bulk-span').innerText = "Double click to toggle interaction";
+                // console.log(this, 'enter');
+            }
+          stroverlay.onmouseleave = function()
+            {
+                // 0.0 for alpha doesn't work properly, apparently
+                this.style.backgroundColor = "rgba(255,255,255,0.01)";
+                document.getElementById('str-overlay-bulk-span').innerText = "";
+                // console.log(this, 'leave');
+            }
+
+          // Enable double-tap events for phones
+          enableDoubleTap(stroverlay, function() {
+            toggleStrVisInteraction(true, 'str-overlay-bulk');
+          });
+
+
+        {% for layer_xsf, this_layer_indices in layers %}
+
+          var divjsmol = document.getElementById('crystal-layer{{loop.index}}');
+          var jsmolcontent = document.getElementById('jmolAppletlayer{{loop.index}}_appletinfotablediv');
+          divjsmol.appendChild(jsmolcontent);
+          enableDoubleTap(layerstructureviewers[{{loop.index}}]['_mouseInterface'], function() {
+            toggleStrVisInteraction(false, 'str-overlay-layer{{loop.index}}');
+          }, ignoreOnMove=true);
+
+          var stroverlay = document.getElementById('str-overlay-layer{{loop.index}}');
+          stroverlay.onmouseenter = function()
+            {
+                this.style.backgroundColor = "rgba(230,230,230,0.5)";
+                document.getElementById('str-overlay-layer{{loop.index}}-span').innerText = "Double click to toggle interaction";
+                // console.log(this, 'enter');
+            }
+          stroverlay.onmouseleave = function()
+            {
+                // 0.0 for alpha doesn't work properly, apparently
+                this.style.backgroundColor = "rgba(255,255,255,0.01)";
+                document.getElementById('str-overlay-layer{{loop.index}}-span').innerText = "";
+                // console.log(this, 'leave');
+            }
+
+          // Enable double-tap events for phones
+          enableDoubleTap(stroverlay, function() {
+            toggleStrVisInteraction(true, 'str-overlay-layer{{loop.index}}');
+          });
+
+        {% endfor %}
+
+        $('[data-toggle="tooltip"]').tooltip({placement: "top"});
+      });
+
+</script>
+
+<div style ="position: relative" data-iframe-height></div>
+
+</div>

@@ -18,6 +18,8 @@ from .utils.optics import assign_representation, INFRARED, RAMAN, BACKSCATTERING
 from .utils.pointgroup import Pointgroup, POINTGROUP_MAPPING
 from .utils.response import make_response, FlaskRedirectException
 
+from web_module import get_config
+import header
 
 VALID_EXAMPLES = {
     "WTe2": ("WTe2-02f1827d-f339-436f-baf6-66d1cf142fcf_structure.xsf", 1.1),
@@ -110,8 +112,13 @@ def process_structure():
                 flask_request=flask.request,
                 skin_factor=skin_factor,
             )
+            config = get_config()
+            tvars = header.template_vars
             return flask.render_template(
-                "user_templates/visualizer.j2", **data_for_template
+                "user_templates/visualizer_header.j2",
+                **data_for_template,
+                **config,
+                **tvars,
             )
         except FlaskRedirectException as e:
             flask.flash(str(e))
@@ -167,8 +174,13 @@ def process_example_structure():
                 flask_request=flask.request,
                 skin_factor=skin_factor,
             )
+            config = get_config()
+            tvars = header.template_vars
             return flask.render_template(
-                "user_templates/visualizer.j2", **data_for_template
+                "user_templates/visualizer_header.j2",
+                **data_for_template,
+                **config,
+                **tvars,
             )
         except FlaskRedirectException as e:
             flask.flash(str(e))
