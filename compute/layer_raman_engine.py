@@ -83,7 +83,8 @@ def process_structure_core(
     ]
 
     inputstructure_positions_cartesian = np.dot(
-        np.array(structure[1]), np.array(structure[0]),
+        np.array(structure[1]),
+        np.array(structure[0]),
     ).tolist()
     inputstructure_atoms_cartesian = [
         [label, coords[0], coords[1], coords[2]]
@@ -345,7 +346,9 @@ def process_structure_core(
     # Either a finite ML with num_layers_bulk, or num_layers_bulk + 1 (the even between the two)
     num_layers_even = num_layers_bulk + num_layers_bulk % 2
     spg_even = get_symmetry_multilayer(
-        rotated_asecell, layer_indices, num_layers=num_layers_even,
+        rotated_asecell,
+        layer_indices,
+        num_layers=num_layers_even,
     )
     pg_even_number = pg_number_from_hm_symbol(spg_even.get_point_group_symbol())
 
@@ -356,7 +359,9 @@ def process_structure_core(
     if num_layers_odd == 1:
         num_layers_odd = 3
     spg_odd = get_symmetry_multilayer(
-        rotated_asecell, layer_indices, num_layers=num_layers_odd,
+        rotated_asecell,
+        layer_indices,
+        num_layers=num_layers_odd,
     )
     pg_odd_number = pg_number_from_hm_symbol(spg_odd.get_point_group_symbol())
 
@@ -508,10 +513,10 @@ def get_symmetry_multilayer(asecell, layer_indices, num_layers, symprec=SYMPREC)
 def find_unique_axis_transformation(spg):
     """
     Obtain the transformation matrix that brings a unique axis
-    along the z direction. Relevant only for monoclinic systems or 
-    orthorhombic with pointgroup mm2 (in which case the rotation 
+    along the z direction. Relevant only for monoclinic systems or
+    orthorhombic with pointgroup mm2 (in which case the rotation
     axis is takes as unique axis)
-    For other systems it is either irrelevant (triclinic, other orthorhombic) 
+    For other systems it is either irrelevant (triclinic, other orthorhombic)
     or already along z by construction (tetragonal, hexagonal, trigonal)
     """
     cry_sys = spg.get_crystal_system()
@@ -584,7 +589,7 @@ def find_unique_axis_monoclinic(spg):
 def construct_first_matrix(spg):
     """
     Construct the interlayer force constant matrix between the first and the second layer
-    based on the symmetry of this bilayer. 
+    based on the symmetry of this bilayer.
 
     Note: in reality only the pointgroup is needed, but for simplicity we pass the whole spacegroup object
     """
@@ -646,7 +651,7 @@ def construct_all_matrices(  # pylint: disable=too-many-locals
     and the trasformation matrix that brings EACH layer into the next one.
 
     Note: in reality only the pointgroup is needed, but for simplicity we pass the whole spacegroup object
-    
+
     :param is_category_III: if True, alternates the matrices at every other layer
        by appending a letter 'a' or 'b' to every constant
     :param unique_matrix_dict: if True, remove duplicates. By default we keep it False, so it's
@@ -699,7 +704,7 @@ def rotate_and_simplify_matrix(matrix_dict, transformation):
     matrix_dict: dictionary whose keys are the free parameters of the interlayer
                   force constant matrix, and the value is a matrix that multiplies the
                   parameter to obtain the corresponding contribution
-    transformation:: 3x3 array that contains the transformation matrix that needs to be applied to 
+    transformation:: 3x3 array that contains the transformation matrix that needs to be applied to
                      the force constant matrix
     """
     # The new force constant matrix is simply the one obtained by transforming the corresponding

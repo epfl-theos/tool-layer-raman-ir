@@ -155,12 +155,19 @@ def process_example_structure():
         # I expect that the valid_examples dictionary already filters only
         # existing files, so I don't try/except here
         with open(
-            os.path.join(os.path.dirname(__file__), "xsf-examples", filename,)
+            os.path.join(
+                os.path.dirname(__file__),
+                "xsf-examples",
+                filename,
+            )
         ) as structurefile:
             filecontent = structurefile.read()
 
         try:
-            structure = parse_structure(filecontent=filecontent, fileformat=fileformat,)
+            structure = parse_structure(
+                filecontent=filecontent,
+                fileformat=fileformat,
+            )
         except Exception as exc:
             flask.flash(
                 "Unable to parse the example structure, sorry... ({}, {})".format(
@@ -205,7 +212,7 @@ def get_modes():  # pylint: disable=too-many-statements
 
     def _get_modes_internal():  # pylint: disable=too-many-locals,too-many-statements,too-many-branches
         """This function implements the actual logic.
-        
+
         It is written as an internal function to allow for profiling.
         """
         start_time = time.time()

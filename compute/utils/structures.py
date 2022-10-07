@@ -27,11 +27,11 @@ def parse_structure(filecontent, fileformat, extra_data=None):
 
 def ase_from_tuple(structure_tuple):
     """
-    Convert a structure tuple with the format 
+    Convert a structure tuple with the format
     (cell, scaled_positions,element_numbers) to a ASE structure
-    
+
     Currently, if the element numbers do not correspond to a known chemical species,
-    an exception is raised. 
+    an exception is raised.
 
     :param structure_tuple: the structure in format (cell, scaled_positions,element_numbers)
     """
@@ -78,8 +78,8 @@ def get_xsf_structure(structure_tuple):
 
 
 def get_covalent_radii_array(asecell):
-    """ 
-    Return a list of the covalent radii for 
+    """
+    Return a list of the covalent radii for
     the atoms in the ASE structure using the Cordero values
 
     :params asecell: the ASE structure

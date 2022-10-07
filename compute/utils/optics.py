@@ -30,8 +30,8 @@ def symmetry_operation(matrix, displacements):
 def assign_representation(
     displacements, pg, transformation, do_print=False
 ):  # pylint: disable=too-many-locals, too-many-branches
-    """ 
-    This function assigns a set of layer displacements to a given 
+    """
+    This function assigns a set of layer displacements to a given
     irreducible representation of the pointgroup pg.
 
     :param displacements: a num_layer x 3 array of displacements

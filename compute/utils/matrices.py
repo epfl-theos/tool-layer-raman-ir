@@ -29,11 +29,11 @@ def replace_symbols_with_values(list_of_lists, replacements):
 
 def replace_linear_combinations(list_of_3x3_matrices, force_constant_prefactor):
     """
-    Given a list of 3x3 matrices, where elements can either be float values 
+    Given a list of 3x3 matrices, where elements can either be float values
     or lists representing linear combination of values, return a (copied) list
     of 3x3 matrices, where linear combinations are replaced by their values.
 
-    For instance, a value ``[[0.1, 0.3], [0.8, 0.7]]`` means a combination 
+    For instance, a value ``[[0.1, 0.3], [0.8, 0.7]]`` means a combination
     ``0.1 * 0.3 + 0.8 * 0.7`` and will therefore be replaced by ``0.59``.
 
     :return: a list of 3x3 lists, each being a numeric 3x3 force-constant matrix.
@@ -68,9 +68,9 @@ def add_block(
     If `banded` is True, fill in a banded matrix (with block-band size 1, i.e. the block-diagonal,
     and one upper block-diagonal, and one lower block-diagonal). I.e., `u=1` in the
     documentation of scipy.linalg.eig_banded.
-    The banded matrix follows the LAPACK/scipy.linalg.eig_banded structure, when used with 
+    The banded matrix follows the LAPACK/scipy.linalg.eig_banded structure, when used with
     `lower=False`. Otherwise, fill in a full matrix.
-    
+
     Matrices must be already initialised with the correct size; the block size is deduced from
     the shape of `block`.
     :param matrix: a numpy array with the matrix to fill
@@ -96,15 +96,17 @@ def add_block(
         matrix[
             block_size * block_i : block_size * (block_i + 1),
             block_size * block_j : block_size * (block_j + 1),
-        ] += (factor * block)
+        ] += (
+            factor * block
+        )
 
 
 def matrix_initialization(variable):
     """
-    Initialize the value of a variable inside a 
+    Initialize the value of a variable inside a
     force constant matrix, assuming the variable name
     has the form 'Cnab' where n is an integer identifying
-    a set of independent variables and a and b identify 
+    a set of independent variables and a and b identify
     the directions (1,2 or 3).
 
     Return a random number between 5 and 10 for the ab=33 component,

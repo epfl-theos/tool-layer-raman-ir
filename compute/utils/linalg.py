@@ -29,7 +29,7 @@ def gauss_reduce(vec1, vec2, tol=1e-6):
             length1 = 1 * length2
             vec2 = vec.copy()
             length2 = 1 * length
-        vec = vec2 - np.round(np.dot(vec1, vec2) / length1 ** 2) * vec1
+        vec = vec2 - np.round(np.dot(vec1, vec2) / length1**2) * vec1
         length = np.linalg.norm(vec)
         if length1 - length > tol:
             vec2 = vec1.copy()

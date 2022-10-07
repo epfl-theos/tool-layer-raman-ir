@@ -43,7 +43,7 @@ def are_same_except_order(pos1, pos2, cell):
         pos_diff_cart = np.dot(pos_diff, cell)
         # Norm of the distance between two atoms that I believe are the same,
         # after refolding to get the closest
-        refolded_norms = (pos_diff_cart ** 2).sum(axis=1)
+        refolded_norms = (pos_diff_cart**2).sum(axis=1)
         # Note that this index_smallest goes only from 0 to len(remaining)-1
         internal_index_smallest = int(refolded_norms.argmin())
         distances.append(np.sqrt(refolded_norms[internal_index_smallest]))
@@ -78,7 +78,13 @@ if __name__ == "__main__":
 
     shuffle = np.array([1, 7, 5, 2, 9, 4, 3, 6, 0, 8])
 
-    cell = np.array([[3.0, 7.0, 1.0], [-5.0, 2.0, 8.0], [-2.0, 6.0, -4.0],])
+    cell = np.array(
+        [
+            [3.0, 7.0, 1.0],
+            [-5.0, 2.0, 8.0],
+            [-2.0, 6.0, -4.0],
+        ]
+    )
 
     rel_vec_shift = np.array(
         [

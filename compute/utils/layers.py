@@ -22,7 +22,7 @@ def find_layers(  # pylint: disable=too-many-locals,too-many-statements,too-many
     :param factor: the skin factor
     :return: a tuple with a boolean indicating if the material is layered, a list of layers in the structure (ase format),
         a list of indices of the atoms in each layer, and a rotated bulk ASE cell (with stacking axis along z).
-        MOREOVER, it 1) returns layers ordered by stacking index and 2) makes sure the layer is connected when 
+        MOREOVER, it 1) returns layers ordered by stacking index and 2) makes sure the layer is connected when
         removing the PBC along the third (stacking) axis.
     """
     tol = 1.0e-6
@@ -142,7 +142,7 @@ def layers_match(layers, ltol=0.2, stol=0.3, angle_tol=5.0):
     """
     Compares all layers in the material
     layers:: list of ASE structures corresponding to layers
-    ltol:: tolerance on cell length 
+    ltol:: tolerance on cell length
     stol:: tolerance on atomic site positions
     angle_tol:: tolerance on cell angles
     """
@@ -199,7 +199,7 @@ def check_neighbors(idx, neighbor_list, asecell, visited, layer):
 def _update_and_rotate_cell(asecell, newcell, layer_indices):
     """
     Update the cell according to the newcell provided,
-    and then rotate it so that the first two lattice vectors are in the 
+    and then rotate it so that the first two lattice vectors are in the
     x-y plane. Atomic positions are refolded moving each layer rigidly.
     """
     asecell.set_cell(newcell)
@@ -242,7 +242,7 @@ def _update_and_rotate_cell(asecell, newcell, layer_indices):
 
 def get_transformation_center(rotation, transl, asecell, num_layers):
     """
-    Starting from the rotation matrix 'rotation', identifies the part 
+    Starting from the rotation matrix 'rotation', identifies the part
     of the corresponding fractional translation 'transl' which is associated
     with the fact that 'rotation' should not be performed around the origin
     but around a different position, returned in the vector 'center'
@@ -281,7 +281,7 @@ def get_transformation_center(rotation, transl, asecell, num_layers):
 def check_transformation(rotation, transl, frac_tr, asecell, num_layers):
     """
     Check if the rotational part 'rotation' and the corresponding translation
-    'transl' satisfy a complex condition which is needed to guarantee that 
+    'transl' satisfy a complex condition which is needed to guarantee that
     the coincidence operation works for all 'num_layers' layers in the cell
     'asecell'
     """
@@ -314,7 +314,7 @@ def check_transformation(rotation, transl, frac_tr, asecell, num_layers):
 def get_fractional_translation(rotation, power, spg):
     """
     Check if the operation 'rotation' elevated to the power 'power'
-    is among the symmetry operations in the spacegroup 'spg' and 
+    is among the symmetry operations in the spacegroup 'spg' and
     return the corresponding fractional translation 'frac_tr'
     """
     # We compute the matrix power
@@ -338,7 +338,7 @@ def find_common_transformation(
     asecell, layer_indices, ltol=0.05, stol=0.05, angle_tol=2.0
 ):  # pylint: disable=too-many-arguments,too-many-locals,too-many-branches,too-many-statements
     """
-    Given an input structure, in ASE format, and the list with 
+    Given an input structure, in ASE format, and the list with
     the indices of atoms belonging to each layer, determine
     if there exists a common transformation that brings one
     layer to the next.
@@ -348,12 +348,12 @@ def find_common_transformation(
         along the third axis, I should still see the layer and not it broken in two or more parts).
         This is performed by the function `find_layers`.
 
-    :param asecell: ASE structure of the bulk, where the first two 
-              lattice vectors have been re-oriented to lie 
+    :param asecell: ASE structure of the bulk, where the first two
+              lattice vectors have been re-oriented to lie
               in the plane of the layers
     :param layer_indices: list of lists containing the indices of the
                     atoms belonging to each layer
-    :param ltol: tolerance on cell length 
+    :param ltol: tolerance on cell length
     :param stol: tolerance on atomic site positions
     :param angle_tol: tolerance on cell angles
     :return: a tuple of length three: either (rot, transl, None) if there is a common transformation,

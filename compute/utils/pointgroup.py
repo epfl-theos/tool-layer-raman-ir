@@ -55,8 +55,8 @@ def pg_number_from_hm_symbol(hm_symbol):
 
 
 def rotation(axis, angle):
-    """ 
-    Generate the rotation matrix 
+    """
+    Generate the rotation matrix
     given the rotation axis and angle
     """
     norm = n.linalg.norm(axis)
@@ -109,10 +109,10 @@ def prepare_spacegroup(spg: SpacegroupAnalyzer):
 
 
 def rotoreflection(axis, angle):
-    """ 
-    Generate the roto-reflection matrix 
+    """
+    Generate the roto-reflection matrix
     given the rotation axis and angle
-    (The transformation is nothing 
+    (The transformation is nothing
     but a rotation by angle+pi followed by
     inversion)
     """
@@ -127,16 +127,26 @@ w2 = n.exp(-2j * n.pi / 3.0)
 pointgroup_dict = {
     # TRICLINIC
     "C1": {
-        "classes": {0: [n.identity(3)],},  # E
-        "character_table": {"A": [1],},
+        "classes": {
+            0: [n.identity(3)],
+        },  # E
+        "character_table": {
+            "A": [1],
+        },
         "raman": ["A"],
         "infrared": ["A"],
         "HM_symbol": "1",
         "backscattering": [["A"], ["A"], ["A"]],
     },
     "Ci": {
-        "classes": {0: [n.identity(3)], 1: [-n.identity(3)],},  # E  # I
-        "character_table": {"Ag": [1, 1], "Au": [1, -1],},
+        "classes": {
+            0: [n.identity(3)],
+            1: [-n.identity(3)],
+        },  # E  # I
+        "character_table": {
+            "Ag": [1, 1],
+            "Au": [1, -1],
+        },
         "raman": ["Ag"],
         "infrared": ["Au"],
         "HM_symbol": "-1",
@@ -144,8 +154,14 @@ pointgroup_dict = {
     },
     # MONOCLINIC
     "C2": {
-        "classes": {0: [n.identity(3)], 1: [rotation([0, 0, 1], n.pi)],},  # E  # C2
-        "character_table": {"A": [1, 1], "B": [1, -1],},
+        "classes": {
+            0: [n.identity(3)],
+            1: [rotation([0, 0, 1], n.pi)],
+        },  # E  # C2
+        "character_table": {
+            "A": [1, 1],
+            "B": [1, -1],
+        },
         "raman": ["A", "B"],
         "infrared": ["A", "B"],
         "HM_symbol": "2",
@@ -156,7 +172,10 @@ pointgroup_dict = {
             0: [n.identity(3)],  # E
             1: [rotoreflection([0, 0, 1], 0.0)],  # sigma_h
         },
-        "character_table": {"A'": [1, 1], "A''": [1, -1],},
+        "character_table": {
+            "A'": [1, 1],
+            "A''": [1, -1],
+        },
         "raman": ["A'", "A''"],
         "infrared": ["A'", "A''"],
         "HM_symbol": "m",
@@ -441,7 +460,11 @@ pointgroup_dict = {
             1: [rotation([0, 0, 1], 2 * n.pi / 3.0)],  # C3+
             2: [rotation([0, 0, 1], -2 * n.pi / 3.0)],  # C3-
         },
-        "character_table": {"A": [1, 1, 1], "1E": [1, w2, w], "2E": [1, w, w2],},
+        "character_table": {
+            "A": [1, 1, 1],
+            "1E": [1, w2, w],
+            "2E": [1, w, w2],
+        },
         "raman": ["A", "1E", "2E"],
         "infrared": ["A", "1E", "2E"],
         "HM_symbol": "3",
@@ -486,7 +509,11 @@ pointgroup_dict = {
                 rotation([-1, -n.sqrt(3.0), 0], n.pi),
             ],  # C2
         },
-        "character_table": {"A1": [1, 1, 1], "A2": [1, 1, -1], "E": [2, -1, 0],},
+        "character_table": {
+            "A1": [1, 1, 1],
+            "A2": [1, 1, -1],
+            "E": [2, -1, 0],
+        },
         "raman": ["A1", "E"],
         "infrared": ["A2", "E"],
         "HM_symbol": "32",
@@ -505,7 +532,11 @@ pointgroup_dict = {
                 rotoreflection([-1, -n.sqrt(3.0), 0], 0.0),
             ],  # sigma_v
         },
-        "character_table": {"A1": [1, 1, 1], "A2": [1, 1, -1], "E": [2, -1, 0],},
+        "character_table": {
+            "A1": [1, 1, 1],
+            "A2": [1, 1, -1],
+            "E": [2, -1, 0],
+        },
         "raman": ["A1", "E"],
         "infrared": ["A1", "E"],
         "HM_symbol": "3m",
@@ -834,7 +865,7 @@ class Pointgroup:
             )
 
     def get_order(self):
-        """ 
+        """
         Return the order of the group
         by counting the number of elements in each class
         """

@@ -23,7 +23,7 @@ def test_barebone_input_data_page(selenium):
     selenium.get(TEST_URL)
 
     assert "fan diagrams" in selenium.title.lower()
-    format_selector = selenium.find_element_by_id("fileformatSelect")
+    format_selector = selenium.find_element(By.ID, "fileformatSelect")
 
     # This is not a complete list, but at least these should be present
     expected_importer_names = set(
@@ -37,7 +37,7 @@ def test_barebone_input_data_page(selenium):
 
     # If the difference is not empty, at least one of the expected importer names is not there!
     assert not expected_importer_names.difference(
-        option.text for option in format_selector.find_elements_by_tag_name("option")
+        option.text for option in format_selector.find_elements(By.TAG_NAME, "option")
     )
 
     # Check the presence of a string in the source code
@@ -90,11 +90,11 @@ def submit_structure(
 ):  # pylint: disable=too-many-locals
     """Given a selenium driver, submit a file."""
     # Load file
-    file_upload = selenium.find_element_by_name("structurefile")
+    file_upload = selenium.find_element(By.NAME, "structurefile")
     file_upload.send_keys(file_abspath)
 
     # Select format
-    format_selector = selenium.find_element_by_id("fileformatSelect")
+    format_selector = selenium.find_element(By.ID, "fileformatSelect")
     Select(format_selector).select_by_value(parser_name)
 
     # Check if there is additional extra information to put in the form
@@ -139,9 +139,9 @@ def submit_structure(
                 selenium.find_element(By.NAME, extra_name).send_keys(str(extra_value))
 
     # Submit form
-    # selenium.find_element_by_xpath("//input[@value='Calculate my structure']").click()
-    selenium.find_element_by_xpath(
-        "//form[@action='compute/process_structure/']"
+    # selenium.find_element(By.XPATH, "//input[@value='Calculate my structure']").click()
+    selenium.find_element(
+        By.XPATH, "//form[@action='compute/process_structure/']"
     ).submit()
 
 
